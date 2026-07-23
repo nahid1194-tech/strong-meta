@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strong Meta — AI Metadata Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0A0B;
+    --ink-panel:#171717;
+    --ink-line:#2C2C2C;
+    --ink-soft:#A4A4A4;
+    --ink-soft2:#6E6E6E;
+    --paper:#F3F3F1;
+    --card:#FFFFFF;
+    --card-line:#E1E1DE;
+    --accent:#111111;
+    --accent-soft:#3B3B3B;
+    --accent-wash:#ECECEC;
+    --ok:#141414;
+    --err:#B03A2E;
+    --text:#1C1C1C;
+    --text-soft:#6E6E6E;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .app{
+    display:grid;
+    grid-template-columns:320px 1fr;
+    min-height:100vh;
+  }
+  @media (max-width:880px){
+    .app{grid-template-columns:1fr;}
+  }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    background:var(--ink);
+    color:#F2F2F2;
+    padding:22px 20px 28px;
+    border-right:1px solid #000;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:11px;
+  }
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(155deg,#2A2A2A,#000000);
+    border:1px solid #3A3A3A;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .brand-mark svg{width:20px;height:20px;}
+  .brand-text .name{font-weight:700;font-size:16.5px;letter-spacing:-0.01em;}
+  .brand-text .sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+
+  .apikey-btn{
+    width:100%;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--ink-panel);
+    border:1px solid var(--ink-line);
+    color:#F2F2F2;
+    padding:10px 12px;
+    border-radius:10px;
+    font-size:13px;font-weight:600;
+    cursor:pointer;
+    transition:.15s ease;
+  }
+  .apikey-btn:hover{border-color:#fff;}
+  .apikey-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--err);flex-shrink:0;}
+  .apikey-btn.set .dot{background:#F2F2F2;}
+
+  .tabs{
+    display:flex;background:var(--ink-panel);padding:4px;border-radius:11px;gap:4px;
+    border:1px solid var(--ink-line);
+  }
+  .tab{
+    flex:1;text-align:center;padding:9px 8px;border-radius:8px;
+    font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:.15s ease;
+    border:none;background:transparent;font-family:inherit;
+  }
+  .tab svg{width:14px;height:14px;}
+  .tab.active{background:#F2F2F2;color:var(--ink);}
+
+  .panel-title{
+    display:flex;align-items:center;gap:8px;
+    font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--ink-soft);
+    padding-bottom:2px;
+  }
+
+  .field{margin-bottom:16px;}
+  .field:last-child{margin-bottom:0;}
+  .field-label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:9px;
+  }
+  .field-label .val{color:#D8D8D8;font-family:'JetBrains Mono',monospace;font-weight:500;text-transform:none;letter-spacing:0;font-size:11.5px;}
+
+  input[type=range]{
+    -webkit-appearance:none;width:100%;height:4px;border-radius:3px;
+    background:var(--ink-line);outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:#F2F2F2;cursor:pointer;border:3px solid var(--ink);
+    box-shadow:0 0 0 1px #F2F2F2;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:15px;height:15px;border-radius:50%;background:#F2F2F2;cursor:pointer;border:3px solid var(--ink);
+  }
+
+  select, .txt-input{
+    width:100%;background:var(--ink-panel);border:1px solid var(--ink-line);
+    color:#F2F2F2;padding:9px 10px;border-radius:9px;font-size:13px;font-family:inherit;
+    outline:none;
+  }
+  select:focus, .txt-input:focus{border-color:#fff;}
+
+  .preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .preset{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:12px 10px;border-radius:9px;border:1px solid var(--ink-line);
+    background:var(--ink-panel);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-soft);
+    transition:.15s ease;text-align:center;
+  }
+  .preset .sw{width:7px;height:7px;border-radius:50%;background:var(--ink-soft2);flex-shrink:0;}
+  .preset.active{background:#F2F2F2;border-color:#F2F2F2;color:var(--ink);}
+  .preset.active .sw{background:var(--ink);}
+
+  .toggle-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0;border-top:1px solid var(--ink-line);
+  }
+  .toggle-row:first-of-type{border-top:none;}
+  .toggle-row .lbl{font-size:13px;color:#D9DADF;}
+  .switch{position:relative;width:36px;height:20px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider-pill{
+    position:absolute;inset:0;background:var(--ink-line);border-radius:20px;cursor:pointer;transition:.15s;
+  }
+  .slider-pill:before{
+    content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;
+    background:#EDEDEF;border-radius:50%;transition:.15s;
+  }
+  input:checked + .slider-pill{background:#F2F2F2;}
+  input:checked + .slider-pill:before{background:var(--ink);transform:translateX(16px);}
+
+  .hint{
+    display:flex;gap:8px;padding:11px 12px;background:var(--ink-panel);
+    border:1px solid var(--ink-line);border-radius:10px;font-size:11.5px;color:var(--ink-soft);line-height:1.5;
+  }
+  .hint svg{width:14px;height:14px;flex-shrink:0;margin-top:1px;color:#D8D8D8;}
+  .hint a{color:#F2F2F2;}
+
+  .side-scroll{overflow-y:auto;flex:1;padding-right:2px;margin-right:-6px;padding-bottom:2px;}
+  .side-scroll::-webkit-scrollbar{width:5px;}
+  .side-scroll::-webkit-scrollbar-thumb{background:var(--ink-line);border-radius:4px;}
+  .side-block{display:flex;flex-direction:column;gap:14px;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--ink-line);}
+  .side-block:last-child{border-bottom:none;margin-bottom:0;}
+
+  /* ---------- MAIN ---------- */
+  .main{padding:26px 32px 60px;max-width:1400px;}
+  @media (max-width:640px){.main{padding:18px 16px 40px;}}
+
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+  .topbar h1{font-size:21px;margin:0 0 4px;letter-spacing:-0.01em;}
+  .topbar p{margin:0;font-size:13.5px;color:var(--text-soft);}
+  .count-badge{
+    font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--card);
+    border:1px solid var(--card-line);padding:6px 12px;border-radius:20px;color:var(--text-soft);
+    white-space:nowrap;
+  }
+  .count-badge b{color:var(--text);}
+
+  .dropzone{
+    background:var(--card);border:2px dashed var(--card-line);border-radius:var(--radius);
+    padding:46px 24px;text-align:center;cursor:pointer;transition:.15s ease;position:relative;
+  }
+  .dropzone.drag{border-color:var(--ink);background:var(--accent-wash);}
+  .dropzone .icon-wrap{
+    width:52px;height:52px;border-radius:14px;background:var(--paper);border:1px solid var(--card-line);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 16px;
+  }
+  .dropzone .icon-wrap svg{width:22px;height:22px;color:var(--ink);}
+  .dropzone h3{margin:0 0 6px;font-size:15px;}
+  .dropzone .browse{color:var(--ink);text-decoration:underline;font-weight:600;cursor:pointer;}
+  .dropzone .sub{font-size:12px;color:var(--text-soft);margin-top:5px;}
+  .filetypes{display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
+  .filetype-chip{
+    display:flex;align-items:center;gap:5px;background:var(--paper);border:1px solid var(--card-line);
+    padding:5px 11px;border-radius:20px;font-size:11.5px;color:var(--text-soft);font-weight:500;
+  }
+
+  .toolbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0 22px;flex-wrap:wrap;
+  }
+  .toolbar-left{font-size:12.5px;color:var(--text-soft);}
+  .toolbar-right{display:flex;gap:9px;flex-wrap:wrap;}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
+    font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:inherit;
+    transition:.15s ease;
+  }
+  .btn svg{width:14px;height:14px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-ghost{background:var(--card);border-color:var(--card-line);color:var(--text);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--ink-soft2);}
+  .btn-danger{background:#F1E4E1;color:#7A2D22;}
+  .btn-danger:hover:not(:disabled){background:#E7D0CA;}
+  .btn-primary{background:var(--ink);color:#F2F2F2;}
+  .btn-primary:hover:not(:disabled){background:#000000;}
+  .btn-primary .spark{color:#F2F2F2;}
+
+  .empty-state{
+    text-align:center;padding:70px 20px;color:var(--text-soft);
+  }
+  .empty-state .icon-wrap{
+    width:58px;height:58px;border-radius:16px;background:var(--card);border:1px solid var(--card-line);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+  }
+  .empty-state .icon-wrap svg{width:24px;height:24px;color:var(--ink-soft2);}
+  .empty-state h3{margin:0 0 6px;color:var(--text);font-size:15.5px;font-weight:600;}
+  .empty-state p{margin:0;font-size:13px;}
+
+  .results{display:flex;flex-direction:column;gap:14px;}
+  .card{
+    background:var(--card);border:1px solid var(--card-line);border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .card-topbar{
+    display:flex;align-items:center;gap:9px;padding:10px 14px;
+    border-bottom:1px solid var(--card-line);background:var(--paper);
+  }
+  .card-topbar .fname{
+    flex:1;font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--text);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .card-topbar .remove-x{
+    width:22px;height:22px;border-radius:7px;flex-shrink:0;
+    background:var(--card);border:1px solid var(--card-line);color:var(--text-soft);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card-topbar .remove-x:hover{color:var(--err);border-color:var(--err);}
+  .card-topbar .remove-x svg{width:12px;height:12px;}
+  .card-main{display:grid;grid-template-columns:96px 1fr;}
+  @media (max-width:520px){.card-main{grid-template-columns:1fr;}}
+  .card-thumb{
+    position:relative;background:var(--paper);
+    width:72px;height:72px;margin:16px;
+    border-radius:10px;overflow:hidden;border:1px solid var(--card-line);
+    align-self:start;
+  }
+  @media (max-width:520px){.card-thumb{margin:16px auto 0;}}
+  .card-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .status-pill{
+    padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;flex-shrink:0;
+    letter-spacing:.03em;text-transform:uppercase;display:flex;align-items:center;gap:5px;
+  }
+  .status-pending{background:var(--ink);color:#E4E4E4;}
+  .status-loading{background:#111111;color:#fff;}
+  .status-done{background:#111111;color:#fff;}
+  .status-error{background:var(--err);color:#fff;}
+  .spin{width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .card-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+  .field-row{display:flex;flex-direction:column;gap:6px;}
+  .field-row-head{display:flex;justify-content:space-between;align-items:center;}
+  .field-row-head .lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-soft);}
+  .field-row-head .cnt{font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--ink-soft2);}
+  .copy-btn{
+    border:none;background:none;cursor:pointer;color:var(--ink-soft2);padding:2px;
+    display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;font-family:inherit;
+  }
+  .copy-btn:hover{color:#000;}
+  .copy-btn svg{width:12px;height:12px;}
+  .ed-input, .ed-textarea{
+    width:100%;border:1px solid var(--card-line);border-radius:8px;padding:8px 10px;
+    font-family:inherit;font-size:13.5px;color:var(--text);background:var(--paper);resize:vertical;
+    outline:none;
+  }
+  .ed-input:focus, .ed-textarea:focus{border-color:#000;background:#fff;}
+  .ed-textarea{min-height:56px;line-height:1.5;}
+  .kw-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+  .kw-chip{
+    display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--card-line);
+    padding:4px 5px 4px 10px;border-radius:20px;font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--text);
+  }
+  .kw-chip button{border:none;background:none;color:var(--ink-soft2);cursor:pointer;padding:2px;display:flex;}
+  .kw-chip button svg{width:10px;height:10px;}
+  .kw-add{
+    border:1px dashed var(--card-line);border-radius:20px;padding:4px 12px;font-size:11.5px;
+    background:none;cursor:pointer;color:var(--text-soft);font-family:'JetBrains Mono',monospace;
+  }
+  .card-actions{display:flex;gap:8px;padding-top:2px;}
+  .icon-btn{
+    display:flex;align-items:center;gap:6px;border:1px solid var(--card-line);background:var(--paper);
+    padding:6px 11px;border-radius:8px;font-size:11.5px;font-weight:600;color:var(--text-soft);cursor:pointer;
+  }
+  .icon-btn:hover{border-color:var(--ink-soft2);color:var(--text);}
+  .icon-btn svg{width:12px;height:12px;}
+  .err-msg{font-size:12px;color:var(--err);}
+
+  /* modal */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(10,10,11,.55);display:none;align-items:center;justify-content:center;
+    z-index:50;padding:20px;
+  }
+  .modal-bg.open{display:flex;}
+  .modal{
+    background:#fff;border-radius:16px;padding:26px;width:100%;max-width:420px;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal h3{margin:0 0 6px;font-size:16.5px;}
+  .modal p{margin:0 0 16px;font-size:13px;color:var(--text-soft);line-height:1.55;}
+  .modal input{
+    padding:10px 12px;border:1px solid var(--card-line);border-radius:10px;font-size:13.5px;
+    font-family:'JetBrains Mono',monospace;outline:none;
+  }
+  .modal input:focus{border-color:#000;}
+  .modal .row{display:flex;gap:10px;justify-content:flex-end;}
+  .modal a{color:#000;font-weight:600;}
+  .apikey-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;}
+  .apikey-list:empty{display:none;}
+  .apikey-row{
+    display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--card-line);
+    border-radius:10px;background:var(--paper);
+  }
+  .apikey-row .st-dot{width:8px;height:8px;border-radius:50%;background:#141414;flex-shrink:0;}
+  .apikey-row.exhausted .st-dot{background:var(--err);}
+  .apikey-row.active-key{border-color:#000;}
+  .apikey-row .kmask{flex:1;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text);}
+  .apikey-row .kstate{font-size:10.5px;color:var(--text-soft);white-space:nowrap;}
+  .apikey-row .kdel{border:none;background:none;color:var(--ink-soft2);cursor:pointer;padding:3px;display:flex;}
+  .apikey-row .kdel:hover{color:var(--err);}
+  .apikey-row .kdel svg{width:14px;height:14px;}
+  .apikey-add-row{display:flex;gap:8px;}
+  .apikey-add-row input{flex:1;width:auto;}
+  .apikey-provider-select{
+    border:1px solid var(--card-line);border-radius:10px;padding:0 10px;font-size:13px;
+    font-family:'Inter',sans-serif;background:var(--paper);color:var(--text);outline:none;flex:0 0 auto;
+  }
+  .apikey-provider-links{font-size:11px;color:var(--text-soft);margin-top:9px;}
+  .apikey-empty-hint{font-size:12px;color:var(--text-soft);margin-bottom:10px;}
+  .kprov{
+    font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+    padding:2px 7px;border-radius:20px;background:#111;color:#fff;flex-shrink:0;
+  }
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(0);
+    background:var(--ink);color:#F2F2F2;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:60;opacity:0;pointer-events:none;transition:.2s ease;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 8L12 3L20 8V16L12 21L4 16V8Z" stroke="#F2F2F2" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" fill="#F2F2F2"/></svg>
+      </div>
+      <div class="brand-text">
+        <div class="name">Strong Meta</div>
+        <div class="sub">AI Metadata Studio · Gemini</div>
+      </div>
+    </div>
+
+    <button class="apikey-btn" id="apiKeyBtn"><span class="dot" id="apiDot"></span><span id="apiKeyLabel">API Key যোগ করুন</span></button>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="metadata">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>
+        Metadata
+      </button>
+      <button class="tab" data-tab="prompt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-14 6 14M6.5 12h7"/><path d="M15 15l4 4M15 19l4-4" stroke-linecap="round"/></svg>
+        Prompt
+      </button>
+    </div>
+
+    <div class="side-scroll">
+      <!-- METADATA SETTINGS -->
+      <div id="panel-metadata">
+        <div class="side-block">
+          <div class="panel-title">Export Platform</div>
+          <div class="preset-grid" id="platformGrid"></div>
+        </div>
+        <div class="side-block" id="metadataSliders"></div>
+        <div class="side-block">
+          <div class="panel-title">Options</div>
+          <div class="toggle-row">
+            <span class="lbl">Prefix</span>
+            <label class="switch"><input type="checkbox" id="toggle-prefix"><span class="slider-pill"></span></label>
+          </div>
+          <div id="prefixInputWrap" style="display:none;"><input class="txt-input mono" id="prefixInput" placeholder="e.g. Stock Photo -"></div>
+          <div class="toggle-row">
+            <span class="lbl">Suffix</span>
+            <label class="switch"><input type="checkbox" id="toggle-suffix"><span class="slider-pill"></span></label>
+          </div>
+          <div id="suffixInputWrap" style="display:none;"><input class="txt-input mono" id="suffixInput" placeholder="e.g. | isolated"></div>
+          <div class="toggle-row">
+            <span class="lbl">Negative Keywords</span>
+            <label class="switch"><input type="checkbox" id="toggle-negkw"><span class="slider-pill"></span></label>
+          </div>
+          <div id="negkwInputWrap" style="display:none;"><input class="txt-input mono" id="negkwInput" placeholder="words to avoid, comma separated"></div>
+        </div>
+        <div class="hint" id="platformHint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5" stroke-linecap="round"/></svg>
+          <span>Adobe Stock-এ শুধু Title + Keywords থাকে, আলাদা Description লাগে না।</span>
+        </div>
+      </div>
+
+      <!-- PROMPT SETTINGS -->
+      <div id="panel-prompt" style="display:none;">
+        <div class="side-block">
+          <div class="panel-title">Prompt Style</div>
+          <div class="preset-grid" id="styleGrid"></div>
+        </div>
+        <div class="side-block">
+          <div class="field">
+            <div class="field-label">Prompt Length <span class="val" id="promptLenVal">~ 60 words</span></div>
+            <input type="range" id="promptLen" min="20" max="180" value="60">
+          </div>
+          <div class="field">
+            <div class="field-label">Target Model</div>
+            <select id="targetModel">
+              <option>General / Any</option>
+              <option>Midjourney</option>
+              <option>Stable Diffusion</option>
+              <option>DALL·E</option>
+              <option>Flux</option>
+            </select>
+          </div>
+        </div>
+        <div class="side-block">
+          <div class="toggle-row" style="border-top:none;">
+            <span class="lbl">Include camera / lens details</span>
+            <label class="switch"><input type="checkbox" id="toggle-camera" checked><span class="slider-pill"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="lbl">Include negative prompt</span>
+            <label class="switch"><input type="checkbox" id="toggle-negprompt"><span class="slider-pill"></span></label>
+          </div>
+        </div>
+        <div class="hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5" stroke-linecap="round"/></svg>
+          <span>ইমেজ দেখে Gemini একটা re-usable text-to-image prompt লিখে দেবে।</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="mainTitle">Image → Metadata</h1>
+        <p id="mainSub">ছবি আপলোড করুন, Gemini দিয়ে title, description আর keyword তৈরি করুন।</p>
+      </div>
+      <div class="count-badge"><b id="fileCount">0</b> / 100 files</div>
+    </div>
+
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp,image/gif,.eps,application/postscript,application/eps" style="display:none;">
+      <div class="filetypes">
+        <span class="filetype-chip">🖼 PNG / JPG</span>
+        <span class="filetype-chip">▦ WEBP</span>
+        <span class="filetype-chip">GIF</span>
+        <span class="filetype-chip">✎ EPS</span>
+      </div>
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke-linecap="round"/></svg>
+      </div>
+      <h3>Upload Files</h3>
+      <div>Drag &amp; drop করুন, অথবা <span class="browse" id="browseLink">browse</span></div>
+      <div class="sub">Max 100 files · প্রতিটি ছবি সরাসরি Gemini API-তে যাবে (আপনার ব্রাউজার থেকে)</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-left" id="toolbarStatus">Upload files to begin.</div>
+      <div class="toolbar-right">
+        <button class="btn btn-danger" id="clearAllBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          Clear All
+        </button>
+        <button class="btn btn-primary" id="generateAllBtn" disabled>
+          <svg class="spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.4L12 16l-1.8-5.6L5 9l5.2-1.4L12 2z"/></svg>
+          Generate All
+        </button>
+        <button class="btn btn-ghost" id="exportCsvBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <div id="resultsArea">
+      <div class="empty-state">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <h3>Your generated results will appear here.</h3>
+        <p>কিছু ছবি আপলোড করে "Generate All" চাপুন।</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-bg" id="apiModalBg">
+  <div class="modal">
+    <h3>AI Provider API Keys</h3>
+    <p>একাধিক provider থেকে একাধিক key যোগ করতে পারো। প্রায়োরিটি অনুযায়ী কাজ করবে: আগে সব <b>Gemini</b> key ব্যবহার হবে, সবগুলোর limit শেষ হলে <b>Mistral</b>-এ switch করবে, তারপর সবশেষে <b>OpenAI</b>-তে। সব key ব্রাউজারে স্থায়ীভাবে সেভ থাকবে।</p>
+    <div id="apiKeyList" class="apikey-list"></div>
+    <div class="apikey-add-row">
+      <select id="apiKeyProviderSelect" class="apikey-provider-select">
+        <option value="gemini">Gemini</option>
+        <option value="mistral">Mistral</option>
+        <option value="openai">OpenAI</option>
+      </select>
+      <input type="password" id="apiKeyInputField" placeholder="নতুন key পেস্ট করো">
+      <button class="btn btn-primary" id="apiModalAdd">+ Add</button>
+    </div>
+    <div class="apikey-provider-links">
+      Free/paid key: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Gemini</a> ·
+      <a href="https://console.mistral.ai/api-keys" target="_blank" rel="noopener">Mistral</a> ·
+      <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a>
+    </div>
+    <div class="row" style="margin-top:14px;">
+      <button class="btn btn-ghost" id="apiModalCancel">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- STATE ---------------- */
+  let state = {
+    apiKeys: [], // {id, key, status:'ok'|'exhausted'|'error'}
+    activeKeyIndex: 0,
+    activeTab: "metadata",
+    platform: "Adobe Stock",
+    styleChoice: "Photographic",
+    files: [] // {id, file, name, dataUrl, base64, mimeType, status, result, error}
+  };
+
+  const PLATFORMS = ["Adobe Stock","Shutterstock"];
+  const STYLES = ["Photographic","Cinematic","Artistic","Minimal","3D Render","Anime"];
+
+  const EPS_PLACEHOLDER_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">'+
+    '<rect width="150" height="150" fill="#F3F3F1"/>'+
+    '<text x="75" y="70" font-family="monospace" font-size="20" font-weight="700" fill="#1C1C1C" text-anchor="middle">EPS</text>'+
+    '<text x="75" y="92" font-family="monospace" font-size="10" fill="#6E6E6E" text-anchor="middle">no preview</text>'+
+    '</svg>'
+  );
+
+  // Official Adobe Stock upload-CSV category list (id must match Adobe's numbering)
+  const ADOBE_CATEGORIES = [
+    {id:1, name:"Animals"},
+    {id:2, name:"Buildings and Architecture"},
+    {id:3, name:"Business"},
+    {id:4, name:"Drinks"},
+    {id:5, name:"The Environment"},
+    {id:6, name:"States of Mind"},
+    {id:7, name:"Food"},
+    {id:8, name:"Graphic Resources"},
+    {id:9, name:"Hobbies and Leisure"},
+    {id:10, name:"Industry"},
+    {id:11, name:"Landscapes"},
+    {id:12, name:"Lifestyle"},
+    {id:13, name:"People"},
+    {id:14, name:"Plants and Flowers"},
+    {id:15, name:"Culture and Religion"},
+    {id:16, name:"Science"},
+    {id:17, name:"Social Issues"},
+    {id:18, name:"Sports"},
+    {id:19, name:"Technology"},
+    {id:20, name:"Transport"},
+    {id:21, name:"Travel"}
+  ];
+
+  // Platform-specific defaults + guideline copy (sourced from each platform's official contributor docs)
+  const PLATFORM_CONFIG = {
+    "Adobe Stock":{
+      hasTitle:true, hasDescription:false, hasCategory:true,
+      titleMax:70, kwMin:5, kwMax:49, kwDefault:40,
+      hint:'Adobe Stock গাইডলাইন অনুযায়ী: Title (≤70 char) + Keywords (≤49টা) + Category — আলাদা Description লাগে না।'
+    },
+    "Shutterstock":{
+      hasTitle:false, hasDescription:true,
+      descMin:60, descMax:250, descDefault:150, kwMin:7, kwMax:50, kwDefault:35,
+      hint:'Shutterstock গাইডলাইন অনুযায়ী: Description-ই title হিসেবে কাজ করে (sentence-style, Who/What/When/Where/Why) + 7–50টা Keyword।'
+    }
+  };
+
+  /* ---------------- STORAGE (persisted per-user, survives reloads) ---------------- */
+  const PROVIDER_META = {
+    gemini: {label:'Gemini'},
+    mistral: {label:'Mistral'},
+    openai: {label:'OpenAI'}
+  };
+  function providerPriority(p){ return p==='gemini' ? 0 : (p==='mistral' ? 1 : 2); }
+  // Gemini keys are tried first (in add-order), then Mistral, then OpenAI.
+  function orderedKeys(){
+    return state.apiKeys.map((k,idx)=>({k,idx})).sort((a,b)=> providerPriority(a.k.provider)-providerPriority(b.k.provider) || a.idx-b.idx).map(x=>x.k);
+  }
+
+  async function loadKeys(){
+    try{
+      const r = await window.storage.get('ai-api-keys', false);
+      if(r && r.value){
+        const arr = JSON.parse(r.value);
+        if(Array.isArray(arr)) state.apiKeys = arr;
+      }
+    }catch(e){ /* nothing saved yet under new format */ }
+    // migrate older single-provider (Gemini-only) storage formats
+    if(state.apiKeys.length===0){
+      try{
+        const old = await window.storage.get('gemini-api-keys', false);
+        if(old && old.value){
+          const arr = JSON.parse(old.value);
+          if(Array.isArray(arr)){
+            state.apiKeys = arr.map(k=> typeof k==='string'
+              ? {id:'k'+Math.random().toString(36).slice(2,9), key:k, provider:'gemini', status:'ok'}
+              : {...k, provider:k.provider||'gemini'});
+          }
+        }
+      }catch(e){ /* no old array either */ }
+    }
+    if(state.apiKeys.length===0){
+      try{
+        const oldest = await window.storage.get('gemini-api-key', false);
+        if(oldest && oldest.value){
+          state.apiKeys.push({id:'k'+Math.random().toString(36).slice(2,9), key:oldest.value, provider:'gemini', status:'ok'});
+        }
+      }catch(e){ /* no legacy single key either */ }
+    }
+    if(state.apiKeys.length>0) await persistKeys();
+    refreshApiKeyUI();
+    renderApiKeyList();
+  }
+  async function persistKeys(){
+    try{ await window.storage.set('ai-api-keys', JSON.stringify(state.apiKeys), false); }catch(e){ console.error(e); }
+  }
+  async function addKey(key, provider){
+    state.apiKeys.push({id:'k'+Date.now()+Math.random().toString(36).slice(2,7), key:key, provider:provider||'gemini', status:'ok'});
+    await persistKeys();
+    refreshApiKeyUI();
+    renderApiKeyList();
+  }
+  async function removeKey(id){
+    state.apiKeys = state.apiKeys.filter(k=>k.id!==id);
+    state.activeKeyIndex = 0;
+    await persistKeys();
+    refreshApiKeyUI();
+    renderApiKeyList();
+  }
+  function maskKey(k){
+    if(k.length <= 10) return k[0]+'••••';
+    return k.slice(0,6) + '••••••' + k.slice(-4);
+  }
+  function renderApiKeyList(){
+    const wrap = document.getElementById('apiKeyList');
+    if(state.apiKeys.length===0){
+      wrap.innerHTML = '<div class="apikey-empty-hint">এখনো কোনো key যোগ করা হয়নি।</div>';
+      return;
+    }
+    wrap.innerHTML = "";
+    const ordered = orderedKeys();
+    ordered.forEach((k)=>{
+      const isActive = ordered[state.activeKeyIndex % ordered.length] === k;
+      const row = document.createElement('div');
+      row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (isActive ? ' active-key' : '');
+      row.innerHTML = '<span class="st-dot"></span>'+
+        '<span class="kprov">'+(PROVIDER_META[k.provider]||{label:k.provider}).label+'</span>'+
+        '<span class="kmask">'+maskKey(k.key)+'</span>'+
+        '<span class="kstate">'+(k.status==='exhausted' ? 'limit শেষ' : (isActive ? 'in use' : 'standby'))+'</span>'+
+        '<button class="kdel" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
+      row.querySelector('.kdel').onclick = ()=>removeKey(k.id);
+      wrap.appendChild(row);
+    });
+  }
+  function refreshApiKeyUI(){
+    const btn = document.getElementById('apiKeyBtn');
+    const label = document.getElementById('apiKeyLabel');
+    const n = state.apiKeys.length;
+    if(n > 0){
+      const providers = [...new Set(state.apiKeys.map(k=>PROVIDER_META[k.provider]?PROVIDER_META[k.provider].label:k.provider))];
+      btn.classList.add('set');
+      label.textContent = n+'টা key সেভ আছে ✓ ('+providers.join(', ')+')';
+    }else{
+      btn.classList.remove('set');
+      label.textContent = 'API Key যোগ করুন';
+    }
+  }
+
+  /* ---------------- SIDEBAR: platform / style presets ---------------- */
+  function renderPresetGrid(container, list, activeVal, onPick){
+    container.innerHTML = "";
+    list.forEach(p=>{
+      const el = document.createElement('div');
+      el.className = 'preset' + (p===activeVal ? ' active' : '');
+      el.innerHTML = '<span class="sw"></span>' + p;
+      el.onclick = ()=>onPick(p);
+      container.appendChild(el);
+    });
+  }
+  function renderPlatformGrid(){
+    renderPresetGrid(document.getElementById('platformGrid'), PLATFORMS, state.platform, (p)=>{
+      state.platform = p;
+      renderPlatformGrid();
+      renderMetadataSliders();
+      document.getElementById('platformHint').querySelector('span').textContent = PLATFORM_CONFIG[p].hint;
+      renderResults();
+    });
+  }
+  function renderStyleGrid(){
+    renderPresetGrid(document.getElementById('styleGrid'), STYLES, state.styleChoice, (s)=>{
+      state.styleChoice = s;
+      renderStyleGrid();
+    });
+  }
+
+  function renderMetadataSliders(){
+    const cfg = PLATFORM_CONFIG[state.platform];
+    const wrap = document.getElementById('metadataSliders');
+    wrap.innerHTML = "";
+    if(cfg.hasTitle){
+      const f = document.createElement('div');
+      f.className = 'field';
+      f.innerHTML = '<div class="field-label">Title Length <span class="val" id="titleLenVal"></span></div>'+
+        '<input type="range" id="titleLen" min="20" max="'+cfg.titleMax+'" value="'+cfg.titleMax+'">';
+      wrap.appendChild(f);
+    }
+    if(cfg.hasDescription){
+      const f = document.createElement('div');
+      f.className = 'field';
+      f.innerHTML = '<div class="field-label">Description Length <span class="val" id="descLenVal"></span></div>'+
+        '<input type="range" id="descLen" min="'+cfg.descMin+'" max="'+cfg.descMax+'" value="'+cfg.descDefault+'">';
+      wrap.appendChild(f);
+    }
+    const kf = document.createElement('div');
+    kf.className = 'field';
+    kf.innerHTML = '<div class="field-label">Keywords Count <span class="val" id="kwCountVal"></span></div>'+
+      '<input type="range" id="kwCount" min="'+cfg.kwMin+'" max="'+cfg.kwMax+'" value="'+cfg.kwDefault+'">';
+    wrap.appendChild(kf);
+
+    ['titleLen','descLen','kwCount'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('input', syncSliderLabels);
+    });
+    syncSliderLabels();
+  }
+
+  function syncSliderLabels(){
+    const t = document.getElementById('titleLen');
+    const d = document.getElementById('descLen');
+    const k = document.getElementById('kwCount');
+    if(t) document.getElementById('titleLenVal').textContent = t.value + ' chars';
+    if(d) document.getElementById('descLenVal').textContent = d.value + ' chars';
+    if(k) document.getElementById('kwCountVal').textContent = k.value + ' keywords';
+    const pl = document.getElementById('promptLen');
+    const plVal = document.getElementById('promptLenVal');
+    if(pl && plVal) plVal.textContent = '~ ' + pl.value + ' words';
+  }
+  document.getElementById('promptLen').addEventListener('input', syncSliderLabels);
+
+  /* toggle -> reveal text input */
+  function wireToggleReveal(toggleId, wrapId){
+    document.getElementById(toggleId).addEventListener('change', (e)=>{
+      document.getElementById(wrapId).style.display = e.target.checked ? 'block' : 'none';
+    });
+  }
+  wireToggleReveal('toggle-prefix','prefixInputWrap');
+  wireToggleReveal('toggle-suffix','suffixInputWrap');
+  wireToggleReveal('toggle-negkw','negkwInputWrap');
+
+  /* ---------------- TABS ---------------- */
+  document.querySelectorAll('.tab').forEach(tabEl=>{
+    tabEl.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tabEl.classList.add('active');
+      state.activeTab = tabEl.dataset.tab;
+      document.getElementById('panel-metadata').style.display = state.activeTab==='metadata' ? 'block':'none';
+      document.getElementById('panel-prompt').style.display = state.activeTab==='prompt' ? 'block':'none';
+      if(state.activeTab==='metadata'){
+        document.getElementById('mainTitle').textContent = 'Image → Metadata';
+        document.getElementById('mainSub').textContent = 'ছবি আপলোড করুন, প্ল্যাটফর্ম গাইডলাইন অনুযায়ী Gemini metadata তৈরি করবে।';
+      }else{
+        document.getElementById('mainTitle').textContent = 'Image → Prompt';
+        document.getElementById('mainSub').textContent = 'ছবি আপলোড করুন, Gemini দিয়ে reusable text-to-image prompt তৈরি করুন।';
+      }
+      renderResults();
+    });
+  });
+
+  /* ---------------- API KEY MODAL ---------------- */
+  const apiModalBg = document.getElementById('apiModalBg');
+  document.getElementById('apiKeyBtn').onclick = ()=>{
+    document.getElementById('apiKeyInputField').value = "";
+    renderApiKeyList();
+    apiModalBg.classList.add('open');
+  };
+  document.getElementById('apiModalCancel').onclick = ()=> apiModalBg.classList.remove('open');
+  apiModalBg.addEventListener('click', (e)=>{ if(e.target===apiModalBg) apiModalBg.classList.remove('open'); });
+  document.getElementById('apiModalAdd').onclick = async ()=>{
+    const field = document.getElementById('apiKeyInputField');
+    const providerSel = document.getElementById('apiKeyProviderSelect');
+    const val = field.value.trim();
+    const provider = providerSel.value;
+    if(!val){ showToast('একটা key দিন'); return; }
+    if(state.apiKeys.some(k=>k.key===val)){ showToast('এই key আগেই যোগ করা আছে'); return; }
+    await addKey(val, provider);
+    field.value = "";
+    showToast('Key যোগ হয়েছে — পরের বার আর দিতে হবে না');
+  };
+  document.getElementById('apiKeyInputField').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('apiModalAdd').click(); }
+  });
+
+  /* ---------------- TOAST ---------------- */
+  let toastTimer;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+  }
+  function copyText(txt){
+    navigator.clipboard.writeText(txt).then(()=>showToast('Copied to clipboard'));
+  }
+
+  /* ---------------- FILE HANDLING ---------------- */
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  document.getElementById('browseLink').onclick = (e)=>{ e.stopPropagation(); fileInput.click(); };
+  dropzone.onclick = ()=> fileInput.click();
+  ['dragover','dragenter'].forEach(ev=>dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); }));
+  dropzone.addEventListener('drop', e=>{ handleFiles(e.dataTransfer.files); });
+  fileInput.addEventListener('change', e=>{ handleFiles(e.target.files); fileInput.value=""; });
+
+  function isEpsFile(file){
+    return /\.eps$/i.test(file.name) || file.type==='application/postscript' || file.type==='application/eps';
+  }
+
+  function fileToBase64(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const res = reader.result; // data:<mime>;base64,xxxx
+        const base64 = res.split(',')[1];
+        resolve({dataUrl:res, base64});
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function fileToArrayBuffer(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=> resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  /* ---- EPS → raster preview extraction ----
+     EPS files can't be sent to Gemini directly (vision API only accepts raster
+     images). Many EPS exports embed a low-res preview we can pull out client-side:
+     1) Binary "Mac EPSF" wrapper (magic C5D0D3C6) embeds a real TIFF preview.
+     2) Plain-text EPS may embed an EPSI preview (%%BeginPreview hex bitmap).
+     If neither is present we can't render/analyze the file in-browser. */
+  function readU32(dv,o,le){ return le ? dv.getUint32(o,true) : dv.getUint32(o,false); }
+  function readU16(dv,o,le){ return le ? dv.getUint16(o,true) : dv.getUint16(o,false); }
+
+  function packBitsDecode(bytes, outLen){
+    const out = new Uint8Array(outLen);
+    let i=0, o=0;
+    while(i<bytes.length && o<outLen){
+      const n = bytes[i++] << 24 >> 24; // signed
+      if(n>=0){
+        for(let k=0;k<=n && i<bytes.length && o<outLen;k++) out[o++]=bytes[i++];
+      }else if(n!==-128){
+        const v = bytes[i++];
+        for(let k=0;k<(1-n) && o<outLen;k++) out[o++]=v;
+      }
+    }
+    return out;
+  }
+
+  function decodeTiffToImageData(buf){
+    const dv = new DataView(buf);
+    const b0 = dv.getUint8(0), b1 = dv.getUint8(1);
+    let le;
+    if(b0===0x49 && b1===0x49) le=true;       // "II"
+    else if(b0===0x4D && b1===0x4D) le=false; // "MM"
+    else return null;
+    if(readU16(dv,2,le) !== 42) return null;
+    const ifdOffset = readU32(dv,4,le);
+    const numEntries = readU16(dv,ifdOffset,le);
+    const tags = {};
+    for(let i=0;i<numEntries;i++){
+      const eo = ifdOffset + 2 + i*12;
+      const tag = readU16(dv,eo,le);
+      const type = readU16(dv,eo+2,le);
+      const count = readU32(dv,eo+4,le);
+      const typeSize = {1:1,2:1,3:2,4:4,5:8}[type] || 1;
+      const totalSize = typeSize*count;
+      let valueOffset;
+      if(totalSize<=4){ valueOffset = eo+8; }
+      else { valueOffset = readU32(dv,eo+8,le); }
+      let value;
+      if(type===3){ // SHORT
+        value = [];
+        for(let k=0;k<count;k++) value.push(readU16(dv, valueOffset+k*2, le));
+      } else if(type===4){ // LONG
+        value = [];
+        for(let k=0;k<count;k++) value.push(readU32(dv, valueOffset+k*4, le));
+      } else {
+        value = readU32(dv, eo+8, le); // fallback, good enough for our tag set
+      }
+      tags[tag] = value;
+    }
+    const width = Array.isArray(tags[256]) ? tags[256][0] : tags[256];
+    const height = Array.isArray(tags[257]) ? tags[257][0] : tags[257];
+    const bitsPerSample = Array.isArray(tags[258]) ? tags[258][0] : (tags[258]||8);
+    const compression = Array.isArray(tags[259]) ? tags[259][0] : (tags[259]||1);
+    const photometric = Array.isArray(tags[262]) ? tags[262][0] : tags[262];
+    const samplesPerPixel = Array.isArray(tags[277]) ? tags[277][0] : (tags[277]||1);
+    const rowsPerStrip = Array.isArray(tags[278]) ? tags[278][0] : (tags[278]||height);
+    const stripOffsets = Array.isArray(tags[273]) ? tags[273] : [tags[273]];
+    const stripByteCounts = Array.isArray(tags[279]) ? tags[279] : [tags[279]];
+    if(!width || !height || bitsPerSample!==8) return null;
+    if(compression!==1 && compression!==32773) return null; // only none / packbits supported
+
+    const rowBytes = width*samplesPerPixel;
+    const raw = new Uint8Array(rowBytes*height);
+    let rowCursor = 0;
+    for(let s=0;s<stripOffsets.length;s++){
+      const off = stripOffsets[s], len = stripByteCounts[s];
+      const stripBytes = new Uint8Array(buf, off, len);
+      const rowsInStrip = Math.min(rowsPerStrip, height - rowCursor);
+      const expectedLen = rowBytes*rowsInStrip;
+      let decoded;
+      if(compression===1){
+        decoded = stripBytes.subarray(0, Math.min(expectedLen, stripBytes.length));
+      }else{
+        decoded = packBitsDecode(stripBytes, expectedLen);
+      }
+      raw.set(decoded, rowCursor*rowBytes);
+      rowCursor += rowsInStrip;
+    }
+
+    const rgba = new Uint8ClampedArray(width*height*4);
+    for(let p=0, px=0; p<width*height; p++, px+=4){
+      const sp = p*samplesPerPixel;
+      if(samplesPerPixel>=3){
+        rgba[px]=raw[sp]; rgba[px+1]=raw[sp+1]; rgba[px+2]=raw[sp+2]; rgba[px+3]=255;
+      }else{
+        let g = raw[sp];
+        if(photometric===0) g = 255-g; // WhiteIsZero
+        rgba[px]=g; rgba[px+1]=g; rgba[px+2]=g; rgba[px+3]=255;
+      }
+    }
+    return {width, height, rgba};
+  }
+
+  function findBinaryEpsTiff(buf){
+    const dv = new DataView(buf);
+    if(buf.byteLength<30) return null;
+    if(dv.getUint32(0,false) !== 0xC5D0D3C6) return null; // Mac binary EPS magic
+    const tiffPtr = dv.getUint32(20,true);
+    const tiffLen = dv.getUint32(24,true);
+    if(!tiffPtr || !tiffLen) return null;
+    return buf.slice(tiffPtr, tiffPtr+tiffLen);
+  }
+
+  function decodeEpsiPreview(text){
+    const beginIdx = text.indexOf('%%BeginPreview:');
+    if(beginIdx===-1) return null;
+    const endIdx = text.indexOf('%%EndPreview', beginIdx);
+    if(endIdx===-1) return null;
+    const headerLine = text.slice(beginIdx, text.indexOf('\n', beginIdx));
+    const parts = headerLine.replace('%%BeginPreview:','').trim().split(/\s+/).map(Number);
+    const [w,h,depth] = parts;
+    if(!w || !h || !depth) return null;
+    const body = text.slice(text.indexOf('\n', beginIdx)+1, endIdx);
+    const hex = body.split('\n').map(l=>l.replace(/^%/,'').trim()).join('');
+    const clean = hex.replace(/[^0-9a-fA-F]/g,'');
+    const bytes = new Uint8Array(clean.length/2);
+    for(let i=0;i<bytes.length;i++) bytes[i] = parseInt(clean.substr(i*2,2),16);
+    const rowBytes = Math.ceil(w*depth/8);
+    const rgba = new Uint8ClampedArray(w*h*4);
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        let val;
+        if(depth===1){
+          const byteIdx = y*rowBytes + (x>>3);
+          const bit = 7-(x%8);
+          const b = bytes[byteIdx] || 0;
+          val = ((b>>bit)&1) ? 255 : 0;
+        }else{
+          const byteIdx = y*rowBytes + x;
+          val = bytes[byteIdx] || 0;
+        }
+        const p=(y*w+x)*4;
+        rgba[p]=val; rgba[p+1]=val; rgba[p+2]=val; rgba[p+3]=255;
+      }
+    }
+    return {width:w, height:h, rgba};
+  }
+
+  function imageDataToPngDataUrl(imgData){
+    const canvas = document.createElement('canvas');
+    canvas.width = imgData.width; canvas.height = imgData.height;
+    const ctx = canvas.getContext('2d');
+    const id = ctx.createImageData(imgData.width, imgData.height);
+    id.data.set(imgData.rgba);
+    ctx.putImageData(id,0,0);
+    return canvas.toDataURL('image/png');
+  }
+
+  // Returns {dataUrl, base64} on success, or null if no usable preview could be extracted.
+  async function extractEpsPreview(file){
+    try{
+      const buf = await fileToArrayBuffer(file);
+      let imgData = null;
+      const tiffBuf = findBinaryEpsTiff(buf);
+      if(tiffBuf) imgData = decodeTiffToImageData(tiffBuf);
+      if(!imgData){
+        const text = new TextDecoder('latin1').decode(buf.slice(0, Math.min(buf.byteLength, 4_000_000)));
+        const epsi = decodeEpsiPreview(text);
+        if(epsi) imgData = epsi;
+      }
+      if(!imgData) return null;
+      const dataUrl = imageDataToPngDataUrl(imgData);
+      return { dataUrl, base64: dataUrl.split(',')[1] };
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function handleFiles(fileList){
+    const arr = Array.from(fileList).filter(f=> f.type.startsWith('image/') || isEpsFile(f));
+    if(arr.length===0) return;
+    for(const f of arr){
+      if(state.files.length >= 100) break;
+      if(isEpsFile(f)){
+        const preview = await extractEpsPreview(f);
+        if(preview){
+          state.files.push({
+            id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
+            file:f, name:f.name, dataUrl:preview.dataUrl, base64:preview.base64, mimeType:'image/png',
+            isEps:true, noPreview:false,
+            status:'pending', result:null, error:null
+          });
+        }else{
+          state.files.push({
+            id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
+            file:f, name:f.name, dataUrl:EPS_PLACEHOLDER_SVG, base64:null, mimeType:null,
+            isEps:true, noPreview:true,
+            status:'error', result:null,
+            error:'এই EPS ফাইলে embedded preview পাওয়া যায়নি, তাই Gemini ছবিটা দেখতে পারছে না। এই ছবির PNG/JPG ভার্সন আলাদাভাবে আপলোড করুন।'
+          });
+        }
+      }else{
+        const {dataUrl, base64} = await fileToBase64(f);
+        state.files.push({
+          id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
+          file:f, name:f.name, dataUrl, base64, mimeType:f.type,
+          isEps:false, noPreview:false,
+          status:'pending', result:null, error:null
+        });
+      }
+    }
+    renderResults();
+    updateToolbar();
+  }
+
+  function removeFile(id){
+    state.files = state.files.filter(f=>f.id!==id);
+    renderResults();
+    updateToolbar();
+  }
+
+  document.getElementById('clearAllBtn').onclick = ()=>{
+    state.files = [];
+    renderResults();
+    updateToolbar();
+  };
+
+  function updateToolbar(){
+    const n = state.files.length;
+    document.getElementById('fileCount').textContent = n;
+    document.getElementById('clearAllBtn').disabled = n===0;
+    document.getElementById('generateAllBtn').disabled = n===0;
+    document.getElementById('exportCsvBtn').disabled = !state.files.some(f=>f.status==='done');
+    const doneCount = state.files.filter(f=>f.status==='done').length;
+    document.getElementById('toolbarStatus').textContent = n===0 ? 'Upload files to begin.' : (doneCount+' / '+n+' generated');
+  }
+
+  /* ---------------- RENDER RESULTS ---------------- */
+  function renderResults(){
+    const area = document.getElementById('resultsArea');
+    if(state.files.length===0){
+      area.innerHTML = '<div class="empty-state"><div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><h3>Your generated results will appear here.</h3><p>কিছু ছবি আপলোড করে "Generate All" চাপুন।</p></div>';
+      return;
+    }
+    area.innerHTML = '<div class="results" id="resultsList"></div>';
+    const list = document.getElementById('resultsList');
+    state.files.forEach(f=>{
+      list.appendChild(buildCard(f));
+    });
+  }
+
+  function statusPillHtml(f){
+    if(f.noPreview) return '<div class="status-pill status-error">No Preview</div>';
+    if(f.status==='loading') return '<div class="status-pill status-loading"><span class="spin"></span> Generating</div>';
+    if(f.status==='done') return '<div class="status-pill status-done">Done</div>';
+    if(f.status==='error') return '<div class="status-pill status-error">Failed</div>';
+    return '<div class="status-pill status-pending">Pending</div>';
+  }
+
+  function buildCard(f){
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const topbar = document.createElement('div');
+    topbar.className = 'card-topbar';
+    topbar.innerHTML = statusPillHtml(f) +
+      '<span class="fname">'+escapeHtml(f.name)+'</span>' +
+      '<button class="remove-x" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
+    topbar.querySelector('.remove-x').onclick = ()=>removeFile(f.id);
+    card.appendChild(topbar);
+
+    const main = document.createElement('div');
+    main.className = 'card-main';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'card-thumb';
+    thumb.innerHTML = '<img src="'+f.dataUrl+'" alt="">';
+    main.appendChild(thumb);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+
+    if(f.noPreview){
+      body.innerHTML = '<div class="err-msg">⚠ '+escapeHtml(f.error||'Preview পাওয়া যায়নি')+'</div>';
+      main.appendChild(body);
+      card.appendChild(main);
+      return card;
+    }
+
+    if(f.status==='error'){
+      body.innerHTML += '<div class="err-msg">⚠ '+escapeHtml(f.error||'Generation failed')+'</div>';
+    }
+
+    if(f.isEps){
+      const epsNote = document.createElement('div');
+      epsNote.className = 'err-msg';
+      epsNote.style.color = 'var(--text-soft)';
+      epsNote.textContent = '📎 EPS-এর embedded preview থেকে বিশ্লেষণ করা হয়েছে (আসল vector আর্টওয়ার্ক নয়)।';
+      body.appendChild(epsNote);
+    }
+
+    if(state.activeTab==='metadata'){
+      body.appendChild(buildMetadataFields(f));
+    }else{
+      body.appendChild(buildPromptFields(f));
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+    const regenBtn = document.createElement('button');
+    regenBtn.className = 'icon-btn';
+    regenBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9A7 7 0 0119 12M18.5 15A7 7 0 015 12" stroke-linecap="round"/></svg> Regenerate';
+    regenBtn.onclick = ()=>generateForFile(f.id);
+    actions.appendChild(regenBtn);
+    body.appendChild(actions);
+
+    main.appendChild(body);
+    card.appendChild(main);
+    return card;
+  }
+
+  function buildMetadataFields(f){
+    const wrap = document.createElement('div');
+    const cfg = PLATFORM_CONFIG[state.platform];
+    const res = f.result || {title:'', description:'', keywords:[], category:''};
+
+    if(cfg.hasTitle){
+      const titleRow = document.createElement('div');
+      titleRow.className = 'field-row';
+      titleRow.innerHTML = '<div class="field-row-head"><span class="lbl">Title</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>copy</button></div>';
+      const titleInput = document.createElement('input');
+      titleInput.className = 'ed-input';
+      titleInput.value = res.title || '';
+      titleInput.placeholder = f.status==='loading' ? 'Generating…' : 'Generate করলে এখানে title আসবে';
+      titleInput.oninput = ()=>{ f.result = f.result || {title:'',description:'',keywords:[]}; f.result.title = titleInput.value; };
+      titleRow.appendChild(titleInput);
+      titleRow.querySelector('.copy-btn').onclick = ()=>copyText(titleInput.value);
+      wrap.appendChild(titleRow);
+      wrap.appendChild(document.createElement('div')).style.height='10px';
+    }
+
+    if(cfg.hasCategory){
+      const catRow = document.createElement('div');
+      catRow.className = 'field-row';
+      catRow.innerHTML = '<div class="field-row-head"><span class="lbl">Category</span></div>';
+      const catSelect = document.createElement('select');
+      catSelect.className = 'txt-input';
+      let opts = '<option value="">— বেছে নাও —</option>';
+      opts += ADOBE_CATEGORIES.map(c=>'<option value="'+c.id+'"'+(String(res.category)===String(c.id)?' selected':'')+'>'+c.id+' — '+c.name+'</option>').join('');
+      catSelect.innerHTML = opts;
+      catSelect.onchange = ()=>{ f.result = f.result || {title:'',description:'',keywords:[],category:''}; f.result.category = catSelect.value; };
+      catRow.appendChild(catSelect);
+      wrap.appendChild(catRow);
+      wrap.appendChild(document.createElement('div')).style.height='10px';
+    }
+
+    if(cfg.hasDescription){
+      const descRow = document.createElement('div');
+      descRow.className = 'field-row';
+      descRow.innerHTML = '<div class="field-row-head"><span class="lbl">Description (Title)</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>copy</button></div>';
+      const descArea = document.createElement('textarea');
+      descArea.className = 'ed-textarea';
+      descArea.value = res.description || '';
+      descArea.placeholder = f.status==='loading' ? 'Generating…' : 'Generate করলে এখানে description আসবে';
+      descArea.oninput = ()=>{ f.result = f.result || {title:'',description:'',keywords:[]}; f.result.description = descArea.value; };
+      descRow.appendChild(descArea);
+      descRow.querySelector('.copy-btn').onclick = ()=>copyText(descArea.value);
+      wrap.appendChild(descRow);
+      wrap.appendChild(document.createElement('div')).style.height='10px';
+    }
+
+    // Keywords
+    const kwRow = document.createElement('div');
+    kwRow.className = 'field-row';
+    const kwHead = document.createElement('div');
+    kwHead.className = 'field-row-head';
+    kwHead.innerHTML = '<span class="lbl">Keywords</span><span style="display:flex;align-items:center;gap:8px;"><span class="cnt">'+(res.keywords?res.keywords.length:0)+' tags</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>copy</button></span>';
+    kwRow.appendChild(kwHead);
+    kwHead.querySelector('.copy-btn').onclick = ()=>copyText((res.keywords||[]).join(', '));
+    const kwWrap = document.createElement('div');
+    kwWrap.className = 'kw-wrap';
+    (res.keywords||[]).forEach((kw,idx)=>{
+      const chip = document.createElement('span');
+      chip.className = 'kw-chip';
+      chip.innerHTML = escapeHtml(kw) + ' <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
+      chip.querySelector('button').onclick = ()=>{
+        f.result.keywords.splice(idx,1);
+        renderResults();
+      };
+      kwWrap.appendChild(chip);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'kw-add';
+    addBtn.textContent = '+ add';
+    addBtn.onclick = ()=>{
+      const v = prompt('নতুন keyword:');
+      if(v && v.trim()){
+        f.result = f.result || {title:'',description:'',keywords:[]};
+        f.result.keywords = f.result.keywords || [];
+        f.result.keywords.push(v.trim());
+        renderResults();
+      }
+    };
+    kwWrap.appendChild(addBtn);
+    kwRow.appendChild(kwWrap);
+    wrap.appendChild(kwRow);
+
+    return wrap;
+  }
+
+  function buildPromptFields(f){
+    const wrap = document.createElement('div');
+    const res = f.result || {prompt:''};
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = '<div class="field-row-head"><span class="lbl">Generated Prompt</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>copy</button></div>';
+    const area = document.createElement('textarea');
+    area.className = 'ed-textarea';
+    area.style.minHeight = '96px';
+    area.value = res.prompt || '';
+    area.placeholder = f.status==='loading' ? 'Generating…' : 'Generate করলে এখানে prompt আসবে';
+    area.oninput = ()=>{ f.result = f.result || {prompt:''}; f.result.prompt = area.value; };
+    row.appendChild(area);
+    row.querySelector('.copy-btn').onclick = ()=>copyText(area.value);
+    wrap.appendChild(row);
+    return wrap;
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  /* ---------------- AI PROVIDER CALLS ---------------- */
+  function safeParseJson(text){
+    try{ return JSON.parse(text); }
+    catch(e){
+      const m = text.match(/\{[\s\S]*\}/);
+      if(m){ try{ return JSON.parse(m[0]); }catch(e2){} }
+      throw new Error('মডেলের রেসপন্স থেকে JSON পার্স করা যায়নি');
+    }
+  }
+
+  async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema){
+    const model = 'gemini-2.5-flash';
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(apiKey);
+    const body = {
+      contents:[{ parts:[ {text:promptText}, {inline_data:{mime_type:mimeType, data:base64}} ] }],
+      generationConfig:{ responseMimeType:'application/json', responseSchema:schema, temperature:0.8 }
+    };
+    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if(!resp.ok){
+      const errText = await resp.text();
+      let msg = 'Gemini API error ('+resp.status+')';
+      try{ const j = JSON.parse(errText); if(j.error && j.error.message) msg = j.error.message; }catch(e){}
+      const err = new Error(msg); err.status = resp.status; throw err;
+    }
+    const data = await resp.json();
+    const cand = data.candidates && data.candidates[0];
+    if(!cand || !cand.content || !cand.content.parts || !cand.content.parts[0]){
+      throw new Error('Gemini থেকে খালি রেসপন্স পাওয়া গেছে');
+    }
+    const txt = cand.content.parts.map(p=>p.text||'').join('');
+    return safeParseJson(txt);
+  }
+
+  async function callOpenAiRaw(apiKey, base64, mimeType, promptText, schema){
+    const model = 'gpt-5.6';
+    const url = 'https://api.openai.com/v1/chat/completions';
+    const body = {
+      model: model,
+      messages:[{ role:'user', content:[
+        {type:'text', text: promptText},
+        {type:'image_url', image_url:{ url:'data:'+mimeType+';base64,'+base64 }}
+      ]}],
+      response_format:{ type:'json_object' },
+      temperature:0.8
+    };
+    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body) });
+    if(!resp.ok){
+      const errText = await resp.text();
+      let msg = 'OpenAI API error ('+resp.status+')';
+      try{ const j = JSON.parse(errText); if(j.error && j.error.message) msg = j.error.message; }catch(e){}
+      const err = new Error(msg); err.status = resp.status; throw err;
+    }
+    const data = await resp.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if(!content) throw new Error('OpenAI থেকে খালি রেসপন্স পাওয়া গেছে');
+    return safeParseJson(content);
+  }
+
+  async function callMistralRaw(apiKey, base64, mimeType, promptText, schema){
+    const model = 'ministral-14b-latest';
+    const url = 'https://api.mistral.ai/v1/chat/completions';
+    const body = {
+      model: model,
+      messages:[{ role:'user', content:[
+        {type:'text', text: promptText},
+        {type:'image_url', image_url:'data:'+mimeType+';base64,'+base64}
+      ]}],
+      response_format:{ type:'json_object' },
+      temperature:0.8
+    };
+    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body) });
+    if(!resp.ok){
+      const errText = await resp.text();
+      let msg = 'Mistral API error ('+resp.status+')';
+      try{ const j = JSON.parse(errText); if(j.error && j.error.message) msg = j.error.message; }catch(e){}
+      const err = new Error(msg); err.status = resp.status; throw err;
+    }
+    const data = await resp.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if(!content) throw new Error('Mistral থেকে খালি রেসপন্স পাওয়া গেছে');
+    return safeParseJson(content);
+  }
+
+  async function callProviderRaw(keyObj, base64, mimeType, promptText, schema){
+    if(keyObj.provider === 'openai') return callOpenAiRaw(keyObj.key, base64, mimeType, promptText, schema);
+    if(keyObj.provider === 'mistral') return callMistralRaw(keyObj.key, base64, mimeType, promptText, schema);
+    return callGeminiRaw(keyObj.key, base64, mimeType, promptText, schema);
+  }
+
+  function isRateLimitError(err){
+    const msg = (err && err.message) ? err.message.toLowerCase() : '';
+    return err && (err.status === 429 || err.status === 403 || msg.includes('quota') || msg.includes('rate limit') || msg.includes('resource_exhausted'));
+  }
+
+  // Tries keys in provider-priority order (all Gemini keys first, then all Mistral,
+  // then all OpenAI). On any failure — rate-limit or otherwise — marks that key and
+  // rotates to the next one, until a key works or every key has been tried once.
+  async function callAIWithFailover(base64, mimeType, promptText, schema){
+    if(state.apiKeys.length===0){
+      throw new Error('কোনো API key যোগ করা নেই');
+    }
+    const ordered = orderedKeys();
+    const n = ordered.length;
+    let lastErr = new Error('কোনো key দিয়ে কাজ হলো না');
+    for(let attempt=0; attempt<n; attempt++){
+      const i = state.activeKeyIndex % n;
+      const keyObj = ordered[i];
+      try{
+        const result = await callProviderRaw(keyObj, base64, mimeType, promptText, schema);
+        keyObj.status = 'ok';
+        renderApiKeyList();
+        return result;
+      }catch(e){
+        lastErr = e;
+        keyObj.status = isRateLimitError(e) ? 'exhausted' : 'error';
+        state.activeKeyIndex = (i+1) % n;
+        renderApiKeyList();
+        // keep trying the next key regardless of error type — including across
+        // providers — so one bad/limited key never blocks the rest of the chain
+      }
+    }
+    throw lastErr;
+  }
+
+
+  function buildMetadataPrompt(f){
+    const cfg = PLATFORM_CONFIG[state.platform];
+    const kwCount = document.getElementById('kwCount').value;
+    const negOn = document.getElementById('toggle-negkw').checked;
+    const negWords = document.getElementById('negkwInput').value;
+    let p = '';
+
+    if(state.platform === 'Adobe Stock'){
+      const titleLen = document.getElementById('titleLen').value;
+      p += 'তুমি Adobe Stock-এর জন্য একজন metadata specialist। Adobe Stock-এর অফিসিয়াল contributor guideline অনুসরণ করে এই ছবির জন্য metadata তৈরি করো।\n';
+      p += 'TITLE নিয়ম:\n';
+      p += '- সর্বোচ্চ '+titleLen+' characters-এর মধ্যে রাখো (Adobe Stock সীমা 70 char)।\n';
+      p += '- ছবির সবচেয়ে গুরুত্বপূর্ণ visual subject স্পষ্টভাবে বর্ণনা করো, সংক্ষিপ্ত ও পরিষ্কার বাক্যে।\n';
+      p += '- কোনো overly technical/gear-heavy শব্দ ব্যবহার করো না, কোনো trademark/brand/IP বা real person-এর নাম উল্লেখ করো না।\n';
+      p += 'KEYWORDS নিয়ম:\n';
+      p += '- ঠিক '+kwCount+' টা keyword দাও (Adobe সীমা সর্বোচ্চ 49টা)।\n';
+      p += '- সবচেয়ে গুরুত্বপূর্ণ ও প্রাসঙ্গিক keyword প্রথম দিকে (Adobe search ranking-এ প্রথম ১০টা keyword-এর প্রভাব সবচেয়ে বেশি)।\n';
+      p += '- general থেকে specific keyword মিশিয়ে দাও: subject, action, concept/mood, setting (indoor/outdoor, day/night), viewpoint/camera angle, color, number of people ইত্যাদি বিভিন্ন দিক কভার করো।\n';
+      p += '- প্রতিটা keyword শুধু একবার ব্যবহার করো, কোনো keyword repeat করো না, কোনো trademark/brand/personal info দিও না।\n';
+      if(negOn && negWords.trim()) p += '- এই শব্দগুলো কোথাও ব্যবহার করো না: '+negWords+'\n';
+      if(f.mimeType==='image/png') p += '- ছবির background যদি transparent/isolated হয়, keyword-এ তা উল্লেখ করো।\n';
+      p += 'CATEGORY নিয়ম:\n';
+      p += '- নিচের Adobe Stock ক্যাটাগরি লিস্ট থেকে ছবির সাথে সবচেয়ে বেশি মানানসই ঠিক একটা ক্যাটাগরি বেছে নাও, এবং শুধু তার id (সংখ্যা) দাও:\n';
+      p += ADOBE_CATEGORIES.map(c=>c.id+' = '+c.name).join(', ') + '\n';
+      p += 'শুধু JSON আকারে {"title":"...", "keywords":["...","..."], "category":<id সংখ্যা>} — এই ফরম্যাটে উত্তর দাও।';
+    } else {
+      const descLen = document.getElementById('descLen').value;
+      p += 'তুমি Shutterstock-এর জন্য একজন metadata specialist। Shutterstock-এর অফিসিয়াল contributor guideline অনুসরণ করে এই ছবির জন্য metadata তৈরি করো।\n';
+      p += 'DESCRIPTION (এটাই Shutterstock-এ title/description হিসেবে কাজ করে) নিয়ম:\n';
+      p += '- একটা সম্পূর্ণ, unique, detailed বাক্য বা phrase লেখো — শুধু keyword-এর তালিকা কখনো না।\n';
+      p += '- সম্ভব হলে Who, What, When, Where, Why কভার করো, এবং ছবির mood/emotion বোঝাও।\n';
+      p += '- angle, focus এই ধরনের প্রাসঙ্গিক ডিটেইল থাকলে যোগ করো, কিন্তু কোনো link, নির্দিষ্ট camera/lens info বা trademark ব্যবহার করো না, কোনো শব্দ বা phrase repeat করো না।\n';
+      p += '- আনুমানিক '+descLen+' characters-এর মধ্যে রাখো।\n';
+      p += 'KEYWORDS নিয়ম:\n';
+      p += '- ঠিক '+kwCount+' টা keyword দাও (Shutterstock সীমা 7 থেকে 50টার মধ্যে)।\n';
+      p += '- specific, precise এবং unique/compound শব্দ ব্যবহার করো যা সরাসরি ছবির সাথে সম্পর্কিত, সাথে broader topic/feeling/concept/association যোগ করো।\n';
+      p += '- কোনো keyword repeat করো না, অপ্রাসঙ্গিক শব্দ যোগ করো না, কোনো link/camera info/trademark দিও না।\n';
+      if(negOn && negWords.trim()) p += '- এই শব্দগুলো কোথাও ব্যবহার করো না: '+negWords+'\n';
+      p += 'শুধু JSON আকারে {"description":"...", "keywords":["...","..."]} — এই ফরম্যাটে উত্তর দাও।';
+    }
+    return p;
+  }
+  function buildPromptPrompt(){
+    const style = state.styleChoice;
+    const len = document.getElementById('promptLen').value;
+    const model = document.getElementById('targetModel').value;
+    const camera = document.getElementById('toggle-camera').checked;
+    let p = 'তুমি একজন AI text-to-image prompt engineer। এই ছবিটা দেখে '+model+'-এর জন্য একটা reusable, high quality '+style+' style text-to-image prompt লিখো, আনুমানিক '+len+' শব্দের মধ্যে।\n';
+    p += '- Subject, composition, lighting, color palette, mood স্পষ্টভাবে বর্ণনা করো।\n';
+    if(camera) p += '- সম্ভব হলে camera angle / lens / focal length টাইপ ডিটেইল যোগ করো।\n';
+    p += 'শুধু JSON আকারে উত্তর দাও।';
+    return p;
+  }
+
+  function currentMetadataSchema(){
+    if(state.platform === 'Adobe Stock'){
+      return { type:'OBJECT', properties:{ title:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, category:{type:'INTEGER'} }, required:['title','keywords','category'] };
+    }
+    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}} }, required:['description','keywords'] };
+  }
+  const PROMPT_SCHEMA = {
+    type:'OBJECT',
+    properties:{ prompt:{type:'STRING'} },
+    required:['prompt']
+  };
+
+  function applyPrefixSuffix(text){
+    let t = text;
+    if(document.getElementById('toggle-prefix').checked){
+      const pre = document.getElementById('prefixInput').value;
+      if(pre) t = pre + ' ' + t;
+    }
+    if(document.getElementById('toggle-suffix').checked){
+      const suf = document.getElementById('suffixInput').value;
+      if(suf) t = t + ' ' + suf;
+    }
+    return t;
+  }
+
+  async function generateForFile(id){
+    const f = state.files.find(x=>x.id===id);
+    if(!f) return;
+    if(f.noPreview) return; // no raster data available to send to Gemini
+    if(state.apiKeys.length===0){
+      showToast('আগে একটা API Key যোগ করুন');
+      document.getElementById('apiKeyBtn').click();
+      return;
+    }
+    f.status = 'loading'; f.error = null;
+    renderResults();
+    try{
+      if(state.activeTab==='metadata'){
+        const promptText = buildMetadataPrompt(f);
+        const schema = currentMetadataSchema();
+        const json = await callAIWithFailover(f.base64, f.mimeType, promptText, schema);
+        if(state.platform === 'Adobe Stock'){
+          f.result = {
+            title: applyPrefixSuffix(json.title||''),
+            description: '',
+            keywords: Array.isArray(json.keywords) ? json.keywords : [],
+            category: (function(){ const cid = Number(json.category); return ADOBE_CATEGORIES.some(c=>c.id===cid) ? cid : ''; })()
+          };
+        }else{
+          f.result = {
+            title:'',
+            description: applyPrefixSuffix(json.description||''),
+            keywords: Array.isArray(json.keywords) ? json.keywords : []
+          };
+        }
+      }else{
+        const promptText = buildPromptPrompt();
+        const json = await callAIWithFailover(f.base64, f.mimeType, promptText, PROMPT_SCHEMA);
+        f.result = { prompt: json.prompt||'' };
+      }
+      f.status = 'done';
+    }catch(e){
+      f.status = 'error';
+      f.error = e.message || 'Unknown error';
+    }
+    renderResults();
+    updateToolbar();
+  }
+
+  async function generateAll(){
+    if(state.apiKeys.length===0){
+      showToast('আগে একটা API Key যোগ করুন');
+      document.getElementById('apiKeyBtn').click();
+      return;
+    }
+    const targets = state.files.filter(f=>f.status!=='loading' && !f.noPreview);
+    const CONCURRENCY = 3;
+    let idx = 0;
+    document.getElementById('generateAllBtn').disabled = true;
+    async function worker(){
+      while(idx < targets.length){
+        const cur = targets[idx++];
+        await generateForFile(cur.id);
+      }
+    }
+    const workers = [];
+    for(let i=0;i<CONCURRENCY;i++) workers.push(worker());
+    await Promise.all(workers);
+    document.getElementById('generateAllBtn').disabled = state.files.length===0;
+    updateToolbar();
+    showToast('Generate সম্পন্ন হয়েছে');
+  }
+  document.getElementById('generateAllBtn').onclick = generateAll;
+
+  /* ---------------- EXPORT CSV ---------------- */
+  function csvEscape(v){
+    v = (v==null) ? '' : String(v);
+    if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  }
+  document.getElementById('exportCsvBtn').onclick = ()=>{
+    const done = state.files.filter(f=>f.status==='done');
+    if(done.length===0){ showToast('এখনো কিছু generate হয়নি'); return; }
+    let rows;
+    if(state.activeTab==='metadata'){
+      if(state.platform === 'Adobe Stock'){
+        rows = [['Filename','Title','Keywords','Category']];
+        done.forEach(f=>{ rows.push([f.name, f.result.title, (f.result.keywords||[]).join(', '), f.result.category||'']); });
+      }else{
+        rows = [['Filename','Description','Keywords']];
+        done.forEach(f=>{ rows.push([f.name, f.result.description, (f.result.keywords||[]).join(', ')]); });
+      }
+    }else{
+      rows = [['Filename','Prompt']];
+      done.forEach(f=>{ rows.push([f.name, f.result.prompt]); });
+    }
+    const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (state.platform + (state.activeTab==='metadata' ? '_metadata' : '_prompts')).replace(/\s+/g,'-').toLowerCase() + '_export.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  /* ---------------- INIT ---------------- */
+  renderPlatformGrid();
+  renderMetadataSliders();
+  renderStyleGrid();
+  syncSliderLabels();
+  updateToolbar();
+  renderResults();
+  loadKeys();
+
+})();
+</script>
+</body>
+</html>
