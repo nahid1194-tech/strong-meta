@@ -638,40 +638,17 @@
 
   async function loadKeys(){
     try{
-      const r = await window.storage.get('ai-api-keys', false);
-      if(r && r.value){
-        const arr = JSON.parse(r.value);
+      const raw = localStorage.getItem('ai-api-keys');
+      if(raw){
+        const arr = JSON.parse(raw);
         if(Array.isArray(arr)) state.apiKeys = arr;
       }
-    }catch(e){ /* nothing saved yet under new format */ }
-    // migrate older single-provider (Gemini-only) storage formats
-    if(state.apiKeys.length===0){
-      try{
-        const old = await window.storage.get('gemini-api-keys', false);
-        if(old && old.value){
-          const arr = JSON.parse(old.value);
-          if(Array.isArray(arr)){
-            state.apiKeys = arr.map(k=> typeof k==='string'
-              ? {id:'k'+Math.random().toString(36).slice(2,9), key:k, provider:'gemini', status:'ok'}
-              : {...k, provider:k.provider||'gemini'});
-          }
-        }
-      }catch(e){ /* no old array either */ }
-    }
-    if(state.apiKeys.length===0){
-      try{
-        const oldest = await window.storage.get('gemini-api-key', false);
-        if(oldest && oldest.value){
-          state.apiKeys.push({id:'k'+Math.random().toString(36).slice(2,9), key:oldest.value, provider:'gemini', status:'ok'});
-        }
-      }catch(e){ /* no legacy single key either */ }
-    }
-    if(state.apiKeys.length>0) await persistKeys();
+    }catch(e){ /* nothing saved yet, or storage unavailable */ }
     refreshApiKeyUI();
     renderApiKeyList();
   }
   async function persistKeys(){
-    try{ await window.storage.set('ai-api-keys', JSON.stringify(state.apiKeys), false); }catch(e){ console.error(e); }
+    try{ localStorage.setItem('ai-api-keys', JSON.stringify(state.apiKeys)); }catch(e){ console.error(e); }
   }
   async function addKey(key, provider){
     state.apiKeys.push({id:'k'+Date.now()+Math.random().toString(36).slice(2,7), key:key, provider:provider||'gemini', status:'ok'});
