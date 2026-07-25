@@ -55,6 +55,14 @@
     display:flex;
     flex-direction:column;
     gap:22px;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow:hidden;
+  }
+  @media (max-width:880px){
+    .sidebar{position:static;height:auto;overflow:visible;}
   }
   .brand{
     display:flex;
@@ -582,6 +590,7 @@
   let state = {
     apiKeys: [], // {id, key, status:'ok'|'exhausted'|'error'}
     activeKeyIndex: 0,
+    stopRequested: false,
     activeTab: "metadata",
     platform: "Adobe Stock",
     styleChoice: "Photographic",
@@ -1324,7 +1333,7 @@
   }
 
   async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema){
-    const model = 'gemini-2.5-flash';
+    const model = 'gemini-2.5-flash-lite';
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(apiKey);
     const body = {
       contents:[{ parts:[ {text:promptText}, {inline_data:{mime_type:mimeType, data:base64}} ] }],
@@ -1407,9 +1416,21 @@
     return err && (err.status === 429 || err.status === 403 || msg.includes('quota') || msg.includes('rate limit') || msg.includes('resource_exhausted'));
   }
 
+  // Pulls a "Please retry in 59.5s" style hint out of the error message so we know
+  // exactly how long to cool this key down for, instead of guessing.
+  function parseRetryAfterMs(err){
+    const msg = (err && err.message) ? err.message : '';
+    const m = msg.match(/retry in\s+([\d.]+)\s*s/i);
+    if(m) return Math.ceil(parseFloat(m[1]) * 1000) + 500; // small buffer
+    return 30000; // sensible fallback if Google doesn't tell us
+  }
+
   // Tries keys in provider-priority order (all Gemini keys first, then all Mistral,
-  // then all OpenAI). On any failure — rate-limit or otherwise — marks that key and
-  // rotates to the next one, until a key works or every key has been tried once.
+  // then all OpenAI). On rate-limit errors the key is put in a cooldown (parsed from
+  // Google's own "retry in Xs" hint) rather than being abandoned for the whole
+  // session — so once quota resets it's used again automatically. On any other
+  // failure it's marked and skipped for this attempt. If every key is in cooldown,
+  // we wait for whichever frees up soonest instead of failing outright.
   async function callAIWithFailover(base64, mimeType, promptText, schema){
     if(state.apiKeys.length===0){
       throw new Error('কোনো API key যোগ করা নেই');
@@ -1417,21 +1438,37 @@
     const ordered = orderedKeys();
     const n = ordered.length;
     let lastErr = new Error('কোনো key দিয়ে কাজ হলো না');
-    for(let attempt=0; attempt<n; attempt++){
-      const i = state.activeKeyIndex % n;
-      const keyObj = ordered[i];
+    let guard = 0;
+    while(guard++ < n * 4){ // allow a few extra passes for cooldown waits without looping forever
+      if(state.stopRequested) throw new Error('Generate থামানো হয়েছে');
+      const now = Date.now();
+      const readyIdx = ordered.findIndex(k => !k.cooldownUntil || k.cooldownUntil <= now);
+      if(readyIdx === -1){
+        // every key is cooling down — wait for the one that frees up soonest
+        const soonest = Math.min(...ordered.map(k=>k.cooldownUntil||0));
+        const waitMs = Math.max(300, soonest - now);
+        showToast('সব key rate-limit-এ, '+Math.ceil(waitMs/1000)+'s পর আবার চেষ্টা হবে');
+        await new Promise(r=>setTimeout(r, Math.min(waitMs, 5000))); // check in chunks, respects stop
+        continue;
+      }
+      const keyObj = ordered[readyIdx];
+      state.activeKeyIndex = readyIdx;
       try{
         const result = await callProviderRaw(keyObj, base64, mimeType, promptText, schema);
         keyObj.status = 'ok';
+        keyObj.cooldownUntil = 0;
         renderApiKeyList();
         return result;
       }catch(e){
         lastErr = e;
-        keyObj.status = isRateLimitError(e) ? 'exhausted' : 'error';
-        state.activeKeyIndex = (i+1) % n;
+        if(isRateLimitError(e)){
+          keyObj.status = 'exhausted';
+          keyObj.cooldownUntil = Date.now() + parseRetryAfterMs(e);
+        }else{
+          keyObj.status = 'error';
+        }
         renderApiKeyList();
-        // keep trying the next key regardless of error type — including across
-        // providers — so one bad/limited key never blocks the rest of the chain
+        // loop continues — next iteration picks another ready key, or waits if none are ready
       }
     }
     throw lastErr;
