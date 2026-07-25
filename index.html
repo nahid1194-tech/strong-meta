@@ -214,8 +214,11 @@
   }
 
   .toolbar{
-    display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0 22px;flex-wrap:wrap;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 22px;flex-wrap:wrap;
+    position:sticky;top:0;z-index:30;background:var(--paper);padding:14px 0;
+    border-bottom:1px solid transparent;transition:border-color .15s ease, box-shadow .15s ease;
   }
+  .toolbar.is-stuck{border-bottom-color:var(--card-line);box-shadow:0 6px 14px -10px rgba(0,0,0,.25);}
   .toolbar-left{font-size:12.5px;color:var(--text-soft);}
   .toolbar-right{display:flex;gap:9px;flex-wrap:wrap;}
   .btn{
@@ -264,6 +267,13 @@
   }
   .card-topbar .remove-x:hover{color:var(--err);border-color:var(--err);}
   .card-topbar .remove-x svg{width:12px;height:12px;}
+  .card-topbar .regen-btn{
+    display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:7px;flex-shrink:0;
+    background:var(--card);border:1px solid var(--card-line);color:var(--text-soft);cursor:pointer;
+    font-size:11px;font-weight:600;font-family:inherit;
+  }
+  .card-topbar .regen-btn:hover{color:var(--ink);border-color:var(--ink-soft2,var(--card-line));}
+  .card-topbar .regen-btn svg{width:11px;height:11px;flex-shrink:0;}
   .card-main{display:grid;grid-template-columns:96px 1fr;}
   @media (max-width:520px){.card-main{grid-template-columns:1fr;}}
   .card-thumb{
@@ -512,6 +522,10 @@
         <button class="btn btn-primary" id="generateAllBtn" disabled>
           <svg class="spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.4L12 16l-1.8-5.6L5 9l5.2-1.4L12 2z"/></svg>
           Generate All
+        </button>
+        <button class="btn btn-danger" id="stopAllBtn" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Stop
         </button>
         <button class="btn btn-ghost" id="exportCsvBtn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -1140,8 +1154,11 @@
     topbar.className = 'card-topbar';
     topbar.innerHTML = statusPillHtml(f) +
       '<span class="fname">'+escapeHtml(f.name)+'</span>' +
+      (f.noPreview ? '' : '<button class="regen-btn" title="Regenerate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 9A8 8 0 0119.5 9M19.5 15A8 8 0 014.5 15" stroke-linecap="round"/></svg>Regenerate</button>') +
       '<button class="remove-x" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
     topbar.querySelector('.remove-x').onclick = ()=>removeFile(f.id);
+    const regenBtn = topbar.querySelector('.regen-btn');
+    if(regenBtn) regenBtn.onclick = ()=>generateForFile(f.id);
     card.appendChild(topbar);
 
     const main = document.createElement('div');
@@ -1179,15 +1196,6 @@
     }else{
       body.appendChild(buildPromptFields(f));
     }
-
-    const actions = document.createElement('div');
-    actions.className = 'card-actions';
-    const regenBtn = document.createElement('button');
-    regenBtn.className = 'icon-btn';
-    regenBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9A7 7 0 0119 12M18.5 15A7 7 0 015 12" stroke-linecap="round"/></svg> Regenerate';
-    regenBtn.onclick = ()=>generateForFile(f.id);
-    actions.appendChild(regenBtn);
-    body.appendChild(actions);
 
     main.appendChild(body);
     card.appendChild(main);
@@ -1562,9 +1570,13 @@
     const targets = state.files.filter(f=>f.status!=='loading' && !f.noPreview);
     const CONCURRENCY = 3;
     let idx = 0;
-    document.getElementById('generateAllBtn').disabled = true;
+    state.stopRequested = false;
+    const generateBtn = document.getElementById('generateAllBtn');
+    const stopBtn = document.getElementById('stopAllBtn');
+    generateBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-flex';
     async function worker(){
-      while(idx < targets.length){
+      while(idx < targets.length && !state.stopRequested){
         const cur = targets[idx++];
         await generateForFile(cur.id);
       }
@@ -1572,11 +1584,14 @@
     const workers = [];
     for(let i=0;i<CONCURRENCY;i++) workers.push(worker());
     await Promise.all(workers);
-    document.getElementById('generateAllBtn').disabled = state.files.length===0;
+    stopBtn.style.display = 'none';
+    generateBtn.style.display = 'inline-flex';
+    generateBtn.disabled = state.files.length===0;
     updateToolbar();
-    showToast('Generate সম্পন্ন হয়েছে');
+    showToast(state.stopRequested ? 'Generate থামানো হয়েছে' : 'Generate সম্পন্ন হয়েছে');
   }
   document.getElementById('generateAllBtn').onclick = generateAll;
+  document.getElementById('stopAllBtn').onclick = ()=>{ state.stopRequested = true; };
 
   /* ---------------- EXPORT CSV ---------------- */
   function csvEscape(v){
@@ -1619,6 +1634,17 @@
   syncSliderLabels();
   updateToolbar();
   renderResults();
+
+  (function(){
+    const tb = document.querySelector('.toolbar');
+    if(!tb) return;
+    const sentinelCheck = ()=>{
+      const r = tb.getBoundingClientRect();
+      if(r.top <= 0) tb.classList.add('is-stuck'); else tb.classList.remove('is-stuck');
+    };
+    window.addEventListener('scroll', sentinelCheck, {passive:true});
+    sentinelCheck();
+  })();
   loadKeys();
 
 })();
