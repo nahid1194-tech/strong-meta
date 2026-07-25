@@ -117,6 +117,23 @@
     padding-bottom:2px;
   }
 
+  .side-block.collapsible .panel-title{
+    cursor:pointer;user-select:none;justify-content:space-between;padding-bottom:0;
+  }
+  .side-block.collapsible .panel-title .ptitle-left{display:flex;align-items:center;gap:8px;min-width:0;}
+  .side-block.collapsible .panel-title .curval{
+    font-size:10.5px;color:#D8D8D8;font-weight:500;text-transform:none;letter-spacing:0;
+    font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .side-block.collapsible .panel-title .chev{
+    width:14px;height:14px;flex-shrink:0;transition:transform .18s ease;color:var(--ink-soft);
+  }
+  .side-block.collapsible.open .panel-title .chev{transform:rotate(180deg);}
+  .side-block.collapsible .collapsible-body{
+    display:none;flex-direction:column;gap:14px;padding-top:14px;
+  }
+  .side-block.collapsible.open .collapsible-body{display:flex;}
+
   .field{margin-bottom:16px;}
   .field:last-child{margin-bottom:0;}
   .field-label{
@@ -369,6 +386,7 @@
   .apikey-row .st-dot{width:8px;height:8px;border-radius:50%;background:#141414;flex-shrink:0;}
   .apikey-row.exhausted .st-dot{background:var(--err);}
   .apikey-row.active-key{border-color:#000;}
+  .apikey-row.fallback-key{opacity:.55;}
   .apikey-row .kmask{flex:1;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text);}
   .apikey-row .kstate{font-size:10.5px;color:var(--text-soft);white-space:nowrap;}
   .apikey-row .kdel{border:none;background:none;color:var(--ink-soft2);cursor:pointer;padding:3px;display:flex;}
@@ -431,14 +449,31 @@
     <div class="side-scroll">
       <!-- METADATA SETTINGS -->
       <div id="panel-metadata">
-        <div class="side-block">
-          <div class="panel-title">Export Platform</div>
-          <div class="preset-grid" id="platformGrid"></div>
+        <div class="side-block collapsible" id="block-platform">
+          <div class="panel-title" data-target="body-platform">
+            <span class="ptitle-left">Export Platform <span class="curval" id="platformCurVal"></span></span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="collapsible-body" id="body-platform">
+            <div class="preset-grid" id="platformGrid"></div>
+          </div>
         </div>
-        <div class="side-block" id="metadataSliders"></div>
-        <div class="side-block">
-          <div class="panel-title">Options</div>
-          <div class="toggle-row">
+        <div class="side-block collapsible" id="block-metaSliders">
+          <div class="panel-title" data-target="body-metaSliders">
+            <span class="ptitle-left">Length &amp; Keywords</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="collapsible-body" id="body-metaSliders">
+            <div id="metadataSliders"></div>
+          </div>
+        </div>
+        <div class="side-block collapsible" id="block-options">
+          <div class="panel-title" data-target="body-options">
+            <span class="ptitle-left">Options</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="collapsible-body" id="body-options">
+          <div class="toggle-row" style="border-top:none;">
             <span class="lbl">Prefix</span>
             <label class="switch"><input type="checkbox" id="toggle-prefix"><span class="slider-pill"></span></label>
           </div>
@@ -453,6 +488,7 @@
             <label class="switch"><input type="checkbox" id="toggle-negkw"><span class="slider-pill"></span></label>
           </div>
           <div id="negkwInputWrap" style="display:none;"><input class="txt-input mono" id="negkwInput" placeholder="words to avoid, comma separated"></div>
+          </div>
         </div>
         <div class="hint" id="platformHint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5" stroke-linecap="round"/></svg>
@@ -462,24 +498,42 @@
 
       <!-- PROMPT SETTINGS -->
       <div id="panel-prompt" style="display:none;">
-        <div class="side-block">
-          <div class="panel-title">Prompt Style</div>
-          <div class="preset-grid" id="styleGrid"></div>
-        </div>
-        <div class="side-block">
-          <div class="field">
-            <div class="field-label">Prompt Length <span class="val" id="promptLenVal">~ 60 words</span></div>
-            <input type="range" id="promptLen" min="20" max="180" value="60">
+        <div class="side-block collapsible" id="block-style">
+          <div class="panel-title" data-target="body-style">
+            <span class="ptitle-left">Prompt Style <span class="curval" id="styleCurVal"></span></span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <div class="field">
-            <div class="field-label">Target Model</div>
-            <select id="targetModel">
-              <option>General / Any</option>
-              <option>Midjourney</option>
-              <option>Stable Diffusion</option>
-              <option>DALL·E</option>
-              <option>Flux</option>
-            </select>
+          <div class="collapsible-body" id="body-style">
+            <div class="preset-grid" id="styleGrid"></div>
+          </div>
+        </div>
+        <div class="side-block collapsible" id="block-promptLen">
+          <div class="panel-title" data-target="body-promptLen">
+            <span class="ptitle-left">Prompt Length <span class="curval" id="promptLenCurVal"></span></span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="collapsible-body" id="body-promptLen">
+            <div class="field" style="margin-bottom:0;">
+              <div class="field-label">Prompt Length <span class="val" id="promptLenVal">~ 60 words</span></div>
+              <input type="range" id="promptLen" min="20" max="180" value="60">
+            </div>
+          </div>
+        </div>
+        <div class="side-block collapsible" id="block-targetModel">
+          <div class="panel-title" data-target="body-targetModel">
+            <span class="ptitle-left">Target Model <span class="curval" id="targetModelCurVal"></span></span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="collapsible-body" id="body-targetModel">
+            <div class="field" style="margin-bottom:0;">
+              <select id="targetModel">
+                <option>General / Any</option>
+                <option>Midjourney</option>
+                <option>Stable Diffusion</option>
+                <option>DALL·E</option>
+                <option>Flux</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="side-block">
@@ -564,7 +618,7 @@
 <div class="modal-bg" id="apiModalBg">
   <div class="modal">
     <h3>AI Provider API Keys</h3>
-    <p>একাধিক provider থেকে একাধিক key যোগ করতে পারো। নিচে থেকে একটা provider বেছে নিলে <b>শুধু সেই provider</b>-এর key ব্যবহার হবে, বাকি provider-এর key hide/inactive থাকবে। "সব" সিলেক্ট করলে আগের মতো Gemini → Mistral → OpenAI প্রায়োরিটিতে কাজ করবে। সব key ব্রাউজারে স্থায়ীভাবে সেভ থাকবে।</p>
+    <p>একাধিক provider থেকে একাধিক key যোগ করতে পারো। নিচে থেকে একটা provider বেছে নিলে <b>সেই provider-এর key আগে ব্যবহার হবে</b>; ওই provider-এর সবগুলো key-র limit শেষ হয়ে গেলে বাকি provider-গুলোতে automatic switch হয়ে যাবে (fallback হিসেবে, বন্ধ হয়ে যাবে না)। "সব" সিলেক্ট করলে ডিফল্ট প্রায়োরিটি: Gemini → Mistral → OpenAI। সব key ব্রাউজারে স্থায়ীভাবে সেভ থাকবে।</p>
     <div class="provider-filter" id="providerFilter">
       <button data-provider="all">সব</button>
       <button data-provider="gemini">Gemini</button>
@@ -666,16 +720,21 @@
     mistral: {label:'Mistral'},
     openai: {label:'OpenAI'}
   };
-  function providerPriority(p){ return p==='gemini' ? 0 : (p==='mistral' ? 1 : 2); }
-  // Gemini keys are tried first (in add-order), then Mistral, then OpenAI —
-  // unless a specific provider is selected as active, in which case only that
-  // provider's keys are considered at all.
-  function orderedKeys(){
-    let keys = state.apiKeys;
+  // Default order when no provider is pinned: Gemini, then Mistral, then OpenAI.
+  function defaultProviderPriority(p){ return p==='gemini' ? 0 : (p==='mistral' ? 1 : 2); }
+  // When a provider is selected as "priority" in the modal, its keys are tried
+  // first; if all of them are exhausted/cooling down, the other providers are
+  // used automatically as fallback (not hidden or excluded — just tried later).
+  function providerPriority(p){
     if(state.activeProvider && state.activeProvider !== 'all'){
-      keys = keys.filter(k=>k.provider === state.activeProvider);
+      if(p === state.activeProvider) return 0;
+      const rest = ['gemini','mistral','openai'].filter(x=>x!==state.activeProvider);
+      return 1 + rest.indexOf(p);
     }
-    return keys.map((k,idx)=>({k,idx})).sort((a,b)=> providerPriority(a.k.provider)-providerPriority(b.k.provider) || a.idx-b.idx).map(x=>x.k);
+    return defaultProviderPriority(p);
+  }
+  function orderedKeys(){
+    return state.apiKeys.map((k,idx)=>({k,idx})).sort((a,b)=> providerPriority(a.k.provider)-providerPriority(b.k.provider) || a.idx-b.idx).map(x=>x.k);
   }
 
   async function loadKeys(){
@@ -715,20 +774,20 @@
   }
   function renderApiKeyList(){
     const wrap = document.getElementById('apiKeyList');
-    const visibleKeys = state.activeProvider==='all' ? state.apiKeys : state.apiKeys.filter(k=>k.provider===state.activeProvider);
-    if(visibleKeys.length===0){
-      wrap.innerHTML = '<div class="apikey-empty-hint">'+(state.apiKeys.length===0 ? 'এখনো কোনো key যোগ করা হয়নি।' : 'এই provider-এর কোনো key নেই।')+'</div>';
+    if(state.apiKeys.length===0){
+      wrap.innerHTML = '<div class="apikey-empty-hint">এখনো কোনো key যোগ করা হয়নি।</div>';
     }else{
       wrap.innerHTML = "";
       const ordered = orderedKeys();
-      visibleKeys.forEach((k)=>{
-        const isActive = ordered.length>0 && ordered[state.activeKeyIndex % ordered.length] === k;
+      ordered.forEach((k)=>{
+        const isActive = ordered[state.activeKeyIndex % ordered.length] === k;
+        const isFallback = state.activeProvider!=='all' && k.provider!==state.activeProvider;
         const row = document.createElement('div');
-        row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (isActive ? ' active-key' : '');
+        row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (isActive ? ' active-key' : '') + (isFallback ? ' fallback-key' : '');
         row.innerHTML = '<span class="st-dot"></span>'+
           '<span class="kprov">'+(PROVIDER_META[k.provider]||{label:k.provider}).label+'</span>'+
           '<span class="kmask">'+maskKey(k.key)+'</span>'+
-          '<span class="kstate">'+(k.status==='exhausted' ? 'limit শেষ' : (isActive ? 'in use' : 'standby'))+'</span>'+
+          '<span class="kstate">'+(k.status==='exhausted' ? 'limit শেষ' : (isActive ? 'in use' : (isFallback ? 'fallback' : 'standby')))+'</span>'+
           '<button class="kdel" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
         row.querySelector('.kdel').onclick = ()=>removeKey(k.id);
         wrap.appendChild(row);
@@ -755,10 +814,9 @@
     const n = state.apiKeys.length;
     if(n > 0){
       if(state.activeProvider !== 'all'){
-        const activeN = state.apiKeys.filter(k=>k.provider===state.activeProvider).length;
         const provLabel = (PROVIDER_META[state.activeProvider]||{}).label || state.activeProvider;
         btn.classList.add('set');
-        label.textContent = activeN+'টা key সেভ আছে ✓ ('+provLabel+' only)';
+        label.textContent = n+'টা key সেভ আছে ✓ ('+provLabel+' প্রায়োরিটি)';
       }else{
         const providers = [...new Set(state.apiKeys.map(k=>PROVIDER_META[k.provider]?PROVIDER_META[k.provider].label:k.provider))];
         btn.classList.add('set');
@@ -789,12 +847,16 @@
       document.getElementById('platformHint').querySelector('span').textContent = PLATFORM_CONFIG[p].hint;
       renderResults();
     });
+    const cv = document.getElementById('platformCurVal');
+    if(cv) cv.textContent = state.platform;
   }
   function renderStyleGrid(){
     renderPresetGrid(document.getElementById('styleGrid'), STYLES, state.styleChoice, (s)=>{
       state.styleChoice = s;
       renderStyleGrid();
     });
+    const cv = document.getElementById('styleCurVal');
+    if(cv) cv.textContent = state.styleChoice;
   }
 
   function renderMetadataSliders(){
@@ -838,8 +900,22 @@
     const pl = document.getElementById('promptLen');
     const plVal = document.getElementById('promptLenVal');
     if(pl && plVal) plVal.textContent = '~ ' + pl.value + ' words';
+    const plCur = document.getElementById('promptLenCurVal');
+    if(pl && plCur) plCur.textContent = '~ ' + pl.value + ' words';
   }
   document.getElementById('promptLen').addEventListener('input', syncSliderLabels);
+  const targetModelEl = document.getElementById('targetModel');
+  const targetModelCurValEl = document.getElementById('targetModelCurVal');
+  function syncTargetModelLabel(){ if(targetModelCurValEl) targetModelCurValEl.textContent = targetModelEl.value; }
+  targetModelEl.addEventListener('change', syncTargetModelLabel);
+  syncTargetModelLabel();
+
+  /* ---- collapsible sidebar sections: click header to expand/collapse ---- */
+  document.querySelectorAll('.side-block.collapsible > .panel-title[data-target]').forEach(header=>{
+    header.addEventListener('click', ()=>{
+      header.closest('.side-block.collapsible').classList.toggle('open');
+    });
+  });
 
   /* toggle -> reveal text input */
   function wireToggleReveal(toggleId, wrapId){
@@ -1482,10 +1558,6 @@
     }
     const ordered = orderedKeys();
     const n = ordered.length;
-    if(n===0){
-      const provLabel = (PROVIDER_META[state.activeProvider]||{}).label || state.activeProvider;
-      throw new Error(state.activeProvider!=='all' ? provLabel+'-এর কোনো key যোগ করা নেই' : 'কোনো API key যোগ করা নেই');
-    }
     let lastErr = new Error('কোনো key দিয়ে কাজ হলো না');
     let guard = 0;
     while(guard++ < n * 4){ // allow a few extra passes for cooldown waits without looping forever
