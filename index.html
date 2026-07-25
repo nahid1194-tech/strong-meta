@@ -382,6 +382,12 @@
   }
   .apikey-provider-links{font-size:11px;color:var(--text-soft);margin-top:9px;}
   .apikey-empty-hint{font-size:12px;color:var(--text-soft);margin-bottom:10px;}
+  .provider-filter{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .provider-filter button{
+    border:1px solid var(--card-line);background:var(--paper);color:var(--text-soft);
+    padding:7px 13px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .provider-filter button.active{background:var(--ink);border-color:var(--ink);color:#F2F2F2;}
   .kprov{
     font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
     padding:2px 7px;border-radius:20px;background:#111;color:#fff;flex-shrink:0;
@@ -558,7 +564,13 @@
 <div class="modal-bg" id="apiModalBg">
   <div class="modal">
     <h3>AI Provider API Keys</h3>
-    <p>একাধিক provider থেকে একাধিক key যোগ করতে পারো। প্রায়োরিটি অনুযায়ী কাজ করবে: আগে সব <b>Gemini</b> key ব্যবহার হবে, সবগুলোর limit শেষ হলে <b>Mistral</b>-এ switch করবে, তারপর সবশেষে <b>OpenAI</b>-তে। সব key ব্রাউজারে স্থায়ীভাবে সেভ থাকবে।</p>
+    <p>একাধিক provider থেকে একাধিক key যোগ করতে পারো। নিচে থেকে একটা provider বেছে নিলে <b>শুধু সেই provider</b>-এর key ব্যবহার হবে, বাকি provider-এর key hide/inactive থাকবে। "সব" সিলেক্ট করলে আগের মতো Gemini → Mistral → OpenAI প্রায়োরিটিতে কাজ করবে। সব key ব্রাউজারে স্থায়ীভাবে সেভ থাকবে।</p>
+    <div class="provider-filter" id="providerFilter">
+      <button data-provider="all">সব</button>
+      <button data-provider="gemini">Gemini</button>
+      <button data-provider="mistral">Mistral</button>
+      <button data-provider="openai">OpenAI</button>
+    </div>
     <div id="apiKeyList" class="apikey-list"></div>
     <div class="apikey-add-row">
       <select id="apiKeyProviderSelect" class="apikey-provider-select">
@@ -591,6 +603,7 @@
     apiKeys: [], // {id, key, status:'ok'|'exhausted'|'error'}
     activeKeyIndex: 0,
     stopRequested: false,
+    activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider's keys are actually used
     activeTab: "metadata",
     platform: "Adobe Stock",
     styleChoice: "Photographic",
@@ -654,9 +667,15 @@
     openai: {label:'OpenAI'}
   };
   function providerPriority(p){ return p==='gemini' ? 0 : (p==='mistral' ? 1 : 2); }
-  // Gemini keys are tried first (in add-order), then Mistral, then OpenAI.
+  // Gemini keys are tried first (in add-order), then Mistral, then OpenAI —
+  // unless a specific provider is selected as active, in which case only that
+  // provider's keys are considered at all.
   function orderedKeys(){
-    return state.apiKeys.map((k,idx)=>({k,idx})).sort((a,b)=> providerPriority(a.k.provider)-providerPriority(b.k.provider) || a.idx-b.idx).map(x=>x.k);
+    let keys = state.apiKeys;
+    if(state.activeProvider && state.activeProvider !== 'all'){
+      keys = keys.filter(k=>k.provider === state.activeProvider);
+    }
+    return keys.map((k,idx)=>({k,idx})).sort((a,b)=> providerPriority(a.k.provider)-providerPriority(b.k.provider) || a.idx-b.idx).map(x=>x.k);
   }
 
   async function loadKeys(){
@@ -667,6 +686,10 @@
         if(Array.isArray(arr)) state.apiKeys = arr;
       }
     }catch(e){ /* nothing saved yet, or storage unavailable */ }
+    try{
+      const p = localStorage.getItem('ai-active-provider');
+      if(p && ['all','gemini','mistral','openai'].includes(p)) state.activeProvider = p;
+    }catch(e){ /* default stays 'all' */ }
     refreshApiKeyUI();
     renderApiKeyList();
   }
@@ -692,33 +715,55 @@
   }
   function renderApiKeyList(){
     const wrap = document.getElementById('apiKeyList');
-    if(state.apiKeys.length===0){
-      wrap.innerHTML = '<div class="apikey-empty-hint">এখনো কোনো key যোগ করা হয়নি।</div>';
-      return;
+    const visibleKeys = state.activeProvider==='all' ? state.apiKeys : state.apiKeys.filter(k=>k.provider===state.activeProvider);
+    if(visibleKeys.length===0){
+      wrap.innerHTML = '<div class="apikey-empty-hint">'+(state.apiKeys.length===0 ? 'এখনো কোনো key যোগ করা হয়নি।' : 'এই provider-এর কোনো key নেই।')+'</div>';
+    }else{
+      wrap.innerHTML = "";
+      const ordered = orderedKeys();
+      visibleKeys.forEach((k)=>{
+        const isActive = ordered.length>0 && ordered[state.activeKeyIndex % ordered.length] === k;
+        const row = document.createElement('div');
+        row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (isActive ? ' active-key' : '');
+        row.innerHTML = '<span class="st-dot"></span>'+
+          '<span class="kprov">'+(PROVIDER_META[k.provider]||{label:k.provider}).label+'</span>'+
+          '<span class="kmask">'+maskKey(k.key)+'</span>'+
+          '<span class="kstate">'+(k.status==='exhausted' ? 'limit শেষ' : (isActive ? 'in use' : 'standby'))+'</span>'+
+          '<button class="kdel" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
+        row.querySelector('.kdel').onclick = ()=>removeKey(k.id);
+        wrap.appendChild(row);
+      });
     }
-    wrap.innerHTML = "";
-    const ordered = orderedKeys();
-    ordered.forEach((k)=>{
-      const isActive = ordered[state.activeKeyIndex % ordered.length] === k;
-      const row = document.createElement('div');
-      row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (isActive ? ' active-key' : '');
-      row.innerHTML = '<span class="st-dot"></span>'+
-        '<span class="kprov">'+(PROVIDER_META[k.provider]||{label:k.provider}).label+'</span>'+
-        '<span class="kmask">'+maskKey(k.key)+'</span>'+
-        '<span class="kstate">'+(k.status==='exhausted' ? 'limit শেষ' : (isActive ? 'in use' : 'standby'))+'</span>'+
-        '<button class="kdel" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
-      row.querySelector('.kdel').onclick = ()=>removeKey(k.id);
-      wrap.appendChild(row);
+    document.querySelectorAll('#providerFilter button').forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.provider === state.activeProvider);
     });
   }
+  function setActiveProvider(p){
+    state.activeProvider = p;
+    state.activeKeyIndex = 0;
+    try{ localStorage.setItem('ai-active-provider', p); }catch(e){}
+    renderApiKeyList();
+    refreshApiKeyUI();
+  }
+  document.getElementById('providerFilter').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-provider]');
+    if(btn) setActiveProvider(btn.dataset.provider);
+  });
   function refreshApiKeyUI(){
     const btn = document.getElementById('apiKeyBtn');
     const label = document.getElementById('apiKeyLabel');
     const n = state.apiKeys.length;
     if(n > 0){
-      const providers = [...new Set(state.apiKeys.map(k=>PROVIDER_META[k.provider]?PROVIDER_META[k.provider].label:k.provider))];
-      btn.classList.add('set');
-      label.textContent = n+'টা key সেভ আছে ✓ ('+providers.join(', ')+')';
+      if(state.activeProvider !== 'all'){
+        const activeN = state.apiKeys.filter(k=>k.provider===state.activeProvider).length;
+        const provLabel = (PROVIDER_META[state.activeProvider]||{}).label || state.activeProvider;
+        btn.classList.add('set');
+        label.textContent = activeN+'টা key সেভ আছে ✓ ('+provLabel+' only)';
+      }else{
+        const providers = [...new Set(state.apiKeys.map(k=>PROVIDER_META[k.provider]?PROVIDER_META[k.provider].label:k.provider))];
+        btn.classList.add('set');
+        label.textContent = n+'টা key সেভ আছে ✓ ('+providers.join(', ')+')';
+      }
     }else{
       btn.classList.remove('set');
       label.textContent = 'API Key যোগ করুন';
@@ -1437,6 +1482,10 @@
     }
     const ordered = orderedKeys();
     const n = ordered.length;
+    if(n===0){
+      const provLabel = (PROVIDER_META[state.activeProvider]||{}).label || state.activeProvider;
+      throw new Error(state.activeProvider!=='all' ? provLabel+'-এর কোনো key যোগ করা নেই' : 'কোনো API key যোগ করা নেই');
+    }
     let lastErr = new Error('কোনো key দিয়ে কাজ হলো না');
     let guard = 0;
     while(guard++ < n * 4){ // allow a few extra passes for cooldown waits without looping forever
