@@ -1605,7 +1605,14 @@
   }
 
   async function callMistralRaw(apiKey, base64, mimeType, promptText, schema){
-    const model = 'ministral-14b-latest';
+    // ministral-14b-latest is Mistral's small edge/efficient model — its vision
+    // encoder is only ~0.4B parameters, which is fine for basic "what's in this
+    // image" but too weak to ground detailed, accurate stock-photo-style
+    // descriptions; in practice it tends to hallucinate content unrelated to
+    // the actual image. mistral-small-2506 (Mistral Small 3.2) is one of
+    // Mistral's officially recommended vision models and has meaningfully
+    // stronger image understanding while still being a lightweight/cheap model.
+    const model = 'mistral-small-2506';
     const url = 'https://api.mistral.ai/v1/chat/completions';
     const body = {
       model: model,
@@ -1614,7 +1621,8 @@
         {type:'image_url', image_url:'data:'+mimeType+';base64,'+base64}
       ]}],
       response_format:{ type:'json_object' },
-      temperature:0.8
+      max_tokens: 1000,
+      temperature:0.4
     };
     const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body) });
     if(!resp.ok){
@@ -1807,7 +1815,7 @@
     const len = document.getElementById('promptLen').value;
     const model = document.getElementById('targetModel').value;
     const camera = document.getElementById('toggle-camera').checked;
-    let p = 'তুমি একজন AI text-to-image prompt engineer। এই ছবিটা দেখে '+model+'-এর জন্য একটা reusable, high quality '+style+' style text-to-image prompt লিখো, আনুমানিক '+len+' শব্দের মধ্যে।\n';
+    let p = 'তুমি একজন AI text-to-image prompt engineer। এই ছবিটা মনোযোগ দিয়ে দেখো এবং শুধুমাত্র ছবিতে সত্যিই যা দেখা যাচ্ছে তার ভিত্তিতে '+model+'-এর জন্য একটা reusable, high quality '+style+' style text-to-image prompt লিখো, আনুমানিক '+len+' শব্দের মধ্যে। ছবিতে নেই এমন কোনো বিষয়/বস্তু কল্পনা করে prompt-এ যোগ করো না।\n';
     p += '- Subject, composition, lighting, color palette, mood স্পষ্টভাবে বর্ণনা করো।\n';
     if(camera) p += '- সম্ভব হলে camera angle / lens / focal length টাইপ ডিটেইল যোগ করো।\n';
     p += '- ছবির মূল subject/scene-এর সাথে সরাসরি সম্পর্কহীন কোনো কিছু prompt-এ উল্লেখ করো না — যেমন কোনো logo, watermark, brand mark, text/caption/লেখা, UI icon, website link/URL, বা এমন কোনো বাড়তি object যেটা ছবির আসল বিষয়বস্তুর অংশ না বরং পরে যোগ হওয়া/অপ্রাসঙ্গিক কিছু। শুধু ছবির প্রকৃত visual subject বর্ণনা করো।\n';
