@@ -59,10 +59,9 @@
     top:0;
     align-self:start;
     height:100vh;
-    overflow:hidden;
   }
   @media (max-width:880px){
-    .sidebar{position:static;height:auto;overflow:visible;}
+    .sidebar{position:static;height:auto;}
   }
   .brand{
     display:flex;
@@ -1453,8 +1452,18 @@
     }
   }
 
-  async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema){
-    const model = 'gemini-2.5-flash-lite';
+  // Each of these has its own SEPARATE free-tier quota on Google's side, so
+  // rotating through them (per key) multiplies the effective throughput —
+  // ordered from most generous free-tier limit to least.
+  const GEMINI_MODELS = [
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-pro'
+  ];
+
+  async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema, model){
+    model = model || GEMINI_MODELS[0];
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(apiKey);
     const body = {
       contents:[{ parts:[ {text:promptText}, {inline_data:{mime_type:mimeType, data:base64}} ] }],
@@ -1526,10 +1535,40 @@
     return safeParseJson(content);
   }
 
-  async function callProviderRaw(keyObj, base64, mimeType, promptText, schema){
+  async function callProviderRaw(keyObj, base64, mimeType, promptText, schema, model){
     if(keyObj.provider === 'openai') return callOpenAiRaw(keyObj.key, base64, mimeType, promptText, schema);
     if(keyObj.provider === 'mistral') return callMistralRaw(keyObj.key, base64, mimeType, promptText, schema);
-    return callGeminiRaw(keyObj.key, base64, mimeType, promptText, schema);
+    return callGeminiRaw(keyObj.key, base64, mimeType, promptText, schema, model);
+  }
+
+  // Builds the full list of things we can try, in priority order: for each Gemini
+  // key, one "slot" per model in GEMINI_MODELS (each model has its own quota on
+  // Google's side); for Mistral/OpenAI keys, a single slot (they use one model).
+  function buildAttemptSlots(){
+    const slots = [];
+    orderedKeys().forEach(k=>{
+      if(k.provider === 'gemini'){
+        if(!k.modelCooldowns) k.modelCooldowns = {};
+        GEMINI_MODELS.forEach(m=> slots.push({key:k, model:m}));
+      }else{
+        slots.push({key:k, model:null});
+      }
+    });
+    return slots;
+  }
+  function slotCooldown(s){ return s.model ? (s.key.modelCooldowns && s.key.modelCooldowns[s.model]) || 0 : (s.key.cooldownUntil||0); }
+  function setSlotCooldown(s, until){ if(s.model) s.key.modelCooldowns[s.model] = until; else s.key.cooldownUntil = until; }
+  // After any attempt, refresh the key's overall badge: for Gemini, 'ok' if at
+  // least one of its models is still usable, otherwise 'exhausted'; for
+  // Mistral/OpenAI (single model each) it just reflects the last outcome.
+  function refreshKeyStatus(k, outcome){ // outcome: 'ok' | 'ratelimit' | 'error'
+    if(k.provider !== 'gemini'){
+      k.status = outcome === 'ok' ? 'ok' : (outcome === 'ratelimit' ? 'exhausted' : 'error');
+      return;
+    }
+    const now = Date.now();
+    const anyReady = GEMINI_MODELS.some(m => (k.modelCooldowns[m]||0) <= now);
+    k.status = anyReady ? 'ok' : 'exhausted';
   }
 
   function isRateLimitError(err){
@@ -1547,49 +1586,55 @@
   }
 
   // Tries keys in provider-priority order (all Gemini keys first, then all Mistral,
-  // then all OpenAI). On rate-limit errors the key is put in a cooldown (parsed from
-  // Google's own "retry in Xs" hint) rather than being abandoned for the whole
-  // session — so once quota resets it's used again automatically. On any other
-  // failure it's marked and skipped for this attempt. If every key is in cooldown,
-  // we wait for whichever frees up soonest instead of failing outright.
+  // then all OpenAI). Each Gemini key is tried across several models in turn
+  // (gemini-2.5-flash-lite → gemini-2.5-flash → gemini-3.1-flash-lite →
+  // gemini-2.5-pro) since each model has its own separate free-tier quota — so
+  // one key alone can absorb several times the throughput of a single model.
+  // On rate-limit errors that specific (key, model) pair is put in a cooldown
+  // (parsed from Google's own "retry in Xs" hint) rather than abandoned for the
+  // whole session — once quota resets it's used again automatically. If every
+  // slot is in cooldown, we wait for whichever frees up soonest instead of
+  // failing outright.
   async function callAIWithFailover(base64, mimeType, promptText, schema){
     if(state.apiKeys.length===0){
       throw new Error('কোনো API key যোগ করা নেই');
     }
-    const ordered = orderedKeys();
-    const n = ordered.length;
-    let lastErr = new Error('কোনো key দিয়ে কাজ হলো না');
-    let guard = 0;
-    while(guard++ < n * 4){ // allow a few extra passes for cooldown waits without looping forever
+    const slots = buildAttemptSlots();
+    let lastErr = new Error('কোনো key/model দিয়ে কাজ হলো না');
+    const startedAt = Date.now();
+    const MAX_WAIT_MS = 20 * 60 * 1000; // give up only after 20 minutes of genuinely being stuck
+    let lastToastAt = 0;
+    while(Date.now() - startedAt < MAX_WAIT_MS){
       if(state.stopRequested) throw new Error('Generate থামানো হয়েছে');
       const now = Date.now();
-      const readyIdx = ordered.findIndex(k => !k.cooldownUntil || k.cooldownUntil <= now);
-      if(readyIdx === -1){
-        // every key is cooling down — wait for the one that frees up soonest
-        const soonest = Math.min(...ordered.map(k=>k.cooldownUntil||0));
+      const readySlot = slots.find(s => slotCooldown(s) <= now);
+      if(!readySlot){
+        // every (key, model) slot is cooling down — wait for whichever frees up soonest
+        const soonest = Math.min(...slots.map(slotCooldown));
         const waitMs = Math.max(300, soonest - now);
-        showToast('সব key rate-limit-এ, '+Math.ceil(waitMs/1000)+'s পর আবার চেষ্টা হবে');
-        await new Promise(r=>setTimeout(r, Math.min(waitMs, 5000))); // check in chunks, respects stop
+        if(Date.now() - lastToastAt > 4000){ // don't spam toasts every loop tick
+          showToast('সব key/model rate-limit-এ, '+Math.ceil(waitMs/1000)+'s পর auto-resume হবে');
+          lastToastAt = Date.now();
+        }
+        await new Promise(r=>setTimeout(r, Math.min(waitMs, 4000))); // check in short chunks, respects Stop button
         continue;
       }
-      const keyObj = ordered[readyIdx];
-      state.activeKeyIndex = readyIdx;
+      const keyObj = readySlot.key;
+      state.activeKeyIndex = orderedKeys().indexOf(keyObj);
       try{
-        const result = await callProviderRaw(keyObj, base64, mimeType, promptText, schema);
-        keyObj.status = 'ok';
-        keyObj.cooldownUntil = 0;
+        const result = await callProviderRaw(keyObj, base64, mimeType, promptText, schema, readySlot.model);
+        setSlotCooldown(readySlot, 0);
+        refreshKeyStatus(keyObj, 'ok');
         renderApiKeyList();
         return result;
       }catch(e){
         lastErr = e;
-        if(isRateLimitError(e)){
-          keyObj.status = 'exhausted';
-          keyObj.cooldownUntil = Date.now() + parseRetryAfterMs(e);
-        }else{
-          keyObj.status = 'error';
-        }
+        const rateLimited = isRateLimitError(e);
+        setSlotCooldown(readySlot, Date.now() + (rateLimited ? parseRetryAfterMs(e) : 8000));
+        refreshKeyStatus(keyObj, rateLimited ? 'ratelimit' : 'error');
         renderApiKeyList();
-        // loop continues — next iteration picks another ready key, or waits if none are ready
+        // loop continues — next iteration picks another ready slot (different
+        // model on the same key, or the next key), or waits if none are ready
       }
     }
     throw lastErr;
