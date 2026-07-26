@@ -1753,19 +1753,29 @@
     const negOn = document.getElementById('toggle-negkw').checked;
     const negWords = document.getElementById('negkwInput').value;
     let p = '';
+    // Adobe Stock (and other stock sites) auto-reject or flag submissions for
+    // "Copyright" / "Intellectual Property" violations when the image itself
+    // contains a visible logo, watermark, brand mark, or website/URL. Even if
+    // we can't remove that from the image, metadata must never name/describe
+    // it — doing so is what triggers manual/automatic IP review and rejection.
+    const ipWarning = '- ছবির ভিতরে যদি কোনো logo, watermark, brand mark, trademark, website/URL, বা কোনো company/product-এর নাম দৃশ্যমান থাকে, সেটা title/description/keyword কোথাও উল্লেখ করো না বা বর্ণনা করো না — শুধু এগুলো নাম উল্লেখ করলেই Adobe/Shutterstock "Copyright" বা "Intellectual Property" ভায়োলেশন হিসেবে ছবিটা reject করে দেয়। এই ধরনের element ইগনোর করে শুধু ছবির বাকি genuine visual subject বর্ণনা করো।\n';
 
     if(state.platform === 'Adobe Stock'){
       const titleLen = document.getElementById('titleLen').value;
       p += 'তুমি Adobe Stock-এর জন্য একজন metadata specialist। Adobe Stock-এর অফিসিয়াল contributor guideline অনুসরণ করে এই ছবির জন্য metadata তৈরি করো।\n';
+      p += ipWarning;
       p += 'TITLE নিয়ম:\n';
       p += '- সর্বোচ্চ '+titleLen+' characters-এর মধ্যে রাখো (Adobe Stock সীমা 70 char)।\n';
       p += '- ছবির সবচেয়ে গুরুত্বপূর্ণ visual subject স্পষ্টভাবে বর্ণনা করো, সংক্ষিপ্ত ও পরিষ্কার বাক্যে।\n';
-      p += '- কোনো overly technical/gear-heavy শব্দ ব্যবহার করো না, কোনো trademark/brand/IP বা real person-এর নাম উল্লেখ করো না।\n';
+      p += '- কোনো overly technical/gear-heavy শব্দ ব্যবহার করো না, কোনো trademark/brand/IP, artist name, বা real person-এর নাম উল্লেখ করো না।\n';
       p += 'KEYWORDS নিয়ম:\n';
       p += '- ঠিক '+kwCount+' টা keyword দাও (Adobe সীমা সর্বোচ্চ 49টা)।\n';
       p += '- সবচেয়ে গুরুত্বপূর্ণ ও প্রাসঙ্গিক keyword প্রথম দিকে (Adobe search ranking-এ প্রথম ১০টা keyword-এর প্রভাব সবচেয়ে বেশি)।\n';
-      p += '- general থেকে specific keyword মিশিয়ে দাও: subject, action, concept/mood, setting (indoor/outdoor, day/night), viewpoint/camera angle, color, number of people ইত্যাদি বিভিন্ন দিক কভার করো।\n';
+      p += '- general থেকে specific keyword মিশিয়ে দাও: subject, action, concept/mood, setting (indoor/outdoor, day/night), viewpoint/camera angle, color, number of people, এবং প্রাসঙ্গিক হলে model demographic info (যেমন gender, age group, ethnicity) ইত্যাদি বিভিন্ন দিক কভার করো।\n';
+      p += '- buyer-এর মতো ভাবো — একজন customer এই ছবিটা খুঁজতে ঠিক কোন শব্দ সার্চ করবে সেটা মাথায় রেখে keyword বাছো।\n';
+      p += '- শুধু ছবির সাথে সরাসরি প্রাসঙ্গিক keyword দাও; অপ্রাসঙ্গিক keyword দিলে Adobe content reject করতে পারে।\n';
       p += '- প্রতিটা keyword শুধু একবার ব্যবহার করো, কোনো keyword repeat করো না, কোনো trademark/brand/personal info দিও না।\n';
+      p += '- সবগুলো title ও keyword একটামাত্র ভাষায় (English) লেখো — একাধিক ভাষা মিশিয়ো না।\n';
       if(negOn && negWords.trim()) p += '- এই শব্দগুলো কোথাও ব্যবহার করো না: '+negWords+'\n';
       if(f.mimeType==='image/png') p += '- ছবির background যদি transparent/isolated হয়, keyword-এ তা উল্লেখ করো।\n';
       p += 'CATEGORY নিয়ম:\n';
@@ -1775,6 +1785,9 @@
     } else {
       const descLen = document.getElementById('descLen').value;
       p += 'তুমি Shutterstock-এর জন্য একজন metadata specialist। Shutterstock-এর অফিসিয়াল contributor guideline অনুসরণ করে এই ছবির জন্য metadata তৈরি করো।\n';
+      p += ipWarning;
+      p += '- মানুষের identity সবসময় respectful ও accurate ভাবে represent করো (race, gender, age ইত্যাদি ভুলভাবে বা stereotypically বর্ণনা করো না)।\n';
+      p += '- কোনো personally identifiable information (PII) — যেমন নাম, ঠিকানা, ফোন নম্বর, ইমেইল — description বা keyword-এ উল্লেখ করো না।\n';
       p += 'DESCRIPTION (এটাই Shutterstock-এ title/description হিসেবে কাজ করে) নিয়ম:\n';
       p += '- একটা সম্পূর্ণ, unique, detailed বাক্য বা phrase লেখো — শুধু keyword-এর তালিকা কখনো না।\n';
       p += '- সম্ভব হলে Who, What, When, Where, Why কভার করো, এবং ছবির mood/emotion বোঝাও।\n';
