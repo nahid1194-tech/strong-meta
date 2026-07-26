@@ -50,10 +50,7 @@
 
   /* ---------- SIDEBAR ---------- */
   .sidebar{
-    background:
-      radial-gradient(520px 320px at 100% 0%, rgba(192,38,212,.22), transparent 65%),
-      radial-gradient(420px 380px at 0% 100%, rgba(124,58,237,.28), transparent 65%),
-      var(--ink);
+    background: var(--ink);
     color:#F2F2F2;
     padding:22px 20px 28px;
     border-right:1px solid #1F1330;
@@ -800,11 +797,13 @@
         const isActive = ordered[state.activeKeyIndex % ordered.length] === k;
         const isFallback = state.activeProvider!=='all' && k.provider!==state.activeProvider;
         const row = document.createElement('div');
-        row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (isActive ? ' active-key' : '') + (isFallback ? ' fallback-key' : '');
+        row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (k.status==='error' ? ' exhausted' : '') + (isActive ? ' active-key' : '') + (isFallback ? ' fallback-key' : '');
+        if(k.lastError) row.title = k.lastError;
+        const stateLabel = k.status==='exhausted' ? 'limit শেষ' : (k.status==='error' ? 'সমস্যা (key দেখুন)' : (isActive ? 'in use' : (isFallback ? 'fallback' : 'standby')));
         row.innerHTML = '<span class="st-dot"></span>'+
           '<span class="kprov">'+(PROVIDER_META[k.provider]||{label:k.provider}).label+'</span>'+
           '<span class="kmask">'+maskKey(k.key)+'</span>'+
-          '<span class="kstate">'+(k.status==='exhausted' ? 'limit শেষ' : (isActive ? 'in use' : (isFallback ? 'fallback' : 'standby')))+'</span>'+
+          '<span class="kstate">'+stateLabel+'</span>'+
           '<button class="kdel" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
         row.querySelector('.kdel').onclick = ()=>removeKey(k.id);
         wrap.appendChild(row);
@@ -1027,6 +1026,38 @@
     });
   }
 
+  // Re-encodes an image through <canvas> into a clean, standard PNG. This
+  // fixes cases where Gemini rejects the raw uploaded bytes with "Unable to
+  // process input image" — usually because the browser reported an empty/
+  // incorrect file.type, or the original file has a format quirk (odd color
+  // profile, unusual container, etc.) that Gemini's vision endpoint can't
+  // parse even though the browser itself can decode and display it fine.
+  // Returns {dataUrl, base64, mimeType:'image/png'}; rejects if the browser
+  // itself can't decode the image (genuinely broken/corrupt file).
+  function normalizeImageForApi(file){
+    return new Promise((resolve,reject)=>{
+      const objUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = ()=>{
+        try{
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img,0,0);
+          const dataUrl = canvas.toDataURL('image/png');
+          URL.revokeObjectURL(objUrl);
+          resolve({dataUrl, base64:dataUrl.split(',')[1], mimeType:'image/png'});
+        }catch(e){
+          URL.revokeObjectURL(objUrl);
+          reject(e);
+        }
+      };
+      img.onerror = ()=>{ URL.revokeObjectURL(objUrl); reject(new Error('Image decode failed')); };
+      img.src = objUrl;
+    });
+  }
+
   function fileToArrayBuffer(file){
     return new Promise((resolve,reject)=>{
       const reader = new FileReader();
@@ -1236,10 +1267,19 @@
           });
         }
       }else{
-        const {dataUrl, base64} = await fileToBase64(f);
+        let dataUrl, base64, mimeType;
+        try{
+          const norm = await normalizeImageForApi(f);
+          dataUrl = norm.dataUrl; base64 = norm.base64; mimeType = norm.mimeType;
+        }catch(e){
+          // browser couldn't decode/re-encode it (rare) — fall back to sending
+          // the raw bytes as-is, same as before
+          const raw = await fileToBase64(f);
+          dataUrl = raw.dataUrl; base64 = raw.base64; mimeType = f.type;
+        }
         state.files.push({
           id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
-          file:f, name:f.name, dataUrl, base64, mimeType:f.type,
+          file:f, name:f.name, dataUrl, base64, mimeType,
           isEps:false, noPreview:false,
           status:'pending', result:null, error:null
         });
@@ -1591,22 +1631,33 @@
   }
   function slotCooldown(s){ return s.model ? (s.key.modelCooldowns && s.key.modelCooldowns[s.model]) || 0 : (s.key.cooldownUntil||0); }
   function setSlotCooldown(s, until){ if(s.model) s.key.modelCooldowns[s.model] = until; else s.key.cooldownUntil = until; }
-  // After any attempt, refresh the key's overall badge: for Gemini, 'ok' if at
-  // least one of its models is still usable, otherwise 'exhausted'; for
-  // Mistral/OpenAI (single model each) it just reflects the last outcome.
-  function refreshKeyStatus(k, outcome){ // outcome: 'ok' | 'ratelimit' | 'error'
+  // After any attempt, refresh the key's overall badge:
+  // - 'exhausted' only when every model slot is cooling down AND the cause was
+  //   genuine rate-limiting (so "limit শেষ" is trustworthy and worth waiting out)
+  // - 'error' when slots are cooling down because of a real error (invalid key,
+  //   permission denied, etc.) — waiting won't fix this, the key itself needs
+  //   attention
+  // - 'ok' if at least one model is usable right now
+  function refreshKeyStatus(k, outcome, err){
+    if(err) k.lastError = err.message || String(err);
     if(k.provider !== 'gemini'){
       k.status = outcome === 'ok' ? 'ok' : (outcome === 'ratelimit' ? 'exhausted' : 'error');
       return;
     }
     const now = Date.now();
     const anyReady = GEMINI_MODELS.some(m => (k.modelCooldowns[m]||0) <= now);
-    k.status = anyReady ? 'ok' : 'exhausted';
+    if(anyReady){ k.status = 'ok'; return; }
+    k.status = (outcome === 'ratelimit') ? 'exhausted' : 'error';
   }
 
+  // NOTE: 403 from Gemini is usually PERMISSION_DENIED (invalid key, API not
+  // enabled, key restricted to certain domains/referrers) — NOT a quota issue.
+  // Only 429 / explicit quota-ish wording should count as "rate limited",
+  // otherwise a broken/invalid key gets mislabeled as "limit শেষ" (which tells
+  // the user to just wait) when it actually needs to be fixed/replaced.
   function isRateLimitError(err){
     const msg = (err && err.message) ? err.message.toLowerCase() : '';
-    return err && (err.status === 429 || err.status === 403 || msg.includes('quota') || msg.includes('rate limit') || msg.includes('resource_exhausted'));
+    return err && (err.status === 429 || msg.includes('quota') || msg.includes('rate limit') || msg.includes('resource_exhausted'));
   }
 
   // Pulls a "Please retry in 59.5s" style hint out of the error message so we know
@@ -1657,6 +1708,7 @@
       try{
         const result = await callProviderRaw(keyObj, base64, mimeType, promptText, schema, readySlot.model);
         setSlotCooldown(readySlot, 0);
+        keyObj.lastError = null;
         refreshKeyStatus(keyObj, 'ok');
         renderApiKeyList();
         return result;
@@ -1664,7 +1716,7 @@
         lastErr = e;
         const rateLimited = isRateLimitError(e);
         setSlotCooldown(readySlot, Date.now() + (rateLimited ? parseRetryAfterMs(e) : 8000));
-        refreshKeyStatus(keyObj, rateLimited ? 'ratelimit' : 'error');
+        refreshKeyStatus(keyObj, rateLimited ? 'ratelimit' : 'error', e);
         renderApiKeyList();
         // loop continues — next iteration picks another ready slot (different
         // model on the same key, or the next key), or waits if none are ready
@@ -1904,6 +1956,24 @@
     sentinelCheck();
   })();
   loadKeys();
+
+  // Cooldowns expire in the background even when nothing is generating, but
+  // the badge (e.g. "limit শেষ") was previously only re-evaluated on the next
+  // API attempt — so it could look permanently stuck even after the wait was
+  // long over. This periodically re-checks and clears it automatically.
+  setInterval(()=>{
+    let changed = false;
+    state.apiKeys.forEach(k=>{
+      if(k.status==='exhausted' || k.status==='error'){
+        const now = Date.now();
+        const anyReady = k.provider==='gemini'
+          ? GEMINI_MODELS.some(m => (k.modelCooldowns && k.modelCooldowns[m]||0) <= now)
+          : (k.cooldownUntil||0) <= now;
+        if(anyReady){ k.status='ok'; changed = true; }
+      }
+    });
+    if(changed) renderApiKeyList();
+  }, 2000);
 
 })();
 </script>
