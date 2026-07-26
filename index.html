@@ -1776,6 +1776,7 @@
     let p = 'তুমি একজন AI text-to-image prompt engineer। এই ছবিটা দেখে '+model+'-এর জন্য একটা reusable, high quality '+style+' style text-to-image prompt লিখো, আনুমানিক '+len+' শব্দের মধ্যে।\n';
     p += '- Subject, composition, lighting, color palette, mood স্পষ্টভাবে বর্ণনা করো।\n';
     if(camera) p += '- সম্ভব হলে camera angle / lens / focal length টাইপ ডিটেইল যোগ করো।\n';
+    p += '- ছবির মূল subject/scene-এর সাথে সরাসরি সম্পর্কহীন কোনো কিছু prompt-এ উল্লেখ করো না — যেমন কোনো logo, watermark, brand mark, text/caption/লেখা, UI icon, website link/URL, বা এমন কোনো বাড়তি object যেটা ছবির আসল বিষয়বস্তুর অংশ না বরং পরে যোগ হওয়া/অপ্রাসঙ্গিক কিছু। শুধু ছবির প্রকৃত visual subject বর্ণনা করো।\n';
     p += 'শুধু JSON আকারে উত্তর দাও।';
     return p;
   }
