@@ -17,25 +17,30 @@
     --ink-line:#352548;
     --ink-soft:#AA9CC9;
     --ink-soft2:#7C6E99;
-    --paper:#F5F2FA;
-    --card:#FFFFFF;
-    --card-line:#E3DCF1;
+    --paper:#0C0917;
+    --card:rgba(255,255,255,.045);
+    --card-line:rgba(255,255,255,.11);
     --accent:#7C3AED;
     --accent2:#C026D3;
     --accent-grad:linear-gradient(135deg,#8B5CF6,#C026D3);
     --accent-soft:#9061F9;
-    --accent-wash:#F1E7FC;
-    --ok:#7C3AED;
-    --err:#B03A2E;
-    --text:#1E1730;
-    --text-soft:#6F6389;
+    --accent-wash:rgba(139,92,246,.16);
+    --ok:#34D399;
+    --err:#F87171;
+    --text:#F2EFFA;
+    --text-soft:#B0A7CB;
     --radius:14px;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
     margin:0;
-    background:var(--paper);
+    background:
+      radial-gradient(ellipse 1000px 750px at 8% -8%, rgba(168,85,247,.30), transparent 60%),
+      radial-gradient(ellipse 900px 700px at 100% 8%, rgba(192,38,211,.24), transparent 55%),
+      radial-gradient(ellipse 800px 650px at 45% 105%, rgba(99,102,241,.18), transparent 60%),
+      #08060F;
+    background-attachment:fixed;
     color:var(--text);
     font-family:'Inter',sans-serif;
     -webkit-font-smoothing:antialiased;
@@ -227,6 +232,7 @@
   .dropzone{
     background:var(--card);border:2px dashed var(--card-line);border-radius:var(--radius);
     padding:46px 24px;text-align:center;cursor:pointer;transition:.15s ease;position:relative;
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   }
   .dropzone.drag{border-color:var(--ink);background:var(--accent-wash);}
   .dropzone .icon-wrap{
@@ -258,7 +264,7 @@
     display:flex;align-items:center;gap:12px;margin:-8px 0 18px;padding:10px 14px;
     background:var(--accent-wash);border:1px solid var(--card-line);border-radius:10px;
   }
-  .upload-progress-bar{flex:1;height:6px;border-radius:6px;background:#fff;overflow:hidden;}
+  .upload-progress-bar{flex:1;height:6px;border-radius:6px;background:rgba(255,255,255,.10);overflow:hidden;}
   .upload-progress-fill{height:100%;background:var(--accent-grad);border-radius:6px;transition:width .2s ease;}
   .upload-progress-text{font-size:12.5px;color:var(--text-soft);white-space:nowrap;font-weight:600;}
   .btn{
@@ -270,8 +276,8 @@
   .btn:disabled{opacity:.4;cursor:not-allowed;}
   .btn-ghost{background:var(--card);border-color:var(--card-line);color:var(--text);}
   .btn-ghost:hover:not(:disabled){border-color:var(--ink-soft2);}
-  .btn-danger{background:#F1E4E1;color:#7A2D22;}
-  .btn-danger:hover:not(:disabled){background:#E7D0CA;}
+  .btn-danger{background:rgba(248,113,113,.14);color:#FCA5A5;}
+  .btn-danger:hover:not(:disabled){background:rgba(248,113,113,.22);}
   .btn-primary{background:var(--accent-grad);color:#fff;}
   .btn-primary:hover:not(:disabled){filter:brightness(1.08);}
   .btn-primary .spark{color:#F2F2F2;}
@@ -284,6 +290,7 @@
   .empty-state .icon-wrap{
     width:58px;height:58px;border-radius:16px;background:var(--card);border:1px solid var(--card-line);
     display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   }
   .empty-state .icon-wrap svg{width:24px;height:24px;color:var(--ink-soft2);}
   .empty-state h3{margin:0 0 6px;color:var(--text);font-size:15.5px;font-weight:600;}
@@ -293,6 +300,7 @@
   .card{
     background:var(--card);border:1px solid var(--card-line);border-radius:var(--radius);
     overflow:hidden;scroll-margin-top:80px;transition:box-shadow .2s ease,border-color .2s ease;
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   }
   .card.is-active-card{
     border-color:var(--accent-soft);
@@ -357,7 +365,7 @@
     font-family:inherit;font-size:13.5px;color:var(--text);background:var(--paper);resize:vertical;
     outline:none;
   }
-  .ed-input:focus, .ed-textarea:focus{border-color:var(--accent-soft);background:#fff;}
+  .ed-input:focus, .ed-textarea:focus{border-color:var(--accent-soft);background:rgba(255,255,255,.06);}
   .ed-textarea{min-height:56px;line-height:1.5;}
   .kw-wrap{display:flex;flex-wrap:wrap;gap:6px;}
   .kw-chip{
@@ -381,19 +389,19 @@
 
   /* modal */
   .modal-bg{
-    position:fixed;inset:0;background:rgba(10,10,11,.55);display:none;align-items:center;justify-content:center;
+    position:fixed;inset:0;background:rgba(3,2,8,.65);display:none;align-items:center;justify-content:center;
     z-index:50;padding:20px;
   }
   .modal-bg.open{display:flex;}
   .modal{
-    background:#fff;border-radius:16px;padding:26px;width:100%;max-width:420px;
-    box-shadow:0 20px 60px rgba(0,0,0,.25);
+    background:#16101F;border:1px solid var(--card-line);border-radius:16px;padding:26px;width:100%;max-width:420px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
   }
   .modal h3{margin:0 0 6px;font-size:16.5px;}
   .modal p{margin:0 0 16px;font-size:13px;color:var(--text-soft);line-height:1.55;}
   .modal input{
     padding:10px 12px;border:1px solid var(--card-line);border-radius:10px;font-size:13.5px;
-    font-family:'JetBrains Mono',monospace;outline:none;
+    font-family:'JetBrains Mono',monospace;outline:none;background:var(--paper);color:var(--text);
   }
   .modal input:focus{border-color:var(--accent-soft);}
   .modal .row{display:flex;gap:10px;justify-content:flex-end;}
@@ -701,9 +709,9 @@
 
   const EPS_PLACEHOLDER_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">'+
-    '<rect width="150" height="150" fill="#F3F3F1"/>'+
-    '<text x="75" y="70" font-family="monospace" font-size="20" font-weight="700" fill="#1C1C1C" text-anchor="middle">EPS</text>'+
-    '<text x="75" y="92" font-family="monospace" font-size="10" fill="#6E6E6E" text-anchor="middle">no preview</text>'+
+    '<rect width="150" height="150" fill="#1A1428"/>'+
+    '<text x="75" y="70" font-family="monospace" font-size="20" font-weight="700" fill="#F2EFFA" text-anchor="middle">EPS</text>'+
+    '<text x="75" y="92" font-family="monospace" font-size="10" fill="#B0A7CB" text-anchor="middle">no preview</text>'+
     '</svg>'
   );
 
@@ -1486,16 +1494,55 @@
   }
 
   /* ---------------- RENDER RESULTS ---------------- */
+  // A cheap fingerprint of everything buildCard() actually renders for this
+  // file. If it hasn't changed since the last render, we skip touching that
+  // card's DOM entirely — critically, that means its <img> thumbnail is never
+  // recreated, so the browser never has to re-decode it. With 100 large
+  // (5-10MB) images, re-decoding all of them on every progress tick during
+  // generation was what caused the page to freeze/"not responding".
+  function cardSignature(f){
+    return [
+      f.status, f._processing?1:0, f.noPreview?1:0, f.error||'',
+      f.dataUrl, JSON.stringify(f.result||null)
+    ].join('|');
+  }
+
   function renderResults(){
     const area = document.getElementById('resultsArea');
     if(state.files.length===0){
       area.innerHTML = '<div class="empty-state"><div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><h3>Your generated results will appear here.</h3><p>কিছু ছবি আপলোড করে "Generate All" চাপুন।</p></div>';
       return;
     }
-    area.innerHTML = '<div class="results" id="resultsList"></div>';
-    const list = document.getElementById('resultsList');
+    let list = document.getElementById('resultsList');
+    if(!list){
+      area.innerHTML = '<div class="results" id="resultsList"></div>';
+      list = document.getElementById('resultsList');
+    }
+    const wantedIds = new Set(state.files.map(f=>'card-'+f.id));
+    // drop cards for files that were removed
+    Array.from(list.children).forEach(el=>{ if(!wantedIds.has(el.id)) el.remove(); });
+    // add/update cards, only rebuilding what actually changed, and keep them
+    // in the same order as state.files
+    let prevEl = null;
     state.files.forEach(f=>{
-      list.appendChild(buildCard(f));
+      const cardId = 'card-'+f.id;
+      const sig = cardSignature(f);
+      let el = document.getElementById(cardId);
+      if(el && el.dataset.sig === sig){
+        // unchanged — leave the DOM (and its decoded image) completely alone
+      }else if(el){
+        const fresh = buildCard(f);
+        fresh.dataset.sig = sig;
+        el.replaceWith(fresh);
+        el = fresh;
+      }else{
+        el = buildCard(f);
+        el.dataset.sig = sig;
+        list.appendChild(el);
+      }
+      const wantedNext = prevEl ? prevEl.nextSibling : list.firstChild;
+      if(wantedNext !== el) list.insertBefore(el, wantedNext);
+      prevEl = el;
     });
   }
 
@@ -1530,7 +1577,7 @@
 
     const thumb = document.createElement('div');
     thumb.className = 'card-thumb';
-    thumb.innerHTML = '<img src="'+f.dataUrl+'" alt="">';
+    thumb.innerHTML = '<img src="'+f.dataUrl+'" alt="" loading="lazy" decoding="async" width="96" height="96">';
     main.appendChild(thumb);
 
     const body = document.createElement('div');
