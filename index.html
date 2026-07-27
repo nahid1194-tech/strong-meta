@@ -1334,28 +1334,50 @@
     if(arr.length===0){ showToast('সর্বোচ্চ 100টি ফাইল upload করা যায়'); return; }
     if(incoming.length > arr.length) showToast('100 ফাইলের সীমা পার হয়ে গেছে — প্রথম '+arr.length+'টি যোগ করা হয়েছে');
 
-    // Step 1: push a lightweight placeholder entry per file and render
-    // immediately — this is what keeps the page responsive for a big batch
-    // of high-resolution files, instead of the browser looking "stuck"
-    // while every image is decoded/resized/encoded up front.
-    const entries = arr.map(f=>({
-      id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
-      file:f, name:f.name, dataUrl:EPS_PLACEHOLDER_SVG, base64:null, mimeType:null,
-      isEps:isEpsFile(f), noPreview:false,
-      status:'pending', result:null, error:null, _processing:true
-    }));
+    // Most formats (PNG/JPG/WEBP/GIF/BMP...) can be shown instantly with
+    // URL.createObjectURL() — the browser already decodes it natively to
+    // paint the thumbnail, no canvas/resize/base64 work needed at all. So
+    // upload itself is now near-instant even for 100 files: we only do the
+    // heavy resize+encode (needed for the API, not for viewing) lazily,
+    // right before that specific image is actually generated.
+    //
+    // EPS and TIFF are the exception — browsers cannot render either format
+    // natively via <img>, so those still need a quick background decode
+    // just to have something to preview at all.
+    const entries = arr.map(f=>{
+      const eps = isEpsFile(f);
+      const tiff = isTiffFile(f);
+      if(!eps && !tiff){
+        return {
+          id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
+          file:f, name:f.name, dataUrl:URL.createObjectURL(f), base64:null, mimeType:null,
+          isEps:false, noPreview:false,
+          status:'pending', result:null, error:null,
+          _processing:false, _isObjectUrl:true, _needsNormalize:true
+        };
+      }
+      return {
+        id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
+        file:f, name:f.name, dataUrl:EPS_PLACEHOLDER_SVG, base64:null, mimeType:null,
+        isEps:eps, noPreview:false,
+        status:'pending', result:null, error:null,
+        _processing:true, _isObjectUrl:false, _needsNormalize:false
+      };
+    });
     entries.forEach(e=> state.files.push(e));
     renderResults();
     updateToolbar();
 
-    // Step 2: decode/normalize each file in the background with limited
-    // concurrency (instead of one at a time), so 100 files finish much
-    // faster, and one slow/huge/corrupt file can't stall the rest.
+    // Only EPS/TIFF entries need background work now — decode just enough
+    // to show a real preview. The rest already have their thumbnail.
+    const needsDecode = entries.filter(e=>e._processing);
+    if(needsDecode.length===0) return;
+
     state.uploadingBatch = true;
     updateToolbar();
     const CONCURRENCY = 4;
     let idx = 0, doneN = 0;
-    const total = entries.length;
+    const total = needsDecode.length;
     showUploadProgress(0, total);
     let lastRender = 0;
     async function processOne(entry){
@@ -1376,36 +1398,22 @@
           entry.error = 'এই EPS ফাইল প্রসেস করা যায়নি।';
         }
       }else{
+        // TIFF — decode fully now since we need it for a preview anyway;
+        // cache the result so generation doesn't have to redo this.
         try{
           const norm = await normalizeImageForApi(f);
           entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType;
         }catch(e){
-          if(isTiffFile(f)){
-            // TIFF-specific failure (unsupported compression/corrupt) — raw
-            // TIFF bytes aren't understood by any provider, so don't send
-            // them silently; show a clear, actionable error instead.
-            entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
-            entry.noPreview = true; entry.status = 'error';
-            entry.error = 'এই TIFF ফাইলটা decode করা যায়নি (unsupported compression)। ছবিটা PNG/JPG এ export করে আবার আপলোড করুন।';
-          }else{
-            try{
-              // browser couldn't decode/re-encode it (rare) — fall back to
-              // sending the raw bytes as-is, same as before
-              const raw = await fileToBase64(f);
-              entry.dataUrl = raw.dataUrl; entry.base64 = raw.base64; entry.mimeType = f.type;
-            }catch(e2){
-              entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
-              entry.noPreview = true; entry.status = 'error';
-              entry.error = 'এই ছবিটা browser এ decode করা যায়নি — ফাইলটা corrupt হতে পারে অথবা ফরম্যাটটা সাপোর্টেড না। PNG/JPG এ convert করে আবার চেষ্টা করুন।';
-            }
-          }
+          entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
+          entry.noPreview = true; entry.status = 'error';
+          entry.error = 'এই TIFF ফাইলটা decode করা যায়নি (unsupported compression)। ছবিটা PNG/JPG এ export করে আবার আপলোড করুন।';
         }
       }
       entry._processing = false;
     }
     async function worker(){
-      while(idx < entries.length){
-        const entry = entries[idx++];
+      while(idx < needsDecode.length){
+        const entry = needsDecode[idx++];
         await processOne(entry);
         doneN++;
         showUploadProgress(doneN, total);
@@ -1438,12 +1446,15 @@
   }
 
   function removeFile(id){
+    const f = state.files.find(x=>x.id===id);
+    if(f && f._isObjectUrl) URL.revokeObjectURL(f.dataUrl);
     state.files = state.files.filter(f=>f.id!==id);
     renderResults();
     updateToolbar();
   }
 
   document.getElementById('clearAllBtn').onclick = ()=>{
+    state.files.forEach(f=>{ if(f._isObjectUrl) URL.revokeObjectURL(f.dataUrl); });
     state.files = [];
     renderResults();
     updateToolbar();
@@ -2013,6 +2024,25 @@
     if(autoScroll){
       const el = document.getElementById('card-'+id);
       if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    if(f._needsNormalize && !f.base64){
+      try{
+        const norm = await normalizeImageForApi(f.file);
+        f.base64 = norm.base64; f.mimeType = norm.mimeType;
+        f._needsNormalize = false;
+      }catch(e){
+        try{
+          const raw = await fileToBase64(f.file);
+          f.base64 = raw.base64; f.mimeType = f.file.type;
+          f._needsNormalize = false;
+        }catch(e2){
+          f.status = 'error';
+          f.error = 'এই ছবিটা browser এ decode করা যায়নি — ফাইলটা corrupt হতে পারে অথবা ফরম্যাটটা সাপোর্টেড না। PNG/JPG এ convert করে আবার চেষ্টা করুন।';
+          renderResults();
+          updateToolbar();
+          return;
+        }
+      }
     }
     try{
       if(state.activeTab==='metadata'){
