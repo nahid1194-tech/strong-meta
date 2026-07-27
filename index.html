@@ -6,6 +6,10 @@
 <title>Strong Meta — AI Metadata Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Browsers cannot natively decode TIFF images (a common export format from AI
+     upscalers like Topaz Gigapixel). UTIF.js decodes TIFF to raw RGBA pixels
+     client-side so we can draw it onto a canvas and treat it like any other image. -->
+<script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js"></script>
 <style>
   :root{
     --ink:#120B22;
@@ -250,6 +254,13 @@
   .toolbar-left .tb-error{color:var(--err);font-weight:600;}
   .toolbar-left .tb-pending{color:var(--accent);font-weight:600;}
   .toolbar-right{display:flex;gap:9px;flex-wrap:wrap;}
+  .upload-progress{
+    display:flex;align-items:center;gap:12px;margin:-8px 0 18px;padding:10px 14px;
+    background:var(--accent-wash);border:1px solid var(--card-line);border-radius:10px;
+  }
+  .upload-progress-bar{flex:1;height:6px;border-radius:6px;background:#fff;overflow:hidden;}
+  .upload-progress-fill{height:100%;background:var(--accent-grad);border-radius:6px;transition:width .2s ease;}
+  .upload-progress-text{font-size:12.5px;color:var(--text-soft);white-space:nowrap;font-weight:600;}
   .btn{
     display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;
     font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:inherit;
@@ -575,12 +586,13 @@
     </div>
 
     <div class="dropzone" id="dropzone">
-      <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp,image/gif,.eps,application/postscript,application/eps" style="display:none;">
+      <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp,image/gif,image/tiff,image/bmp,image/heic,image/heif,.tif,.tiff,.bmp,.heic,.heif,.eps,application/postscript,application/eps" style="display:none;">
       <div class="filetypes">
         <span class="filetype-chip">🖼 PNG / JPG</span>
         <span class="filetype-chip">▦ WEBP</span>
         <span class="filetype-chip">GIF</span>
         <span class="filetype-chip">✎ EPS</span>
+        <span class="filetype-chip">TIFF</span>
       </div>
       <div class="icon-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke-linecap="round"/></svg>
@@ -614,6 +626,11 @@
           Export CSV
         </button>
       </div>
+    </div>
+
+    <div class="upload-progress" id="uploadProgress" style="display:none;">
+      <div class="upload-progress-bar"><div class="upload-progress-fill" id="uploadProgressFill"></div></div>
+      <div class="upload-progress-text" id="uploadProgressText">ছবি প্রসেস হচ্ছে...</div>
     </div>
 
     <div id="resultsArea">
@@ -671,6 +688,7 @@
     apiKeys: [], // {id, key, status:'ok'|'exhausted'|'error'}
     activeKeyIndex: 0,
     stopRequested: false,
+    uploadingBatch: false,
     activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider's keys are actually used
     activeTab: "metadata",
     platform: "Adobe Stock",
@@ -1013,6 +1031,10 @@
     return /\.eps$/i.test(file.name) || file.type==='application/postscript' || file.type==='application/eps';
   }
 
+  function isTiffFile(file){
+    return /\.tiff?$/i.test(file.name) || file.type==='image/tiff';
+  }
+
   function fileToBase64(file){
     return new Promise((resolve,reject)=>{
       const reader = new FileReader();
@@ -1026,56 +1048,97 @@
     });
   }
 
-  // Re-encodes an image through <canvas> into a clean, standard PNG. This
-  // fixes cases where Gemini rejects the raw uploaded bytes with "Unable to
-  // process input image" — usually because the browser reported an empty/
-  // incorrect file.type, or the original file has a format quirk (odd color
-  // profile, unusual container, etc.) that Gemini's vision endpoint can't
-  // parse even though the browser itself can decode and display it fine.
+  // Re-encodes an image into a clean, standard PNG so every provider can read
+  // it reliably — fixes cases where Gemini rejects the raw uploaded bytes
+  // with "Unable to process input image" (empty/incorrect file.type, odd
+  // color profile, unusual container, etc. that the browser can still
+  // display fine even though the vision endpoint can't parse it).
   //
-  // Large originals (e.g. 6000x4000+ camera/stock photos) used to be drawn
-  // onto a full-resolution canvas and encoded with the synchronous
+  // Large originals (e.g. 6000x4000+ camera/stock/upscaled photos) used to be
+  // drawn onto a full-resolution canvas and encoded with the synchronous
   // canvas.toDataURL(), which can block the main thread for several seconds
   // and trigger the browser's "Page Unresponsive / Wait or Leave" dialog.
-  // We now cap the longest side at MAX_DIM (plenty for metadata/prompt
-  // generation and within every provider's effective vision-input limits)
-  // and encode via the non-blocking canvas.toBlob() instead.
-  // Returns {dataUrl, base64, mimeType:'image/png'}; rejects if the browser
-  // itself can't decode the image (genuinely broken/corrupt file).
-  function normalizeImageForApi(file){
-    const MAX_DIM = 3072;
+  // encodeSourceToPng() below caps the longest side at MAX_DIM (plenty for
+  // metadata/prompt generation and within every provider's effective vision
+  // limits) and encodes via the non-blocking canvas.toBlob() instead.
+  const NORMALIZE_MAX_DIM = 3072;
+
+  function encodeSourceToPng(source, naturalW, naturalH){
+    return new Promise((resolve,reject)=>{
+      try{
+        let w = naturalW, h = naturalH;
+        if(w > NORMALIZE_MAX_DIM || h > NORMALIZE_MAX_DIM){
+          const scale = NORMALIZE_MAX_DIM / Math.max(w,h);
+          w = Math.max(1, Math.round(w*scale));
+          h = Math.max(1, Math.round(h*scale));
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(source,0,0,w,h);
+        canvas.toBlob(blob=>{
+          if(!blob){ reject(new Error('Canvas encode failed')); return; }
+          const reader = new FileReader();
+          reader.onload = ()=> resolve({dataUrl:reader.result, base64:reader.result.split(',')[1], mimeType:'image/png'});
+          reader.onerror = ()=> reject(new Error('Blob read failed'));
+          reader.readAsDataURL(blob);
+        }, 'image/png');
+      }catch(e){ reject(e); }
+    });
+  }
+
+  function loadImageElement(file){
     return new Promise((resolve,reject)=>{
       const objUrl = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = ()=>{
-        try{
-          let w = img.naturalWidth, h = img.naturalHeight;
-          if(w > MAX_DIM || h > MAX_DIM){
-            const scale = MAX_DIM / Math.max(w,h);
-            w = Math.max(1, Math.round(w*scale));
-            h = Math.max(1, Math.round(h*scale));
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img,0,0,w,h);
-          canvas.toBlob(blob=>{
-            URL.revokeObjectURL(objUrl);
-            if(!blob){ reject(new Error('Canvas encode failed')); return; }
-            const reader = new FileReader();
-            reader.onload = ()=> resolve({dataUrl:reader.result, base64:reader.result.split(',')[1], mimeType:'image/png'});
-            reader.onerror = ()=> reject(new Error('Blob read failed'));
-            reader.readAsDataURL(blob);
-          }, 'image/png');
-        }catch(e){
-          URL.revokeObjectURL(objUrl);
-          reject(e);
-        }
-      };
+      img.onload = ()=>{ URL.revokeObjectURL(objUrl); resolve(img); };
       img.onerror = ()=>{ URL.revokeObjectURL(objUrl); reject(new Error('Image decode failed')); };
       img.src = objUrl;
     });
+  }
+
+  // Browsers cannot decode TIFF via <img> at all — and TIFF is the default
+  // export format for several popular AI upscalers (e.g. Topaz Gigapixel AI),
+  // so uploads in that format used to silently fail. UTIF.js (loaded via CDN
+  // in <head>) decodes TIFF to raw RGBA pixels client-side; we then draw
+  // those onto a canvas and feed it through the same capped PNG encode path
+  // as every other image.
+  function decodeTiffToCanvas(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          if(typeof UTIF === 'undefined') throw new Error('TIFF decoder ব্যর্থ হয়েছে');
+          const buffer = reader.result;
+          const ifds = UTIF.decode(buffer);
+          if(!ifds || !ifds.length) throw new Error('Invalid TIFF');
+          UTIF.decodeImage(buffer, ifds[0]);
+          const rgba = UTIF.toRGBA8(ifds[0]);
+          const w = ifds[0].width, h = ifds[0].height;
+          if(!w || !h) throw new Error('Invalid TIFF dimensions');
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          const imgData = ctx.createImageData(w,h);
+          imgData.data.set(rgba);
+          ctx.putImageData(imgData,0,0);
+          resolve({canvas, w, h});
+        }catch(e){ reject(e); }
+      };
+      reader.onerror = ()=> reject(new Error('File read failed'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  // Returns {dataUrl, base64, mimeType:'image/png'}; rejects if the browser
+  // itself can't decode the image (genuinely broken/corrupt/unsupported file).
+  async function normalizeImageForApi(file){
+    if(isTiffFile(file)){
+      const {canvas, w, h} = await decodeTiffToCanvas(file);
+      return encodeSourceToPng(canvas, w, h);
+    }
+    const img = await loadImageElement(file);
+    return encodeSourceToPng(img, img.naturalWidth, img.naturalHeight);
   }
 
   function fileToArrayBuffer(file){
@@ -1264,49 +1327,114 @@
   }
 
   async function handleFiles(fileList){
-    const arr = Array.from(fileList).filter(f=> f.type.startsWith('image/') || isEpsFile(f));
-    if(arr.length===0) return;
-    for(const f of arr){
-      if(state.files.length >= 100) break;
-      if(isEpsFile(f)){
-        const preview = await extractEpsPreview(f);
-        if(preview){
-          state.files.push({
-            id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
-            file:f, name:f.name, dataUrl:preview.dataUrl, base64:preview.base64, mimeType:'image/png',
-            isEps:true, noPreview:false,
-            status:'pending', result:null, error:null
-          });
-        }else{
-          state.files.push({
-            id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
-            file:f, name:f.name, dataUrl:EPS_PLACEHOLDER_SVG, base64:null, mimeType:null,
-            isEps:true, noPreview:true,
-            status:'error', result:null,
-            error:'এই EPS ফাইলে embedded preview পাওয়া যায়নি, তাই Gemini ছবিটা দেখতে পারছে না। এই ছবির PNG/JPG ভার্সন আলাদাভাবে আপলোড করুন।'
-          });
-        }
-      }else{
-        let dataUrl, base64, mimeType;
-        try{
-          const norm = await normalizeImageForApi(f);
-          dataUrl = norm.dataUrl; base64 = norm.base64; mimeType = norm.mimeType;
-        }catch(e){
-          // browser couldn't decode/re-encode it (rare) — fall back to sending
-          // the raw bytes as-is, same as before
-          const raw = await fileToBase64(f);
-          dataUrl = raw.dataUrl; base64 = raw.base64; mimeType = f.type;
-        }
-        state.files.push({
-          id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
-          file:f, name:f.name, dataUrl, base64, mimeType,
-          isEps:false, noPreview:false,
-          status:'pending', result:null, error:null
-        });
-      }
-    }
+    const incoming = Array.from(fileList).filter(f=> f.type.startsWith('image/') || isEpsFile(f) || isTiffFile(f));
+    if(incoming.length===0) return;
+    const room = Math.max(0, 100 - state.files.length);
+    const arr = incoming.slice(0, room);
+    if(arr.length===0){ showToast('সর্বোচ্চ 100টি ফাইল upload করা যায়'); return; }
+    if(incoming.length > arr.length) showToast('100 ফাইলের সীমা পার হয়ে গেছে — প্রথম '+arr.length+'টি যোগ করা হয়েছে');
+
+    // Step 1: push a lightweight placeholder entry per file and render
+    // immediately — this is what keeps the page responsive for a big batch
+    // of high-resolution files, instead of the browser looking "stuck"
+    // while every image is decoded/resized/encoded up front.
+    const entries = arr.map(f=>({
+      id: 'f'+Date.now()+Math.random().toString(36).slice(2,7),
+      file:f, name:f.name, dataUrl:EPS_PLACEHOLDER_SVG, base64:null, mimeType:null,
+      isEps:isEpsFile(f), noPreview:false,
+      status:'pending', result:null, error:null, _processing:true
+    }));
+    entries.forEach(e=> state.files.push(e));
     renderResults();
     updateToolbar();
+
+    // Step 2: decode/normalize each file in the background with limited
+    // concurrency (instead of one at a time), so 100 files finish much
+    // faster, and one slow/huge/corrupt file can't stall the rest.
+    state.uploadingBatch = true;
+    updateToolbar();
+    const CONCURRENCY = 4;
+    let idx = 0, doneN = 0;
+    const total = entries.length;
+    showUploadProgress(0, total);
+    let lastRender = 0;
+    async function processOne(entry){
+      const f = entry.file;
+      if(entry.isEps){
+        try{
+          const preview = await extractEpsPreview(f);
+          if(preview){
+            entry.dataUrl = preview.dataUrl; entry.base64 = preview.base64; entry.mimeType = 'image/png';
+          }else{
+            entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
+            entry.noPreview = true; entry.status = 'error';
+            entry.error = 'এই EPS ফাইলে embedded preview পাওয়া যায়নি, তাই Gemini ছবিটা দেখতে পারছে না। এই ছবির PNG/JPG ভার্সন আলাদাভাবে আপলোড করুন।';
+          }
+        }catch(e){
+          entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
+          entry.noPreview = true; entry.status = 'error';
+          entry.error = 'এই EPS ফাইল প্রসেস করা যায়নি।';
+        }
+      }else{
+        try{
+          const norm = await normalizeImageForApi(f);
+          entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType;
+        }catch(e){
+          if(isTiffFile(f)){
+            // TIFF-specific failure (unsupported compression/corrupt) — raw
+            // TIFF bytes aren't understood by any provider, so don't send
+            // them silently; show a clear, actionable error instead.
+            entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
+            entry.noPreview = true; entry.status = 'error';
+            entry.error = 'এই TIFF ফাইলটা decode করা যায়নি (unsupported compression)। ছবিটা PNG/JPG এ export করে আবার আপলোড করুন।';
+          }else{
+            try{
+              // browser couldn't decode/re-encode it (rare) — fall back to
+              // sending the raw bytes as-is, same as before
+              const raw = await fileToBase64(f);
+              entry.dataUrl = raw.dataUrl; entry.base64 = raw.base64; entry.mimeType = f.type;
+            }catch(e2){
+              entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
+              entry.noPreview = true; entry.status = 'error';
+              entry.error = 'এই ছবিটা browser এ decode করা যায়নি — ফাইলটা corrupt হতে পারে অথবা ফরম্যাটটা সাপোর্টেড না। PNG/JPG এ convert করে আবার চেষ্টা করুন।';
+            }
+          }
+        }
+      }
+      entry._processing = false;
+    }
+    async function worker(){
+      while(idx < entries.length){
+        const entry = entries[idx++];
+        await processOne(entry);
+        doneN++;
+        showUploadProgress(doneN, total);
+        const now = Date.now();
+        if(now - lastRender > 200 || doneN===total){
+          renderResults();
+          updateToolbar();
+          lastRender = now;
+        }
+      }
+    }
+    const workers = [];
+    for(let i=0;i<CONCURRENCY;i++) workers.push(worker());
+    await Promise.all(workers);
+    state.uploadingBatch = false;
+    hideUploadProgress();
+    updateToolbar();
+  }
+
+  function showUploadProgress(done, total){
+    const el = document.getElementById('uploadProgress');
+    if(!el) return;
+    el.style.display = 'flex';
+    document.getElementById('uploadProgressFill').style.width = Math.round(done/total*100)+'%';
+    document.getElementById('uploadProgressText').textContent = 'ছবি প্রসেস হচ্ছে... '+done+' / '+total;
+  }
+  function hideUploadProgress(){
+    const el = document.getElementById('uploadProgress');
+    if(el) el.style.display = 'none';
   }
 
   function removeFile(id){
@@ -1325,19 +1453,21 @@
     const n = state.files.length;
     document.getElementById('fileCount').textContent = n;
     document.getElementById('clearAllBtn').disabled = n===0;
-    document.getElementById('generateAllBtn').disabled = n===0;
+    document.getElementById('generateAllBtn').disabled = n===0 || state.uploadingBatch;
     document.getElementById('exportCsvBtn').disabled = !state.files.some(f=>f.status==='done');
     const doneCount = state.files.filter(f=>f.status==='done').length;
     const errorCount = state.files.filter(f=>f.status==='error' || f.noPreview).length;
-    const pendingCount = n - doneCount - errorCount;
+    const processingCount = state.files.filter(f=>f._processing).length;
+    const pendingCount = n - doneCount - errorCount - processingCount;
     const retryableCount = state.files.filter(f=>f.status==='error' && !f.noPreview).length;
     const retryBtn = document.getElementById('retryFailedBtn');
-    retryBtn.disabled = retryableCount===0;
+    retryBtn.disabled = retryableCount===0 || state.uploadingBatch;
     retryBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-2.64-6.36"/><path d="M21 4v6h-6"/></svg> Retry Failed' + (retryableCount>0 ? ' ('+retryableCount+')' : '');
     if(n===0){
       document.getElementById('toolbarStatus').innerHTML = 'Upload files to begin.';
     } else {
       let html = '<b>'+doneCount+'</b> / '+n+' generated';
+      if(processingCount>0) html += ' <span class="tb-pending">· '+processingCount+' processing</span>';
       if(pendingCount>0) html += ' <span class="tb-pending">· '+pendingCount+' pending</span>';
       if(errorCount>0) html += ' <span class="tb-error">· '+errorCount+' error'+(errorCount>1?'s':'')+'</span>';
       document.getElementById('toolbarStatus').innerHTML = html;
@@ -1359,6 +1489,7 @@
   }
 
   function statusPillHtml(f){
+    if(f._processing) return '<div class="status-pill status-loading"><span class="spin"></span> Processing</div>';
     if(f.noPreview) return '<div class="status-pill status-error">No Preview</div>';
     if(f.status==='loading') return '<div class="status-pill status-loading"><span class="spin"></span> Generating</div>';
     if(f.status==='done') return '<div class="status-pill status-done">Done</div>';
@@ -1376,7 +1507,7 @@
     topbar.className = 'card-topbar';
     topbar.innerHTML = statusPillHtml(f) +
       '<span class="fname">'+escapeHtml(f.name)+'</span>' +
-      (f.noPreview ? '' : '<button class="regen-btn" title="Regenerate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 9A8 8 0 0119.5 9M19.5 15A8 8 0 014.5 15" stroke-linecap="round"/></svg>Regenerate</button>') +
+      ((f.noPreview || f._processing) ? '' : '<button class="regen-btn" title="Regenerate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 9A8 8 0 0119.5 9M19.5 15A8 8 0 014.5 15" stroke-linecap="round"/></svg>Regenerate</button>') +
       '<button class="remove-x" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
     topbar.querySelector('.remove-x').onclick = ()=>removeFile(f.id);
     const regenBtn = topbar.querySelector('.regen-btn');
@@ -1948,7 +2079,7 @@
       document.getElementById('apiKeyBtn').click();
       return;
     }
-    const targets = state.files.filter(f=>f.status!=='loading' && !f.noPreview);
+    const targets = state.files.filter(f=>f.status!=='loading' && !f.noPreview && !f._processing);
     await runGeneration(targets);
   }
   document.getElementById('generateAllBtn').onclick = generateAll;
