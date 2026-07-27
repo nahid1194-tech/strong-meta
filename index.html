@@ -1032,22 +1032,42 @@
   // incorrect file.type, or the original file has a format quirk (odd color
   // profile, unusual container, etc.) that Gemini's vision endpoint can't
   // parse even though the browser itself can decode and display it fine.
+  //
+  // Large originals (e.g. 6000x4000+ camera/stock photos) used to be drawn
+  // onto a full-resolution canvas and encoded with the synchronous
+  // canvas.toDataURL(), which can block the main thread for several seconds
+  // and trigger the browser's "Page Unresponsive / Wait or Leave" dialog.
+  // We now cap the longest side at MAX_DIM (plenty for metadata/prompt
+  // generation and within every provider's effective vision-input limits)
+  // and encode via the non-blocking canvas.toBlob() instead.
   // Returns {dataUrl, base64, mimeType:'image/png'}; rejects if the browser
   // itself can't decode the image (genuinely broken/corrupt file).
   function normalizeImageForApi(file){
+    const MAX_DIM = 3072;
     return new Promise((resolve,reject)=>{
       const objUrl = URL.createObjectURL(file);
       const img = new Image();
       img.onload = ()=>{
         try{
+          let w = img.naturalWidth, h = img.naturalHeight;
+          if(w > MAX_DIM || h > MAX_DIM){
+            const scale = MAX_DIM / Math.max(w,h);
+            w = Math.max(1, Math.round(w*scale));
+            h = Math.max(1, Math.round(h*scale));
+          }
           const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
+          canvas.width = w;
+          canvas.height = h;
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img,0,0);
-          const dataUrl = canvas.toDataURL('image/png');
-          URL.revokeObjectURL(objUrl);
-          resolve({dataUrl, base64:dataUrl.split(',')[1], mimeType:'image/png'});
+          ctx.drawImage(img,0,0,w,h);
+          canvas.toBlob(blob=>{
+            URL.revokeObjectURL(objUrl);
+            if(!blob){ reject(new Error('Canvas encode failed')); return; }
+            const reader = new FileReader();
+            reader.onload = ()=> resolve({dataUrl:reader.result, base64:reader.result.split(',')[1], mimeType:'image/png'});
+            reader.onerror = ()=> reject(new Error('Blob read failed'));
+            reader.readAsDataURL(blob);
+          }, 'image/png');
         }catch(e){
           URL.revokeObjectURL(objUrl);
           reject(e);
