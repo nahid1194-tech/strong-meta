@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Strong Meta — AI Metadata Studio</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- Browsers cannot natively decode TIFF images (a common export format from AI
@@ -81,12 +82,10 @@
   }
   .brand-mark{
     width:38px;height:38px;border-radius:10px;
-    background:var(--accent-grad);
-    border:1px solid #4A3468;
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;
   }
-  .brand-mark svg{width:20px;height:20px;}
+  .brand-mark img{width:100%;height:100%;object-fit:contain;display:block;}
   .brand-text .name{font-weight:700;font-size:16.5px;letter-spacing:-0.01em;}
   .brand-text .sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
 
@@ -454,7 +453,7 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 8L12 3L20 8V16L12 21L4 16V8Z" stroke="#F2F2F2" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" fill="#F2F2F2"/></svg>
+        <img src="logo.png" alt="Strong Meta logo">
       </div>
       <div class="brand-text">
         <div class="name">Strong Meta</div>
