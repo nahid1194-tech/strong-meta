@@ -666,12 +666,7 @@
     </div>
     <div id="apiKeyList" class="apikey-list"></div>
     <div class="apikey-add-row">
-      <select id="apiKeyProviderSelect" class="apikey-provider-select">
-        <option value="gemini">Gemini</option>
-        <option value="mistral">Mistral</option>
-        <option value="openai">OpenAI</option>
-      </select>
-      <input type="password" id="apiKeyInputField" placeholder="নতুন key পেস্ট করো">
+      <input type="password" id="apiKeyInputField" placeholder="নতুন key পেস্ট করো (provider auto-detect হবে)">
       <button class="btn btn-primary" id="apiModalAdd">+ Add</button>
     </div>
     <div class="apikey-provider-links">
@@ -681,6 +676,20 @@
     </div>
     <div class="row" style="margin-top:14px;">
       <button class="btn btn-ghost" id="apiModalCancel">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="doneModalBg">
+  <div class="modal">
+    <h3 id="doneModalTitle">Generate সম্পন্ন হয়েছে</h3>
+    <p id="doneModalText">আপনার ছবিগুলোর metadata তৈরি হয়ে গেছে।</p>
+    <div class="row" style="margin-top:18px;gap:10px;">
+      <button class="btn btn-primary" id="doneModalDownload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download CSV
+      </button>
+      <button class="btn btn-ghost" id="doneModalClose">Close</button>
     </div>
   </div>
 </div>
@@ -740,6 +749,16 @@
     {id:21, name:"Travel"}
   ];
 
+  // Official Shutterstock category list (from Shutterstock's Content Publishing
+  // Standards: Contextual Metadata article). CSV requires 1, optionally 2.
+  const SHUTTERSTOCK_CATEGORIES = [
+    "Abstract","Animals/Wildlife","Arts","Backgrounds/Textures","Beauty/Fashion",
+    "Buildings/Landmarks","Business/Finance","Celebrities","Education","Food and Drink",
+    "Healthcare/Medical","Holidays","Industrial","Interiors","Miscellaneous","Nature",
+    "Objects","Parks/Outdoor","People","Religion","Science","Signs/Symbols",
+    "Sports/Recreation","Technology","Transportation","Vintage"
+  ];
+
   // Platform-specific defaults + guideline copy (sourced from each platform's official contributor docs)
   const PLATFORM_CONFIG = {
     "Adobe Stock":{
@@ -748,9 +767,9 @@
       hint:'Adobe Stock গাইডলাইন অনুযায়ী: Title (≤70 char) + Keywords (≤49টা) + Category — আলাদা Description লাগে না।'
     },
     "Shutterstock":{
-      hasTitle:false, hasDescription:true,
+      hasTitle:false, hasDescription:true, hasCategory:true,
       descMin:60, descMax:250, descDefault:150, kwMin:7, kwMax:50, kwDefault:35,
-      hint:'Shutterstock গাইডলাইন অনুযায়ী: Description-ই title হিসেবে কাজ করে (sentence-style, Who/What/When/Where/Why) + 7–50টা Keyword।'
+      hint:'Shutterstock গাইডলাইন অনুযায়ী: Description-ই title হিসেবে কাজ করে (sentence-style, Who/What/When/Where/Why) + 7–50টা Keyword + ১-২টা official Category।'
     }
   };
 
@@ -997,16 +1016,24 @@
   };
   document.getElementById('apiModalCancel').onclick = ()=> apiModalBg.classList.remove('open');
   apiModalBg.addEventListener('click', (e)=>{ if(e.target===apiModalBg) apiModalBg.classList.remove('open'); });
+  // Guesses the provider from the key's own format, so the person doesn't have
+  // to pick it manually. Gemini keys start with "AIzaSy", OpenAI keys start
+  // with "sk-"; anything else defaults to Mistral (its keys have no fixed
+  // recognizable prefix).
+  function detectProvider(key){
+    if(/^AIzaSy/i.test(key)) return 'gemini';
+    if(/^sk-/i.test(key)) return 'openai';
+    return 'mistral';
+  }
   document.getElementById('apiModalAdd').onclick = async ()=>{
     const field = document.getElementById('apiKeyInputField');
-    const providerSel = document.getElementById('apiKeyProviderSelect');
     const val = field.value.trim();
-    const provider = providerSel.value;
+    const provider = detectProvider(val);
     if(!val){ showToast('একটা key দিন'); return; }
     if(state.apiKeys.some(k=>k.key===val)){ showToast('এই key আগেই যোগ করা আছে'); return; }
     await addKey(val, provider);
     field.value = "";
-    showToast('Key যোগ হয়েছে — পরের বার আর দিতে হবে না');
+    showToast((PROVIDER_META[provider]||{}).label+' key যোগ হয়েছে — পরের বার আর দিতে হবে না');
   };
   document.getElementById('apiKeyInputField').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('apiModalAdd').click(); }
@@ -1616,7 +1643,7 @@
   function buildMetadataFields(f){
     const wrap = document.createElement('div');
     const cfg = PLATFORM_CONFIG[state.platform];
-    const res = f.result || {title:'', description:'', keywords:[], category:''};
+    const res = f.result || {title:'', description:'', keywords:[], category:'', categories:[]};
 
     if(cfg.hasTitle){
       const titleRow = document.createElement('div');
@@ -1633,7 +1660,7 @@
       wrap.appendChild(document.createElement('div')).style.height='10px';
     }
 
-    if(cfg.hasCategory){
+    if(cfg.hasCategory && state.platform === 'Adobe Stock'){
       const catRow = document.createElement('div');
       catRow.className = 'field-row';
       catRow.innerHTML = '<div class="field-row-head"><span class="lbl">Category</span></div>';
@@ -1644,6 +1671,35 @@
       catSelect.innerHTML = opts;
       catSelect.onchange = ()=>{ f.result = f.result || {title:'',description:'',keywords:[],category:''}; f.result.category = catSelect.value; };
       catRow.appendChild(catSelect);
+      wrap.appendChild(catRow);
+      wrap.appendChild(document.createElement('div')).style.height='10px';
+    }
+
+    if(cfg.hasCategory && state.platform === 'Shutterstock'){
+      const cats = Array.isArray(res.categories) ? res.categories : [];
+      const catRow = document.createElement('div');
+      catRow.className = 'field-row';
+      catRow.innerHTML = '<div class="field-row-head"><span class="lbl">Categories (১-২টা)</span></div>';
+      const wrapSel = document.createElement('div');
+      wrapSel.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+      const buildSelect = (labelIdx, val)=>{
+        const sel = document.createElement('select');
+        sel.className = 'txt-input';
+        sel.style.flex = '1 1 160px';
+        let opts = '<option value="">— '+(labelIdx===0?'Category 1 (required)':'Category 2 (optional)')+' —</option>';
+        opts += SHUTTERSTOCK_CATEGORIES.map(c=>'<option value="'+c+'"'+(val===c?' selected':'')+'>'+c+'</option>').join('');
+        sel.innerHTML = opts;
+        sel.onchange = ()=>{
+          f.result = f.result || {title:'',description:'',keywords:[],categories:[]};
+          const cur = Array.isArray(f.result.categories) ? [...f.result.categories] : [];
+          cur[labelIdx] = sel.value;
+          f.result.categories = cur.filter(Boolean).slice(0,2);
+        };
+        return sel;
+      };
+      wrapSel.appendChild(buildSelect(0, cats[0]||''));
+      wrapSel.appendChild(buildSelect(1, cats[1]||''));
+      catRow.appendChild(wrapSel);
       wrap.appendChild(catRow);
       wrap.appendChild(document.createElement('div')).style.height='10px';
     }
@@ -2015,7 +2071,10 @@
       p += '- specific, precise এবং unique/compound শব্দ ব্যবহার করো যা সরাসরি ছবির সাথে সম্পর্কিত, সাথে broader topic/feeling/concept/association যোগ করো।\n';
       p += '- কোনো keyword repeat করো না, অপ্রাসঙ্গিক শব্দ যোগ করো না, কোনো link/camera info/trademark দিও না।\n';
       if(negOn && negWords.trim()) p += '- এই শব্দগুলো কোথাও ব্যবহার করো না: '+negWords+'\n';
-      p += 'শুধু JSON আকারে {"description":"...", "keywords":["...","..."]} — এই ফরম্যাটে উত্তর দাও।';
+      p += 'CATEGORY নিয়ম:\n';
+      p += '- নিচের Shutterstock ক্যাটাগরি লিস্ট থেকে ছবির সাথে সবচেয়ে বেশি মানানসই ১টা (এবং প্রাসঙ্গিক হলে সর্বোচ্চ ২টা) category-র exact নাম বেছে নাও, তালিকার বাইরে কোনো নাম দিও না:\n';
+      p += SHUTTERSTOCK_CATEGORIES.join(', ') + '\n';
+      p += 'শুধু JSON আকারে {"description":"...", "keywords":["...","..."], "categories":["...","..."]} — এই ফরম্যাটে উত্তর দাও (categories array-তে ১টা অথবা ২টা category name থাকবে)।';
     }
     return p;
   }
@@ -2036,7 +2095,7 @@
     if(state.platform === 'Adobe Stock'){
       return { type:'OBJECT', properties:{ title:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, category:{type:'INTEGER'} }, required:['title','keywords','category'] };
     }
-    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}} }, required:['description','keywords'] };
+    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, categories:{type:'ARRAY', items:{type:'STRING'}} }, required:['description','keywords','categories'] };
   }
   const PROMPT_SCHEMA = {
     type:'OBJECT',
@@ -2104,10 +2163,12 @@
             category: (function(){ const cid = Number(json.category); return ADOBE_CATEGORIES.some(c=>c.id===cid) ? cid : ''; })()
           };
         }else{
+          const validCats = Array.isArray(json.categories) ? json.categories.filter(c=>SHUTTERSTOCK_CATEGORIES.includes(c)).slice(0,2) : [];
           f.result = {
             title:'',
             description: applyPrefixSuffix(json.description||''),
-            keywords: Array.isArray(json.keywords) ? json.keywords : []
+            keywords: Array.isArray(json.keywords) ? json.keywords : [],
+            categories: validCats
           };
         }
       }else{
@@ -2147,8 +2208,29 @@
     generateBtn.style.display = 'inline-flex';
     generateBtn.disabled = state.files.length===0;
     updateToolbar();
-    showToast(state.stopRequested ? 'Generate থামানো হয়েছে' : 'Generate সম্পন্ন হয়েছে');
+    const doneCount = targets.filter(f=>f.status==='done').length;
+    if(state.stopRequested){
+      showToast('Generate থামানো হয়েছে');
+    }else if(doneCount>0){
+      showCompletionModal(doneCount, targets.length);
+    }else{
+      showToast('Generate সম্পন্ন হয়েছে');
+    }
   }
+
+  function showCompletionModal(doneCount, totalCount){
+    const failedCount = totalCount - doneCount;
+    document.getElementById('doneModalTitle').textContent = 'Generate সম্পন্ন হয়েছে ✓';
+    document.getElementById('doneModalText').textContent =
+      doneCount+' / '+totalCount+' টা ছবির metadata তৈরি হয়ে গেছে'+(failedCount>0 ? ' ('+failedCount+' টা fail হয়েছে, "Retry Failed" দিয়ে আবার try করতে পারো)' : '')+'। এখনই CSV ডাউনলোড করে নাও, অথবা পরে টুলবারের "Export CSV" বাটন থেকেও করতে পারবে।';
+    document.getElementById('doneModalBg').classList.add('open');
+  }
+  document.getElementById('doneModalDownload').onclick = ()=>{
+    exportCsv();
+    document.getElementById('doneModalBg').classList.remove('open');
+  };
+  document.getElementById('doneModalClose').onclick = ()=> document.getElementById('doneModalBg').classList.remove('open');
+  document.getElementById('doneModalBg').addEventListener('click', (e)=>{ if(e.target===document.getElementById('doneModalBg')) e.currentTarget.classList.remove('open'); });
 
   async function generateAll(){
     if(state.apiKeys.length===0){
@@ -2180,7 +2262,7 @@
     if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
     return v;
   }
-  document.getElementById('exportCsvBtn').onclick = ()=>{
+  function exportCsv(){
     const done = state.files.filter(f=>f.status==='done');
     if(done.length===0){ showToast('এখনো কিছু generate হয়নি'); return; }
     let rows;
@@ -2189,8 +2271,8 @@
         rows = [['Filename','Title','Keywords','Category']];
         done.forEach(f=>{ rows.push([f.name, f.result.title, (f.result.keywords||[]).join(', '), f.result.category||'']); });
       }else{
-        rows = [['Filename','Description','Keywords']];
-        done.forEach(f=>{ rows.push([f.name, f.result.description, (f.result.keywords||[]).join(', ')]); });
+        rows = [['Filename','Description','Keywords','Categories']];
+        done.forEach(f=>{ rows.push([f.name, f.result.description, (f.result.keywords||[]).join(', '), (f.result.categories||[]).join(', ')]); });
       }
     }else{
       rows = [['Filename','Prompt']];
@@ -2206,7 +2288,8 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }
+  document.getElementById('exportCsvBtn').onclick = exportCsv;
 
   /* ---------------- INIT ---------------- */
   renderPlatformGrid();
