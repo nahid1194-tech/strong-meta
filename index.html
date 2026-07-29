@@ -461,7 +461,7 @@
       </div>
     </div>
 
-    <button class="apikey-btn" id="apiKeyBtn"><span class="dot" id="apiDot"></span><span id="apiKeyLabel">API Key যোগ করুন</span></button>
+    <button class="apikey-btn" id="apiKeyBtn"><span class="dot" id="apiDot"></span><span id="apiKeyLabel">Add API Key</span></button>
 
     <div class="tabs">
       <button class="tab active" data-tab="metadata">
@@ -520,7 +520,7 @@
         </div>
         <div class="hint" id="platformHint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5" stroke-linecap="round"/></svg>
-          <span>Adobe Stock-এ শুধু Title + Keywords থাকে, আলাদা Description লাগে না।</span>
+          <span>Adobe Stock only uses Title + Keywords — no separate Description needed.</span>
         </div>
       </div>
 
@@ -576,7 +576,7 @@
         </div>
         <div class="hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5" stroke-linecap="round"/></svg>
-          <span>ইমেজ দেখে Gemini একটা re-usable text-to-image prompt লিখে দেবে।</span>
+          <span>Gemini will look at the image and write a reusable text-to-image prompt.</span>
         </div>
       </div>
     </div>
@@ -587,7 +587,7 @@
     <div class="topbar">
       <div>
         <h1 id="mainTitle">Image → Metadata</h1>
-        <p id="mainSub">ছবি আপলোড করুন, Gemini দিয়ে title, description আর keyword তৈরি করুন।</p>
+        <p id="mainSub">Upload images, generate title, description, and keywords with Gemini.</p>
       </div>
       <div class="count-badge"><b id="fileCount">0</b> / 100 files</div>
     </div>
@@ -605,8 +605,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" stroke-linecap="round"/></svg>
       </div>
       <h3>Upload Files</h3>
-      <div>Drag &amp; drop করুন, অথবা <span class="browse" id="browseLink">browse</span></div>
-      <div class="sub">Max 100 files · প্রতিটি ছবি সরাসরি Gemini API-তে যাবে (আপনার ব্রাউজার থেকে)</div>
+      <div>Drag &amp; drop, or <span class="browse" id="browseLink">browse</span></div>
+      <div class="sub">Max 100 files · Each image goes directly to the Gemini API (from your browser)</div>
     </div>
 
     <div class="toolbar">
@@ -637,7 +637,7 @@
 
     <div class="upload-progress" id="uploadProgress" style="display:none;">
       <div class="upload-progress-bar"><div class="upload-progress-fill" id="uploadProgressFill"></div></div>
-      <div class="upload-progress-text" id="uploadProgressText">ছবি প্রসেস হচ্ছে...</div>
+      <div class="upload-progress-text" id="uploadProgressText">Processing images...</div>
     </div>
 
     <div id="resultsArea">
@@ -646,7 +646,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
         </div>
         <h3>Your generated results will appear here.</h3>
-        <p>কিছু ছবি আপলোড করে "Generate All" চাপুন।</p>
+        <p>Upload some images and press "Generate All".</p>
       </div>
     </div>
   </main>
@@ -656,16 +656,16 @@
 <div class="modal-bg" id="apiModalBg">
   <div class="modal">
     <h3>AI Provider API Keys</h3>
-    <p>একাধিক provider থেকে একাধিক key যোগ করতে পারো। নিচে থেকে একটা provider বেছে নিলে <b>সেই provider-এর key আগে ব্যবহার হবে</b>; ওই provider-এর সবগুলো key-র limit শেষ হয়ে গেলে বাকি provider-গুলোতে automatic switch হয়ে যাবে (fallback হিসেবে, বন্ধ হয়ে যাবে না)। "সব" সিলেক্ট করলে ডিফল্ট প্রায়োরিটি: Gemini → Mistral → OpenAI। সব key ব্রাউজারে স্থায়ীভাবে সেভ থাকবে।</p>
+    <p>You can add multiple keys from multiple providers. Choosing a provider below makes <b>that provider's keys get used first</b>; once all of that provider's keys hit their limit, it automatically switches to the other providers as fallback (it won't stop working). Selecting "All" uses the default priority: Gemini → Mistral → OpenAI. All keys are saved permanently in your browser.</p>
     <div class="provider-filter" id="providerFilter">
-      <button data-provider="all">সব</button>
+      <button data-provider="all">All</button>
       <button data-provider="gemini">Gemini</button>
       <button data-provider="mistral">Mistral</button>
       <button data-provider="openai">OpenAI</button>
     </div>
     <div id="apiKeyList" class="apikey-list"></div>
     <div class="apikey-add-row">
-      <input type="password" id="apiKeyInputField" placeholder="নতুন key পেস্ট করো (provider auto-detect হবে)">
+      <input type="password" id="apiKeyInputField" placeholder="Paste a new key (provider auto-detected)">
       <button class="btn btn-primary" id="apiModalAdd">+ Add</button>
     </div>
     <div class="apikey-provider-links">
@@ -681,8 +681,8 @@
 
 <div class="modal-bg" id="doneModalBg">
   <div class="modal">
-    <h3 id="doneModalTitle">Generate সম্পন্ন হয়েছে</h3>
-    <p id="doneModalText">আপনার ছবিগুলোর metadata তৈরি হয়ে গেছে।</p>
+    <h3 id="doneModalTitle">Generation complete</h3>
+    <p id="doneModalText">Your images' metadata has been generated.</p>
     <div class="row" style="margin-top:18px;gap:10px;">
       <button class="btn btn-primary" id="doneModalDownload">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -705,7 +705,7 @@
     activeKeyIndex: 0,
     stopRequested: false,
     uploadingBatch: false,
-    activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider's keys are actually used
+    activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider\'s keys are actually used
     activeTab: "metadata",
     platform: "Adobe Stock",
     styleChoice: "Photographic",
@@ -723,7 +723,7 @@
     '</svg>'
   );
 
-  // Official Adobe Stock upload-CSV category list (id must match Adobe's numbering)
+  // Official Adobe Stock upload-CSV category list (id must match Adobe\'s numbering)
   const ADOBE_CATEGORIES = [
     {id:1, name:"Animals"},
     {id:2, name:"Buildings and Architecture"},
@@ -748,7 +748,7 @@
     {id:21, name:"Travel"}
   ];
 
-  // Official Shutterstock category list (from Shutterstock's Content Publishing
+  // Official Shutterstock category list (from Shutterstock\'s Content Publishing
   // Standards: Contextual Metadata article). CSV requires 1, optionally 2.
   const SHUTTERSTOCK_CATEGORIES = [
     "Abstract","Animals/Wildlife","Arts","Backgrounds/Textures","Beauty/Fashion",
@@ -758,17 +758,17 @@
     "Sports/Recreation","Technology","Transportation","Vintage"
   ];
 
-  // Platform-specific defaults + guideline copy (sourced from each platform's official contributor docs)
+  // Platform-specific defaults + guideline copy (sourced from each platform\'s official contributor docs)
   const PLATFORM_CONFIG = {
     "Adobe Stock":{
       hasTitle:true, hasDescription:false, hasCategory:true,
       titleMax:70, kwMin:5, kwMax:49, kwDefault:40,
-      hint:'Adobe Stock গাইডলাইন অনুযায়ী: Title (≤70 char) + Keywords (≤49টা) + Category — আলাদা Description লাগে না।'
+      hint:'Per Adobe Stock guidelines: Title (≤70 chars) + Keywords (≤49) + Category — no separate Description needed.'
     },
     "Shutterstock":{
       hasTitle:false, hasDescription:true, hasCategory:true,
       descMin:60, descMax:250, descDefault:150, kwMin:7, kwMax:50, kwDefault:35,
-      hint:'Shutterstock গাইডলাইন অনুযায়ী: Description-ই title হিসেবে কাজ করে (sentence-style, Who/What/When/Where/Why) + 7–50টা Keyword + ১-২টা official Category।'
+      hint:'Per Shutterstock guidelines: Description acts as the title (sentence-style, covering Who/What/When/Where/Why) + 7–50 Keywords + 1-2 official Categories.'
     }
   };
 
@@ -833,7 +833,7 @@
   function renderApiKeyList(){
     const wrap = document.getElementById('apiKeyList');
     if(state.apiKeys.length===0){
-      wrap.innerHTML = '<div class="apikey-empty-hint">এখনো কোনো key যোগ করা হয়নি।</div>';
+      wrap.innerHTML = '<div class="apikey-empty-hint">No keys added yet.</div>';
     }else{
       wrap.innerHTML = "";
       const ordered = orderedKeys();
@@ -843,7 +843,7 @@
         const row = document.createElement('div');
         row.className = 'apikey-row' + (k.status==='exhausted' ? ' exhausted' : '') + (k.status==='error' ? ' exhausted' : '') + (isActive ? ' active-key' : '') + (isFallback ? ' fallback-key' : '');
         if(k.lastError) row.title = k.lastError;
-        const stateLabel = k.status==='exhausted' ? 'limit শেষ' : (k.status==='error' ? 'সমস্যা (key দেখুন)' : (isActive ? 'in use' : (isFallback ? 'fallback' : 'standby')));
+        const stateLabel = k.status==='exhausted' ? 'limit reached' : (k.status==='error' ? 'issue (check key)' : (isActive ? 'in use' : (isFallback ? 'fallback' : 'standby')));
         row.innerHTML = '<span class="st-dot"></span>'+
           '<span class="kprov">'+(PROVIDER_META[k.provider]||{label:k.provider}).label+'</span>'+
           '<span class="kmask">'+maskKey(k.key)+'</span>'+
@@ -876,15 +876,15 @@
       if(state.activeProvider !== 'all'){
         const provLabel = (PROVIDER_META[state.activeProvider]||{}).label || state.activeProvider;
         btn.classList.add('set');
-        label.textContent = n+'টা key সেভ আছে ✓ ('+provLabel+' প্রায়োরিটি)';
+        label.textContent = n+' keys saved ✓ ('+provLabel+' priority)';
       }else{
         const providers = [...new Set(state.apiKeys.map(k=>PROVIDER_META[k.provider]?PROVIDER_META[k.provider].label:k.provider))];
         btn.classList.add('set');
-        label.textContent = n+'টা key সেভ আছে ✓ ('+providers.join(', ')+')';
+        label.textContent = n+' keys saved ✓ ('+providers.join(', ')+')';
       }
     }else{
       btn.classList.remove('set');
-      label.textContent = 'API Key যোগ করুন';
+      label.textContent = 'Add API Key';
     }
   }
 
@@ -997,10 +997,10 @@
       document.getElementById('panel-prompt').style.display = state.activeTab==='prompt' ? 'block':'none';
       if(state.activeTab==='metadata'){
         document.getElementById('mainTitle').textContent = 'Image → Metadata';
-        document.getElementById('mainSub').textContent = 'ছবি আপলোড করুন, প্ল্যাটফর্ম গাইডলাইন অনুযায়ী Gemini metadata তৈরি করবে।';
+        document.getElementById('mainSub').textContent = 'Upload images — Gemini will generate metadata following the platform guidelines.';
       }else{
         document.getElementById('mainTitle').textContent = 'Image → Prompt';
-        document.getElementById('mainSub').textContent = 'ছবি আপলোড করুন, Gemini দিয়ে reusable text-to-image prompt তৈরি করুন।';
+        document.getElementById('mainSub').textContent = 'Upload images and generate a reusable text-to-image prompt with Gemini.';
       }
       renderResults();
     });
@@ -1015,7 +1015,7 @@
   };
   document.getElementById('apiModalCancel').onclick = ()=> apiModalBg.classList.remove('open');
   apiModalBg.addEventListener('click', (e)=>{ if(e.target===apiModalBg) apiModalBg.classList.remove('open'); });
-  // Guesses the provider from the key's own format, so the person doesn't have
+  // Guesses the provider from the key\'s own format, so the person doesn\'t have
   // to pick it manually. Gemini keys start with "AIzaSy", OpenAI keys start
   // with "sk-"; anything else defaults to Mistral (its keys have no fixed
   // recognizable prefix).
@@ -1028,11 +1028,11 @@
     const field = document.getElementById('apiKeyInputField');
     const val = field.value.trim();
     const provider = detectProvider(val);
-    if(!val){ showToast('একটা key দিন'); return; }
-    if(state.apiKeys.some(k=>k.key===val)){ showToast('এই key আগেই যোগ করা আছে'); return; }
+    if(!val){ showToast('Enter a key'); return; }
+    if(state.apiKeys.some(k=>k.key===val)){ showToast('This key has already been added'); return; }
     await addKey(val, provider);
     field.value = "";
-    showToast((PROVIDER_META[provider]||{}).label+' key যোগ হয়েছে — পরের বার আর দিতে হবে না');
+    showToast((PROVIDER_META[provider]||{}).label+' key added — you won\'t need to enter it again');
   };
   document.getElementById('apiKeyInputField').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('apiModalAdd').click(); }
@@ -1086,14 +1086,14 @@
   // it reliably — fixes cases where Gemini rejects the raw uploaded bytes
   // with "Unable to process input image" (empty/incorrect file.type, odd
   // color profile, unusual container, etc. that the browser can still
-  // display fine even though the vision endpoint can't parse it).
+  // display fine even though the vision endpoint can\'t parse it).
   //
   // Large originals (e.g. 6000x4000+ camera/stock/upscaled photos) used to be
   // drawn onto a full-resolution canvas and encoded with the synchronous
   // canvas.toDataURL(), which can block the main thread for several seconds
-  // and trigger the browser's "Page Unresponsive / Wait or Leave" dialog.
+  // and trigger the browser\'s "Page Unresponsive / Wait or Leave" dialog.
   // encodeSourceToPng() below caps the longest side at MAX_DIM (plenty for
-  // metadata/prompt generation and within every provider's effective vision
+  // metadata/prompt generation and within every provider\'s effective vision
   // limits) and encodes via the non-blocking canvas.toBlob() instead.
   const NORMALIZE_MAX_DIM = 3072;
 
@@ -1142,7 +1142,7 @@
       const reader = new FileReader();
       reader.onload = ()=>{
         try{
-          if(typeof UTIF === 'undefined') throw new Error('TIFF decoder ব্যর্থ হয়েছে');
+          if(typeof UTIF === 'undefined') throw new Error('TIFF decoder failed to load');
           const buffer = reader.result;
           const ifds = UTIF.decode(buffer);
           if(!ifds || !ifds.length) throw new Error('Invalid TIFF');
@@ -1165,7 +1165,7 @@
   }
 
   // Returns {dataUrl, base64, mimeType:'image/png'}; rejects if the browser
-  // itself can't decode the image (genuinely broken/corrupt/unsupported file).
+  // itself can\'t decode the image (genuinely broken/corrupt/unsupported file).
   async function normalizeImageForApi(file){
     if(isTiffFile(file)){
       const {canvas, w, h} = await decodeTiffToCanvas(file);
@@ -1185,11 +1185,11 @@
   }
 
   /* ---- EPS → raster preview extraction ----
-     EPS files can't be sent to Gemini directly (vision API only accepts raster
+     EPS files can\'t be sent to Gemini directly (vision API only accepts raster
      images). Many EPS exports embed a low-res preview we can pull out client-side:
      1) Binary "Mac EPSF" wrapper (magic C5D0D3C6) embeds a real TIFF preview.
      2) Plain-text EPS may embed an EPSI preview (%%BeginPreview hex bitmap).
-     If neither is present we can't render/analyze the file in-browser. */
+     If neither is present we can\'t render/analyze the file in-browser. */
   function readU32(dv,o,le){ return le ? dv.getUint32(o,true) : dv.getUint32(o,false); }
   function readU16(dv,o,le){ return le ? dv.getUint16(o,true) : dv.getUint16(o,false); }
 
@@ -1365,8 +1365,8 @@
     if(incoming.length===0) return;
     const room = Math.max(0, 100 - state.files.length);
     const arr = incoming.slice(0, room);
-    if(arr.length===0){ showToast('সর্বোচ্চ 100টি ফাইল upload করা যায়'); return; }
-    if(incoming.length > arr.length) showToast('100 ফাইলের সীমা পার হয়ে গেছে — প্রথম '+arr.length+'টি যোগ করা হয়েছে');
+    if(arr.length===0){ showToast('Maximum 100 files can be uploaded'); return; }
+    if(incoming.length > arr.length) showToast('100 file limit exceeded — the first '+arr.length+' were added');
 
     // Most formats (PNG/JPG/WEBP/GIF/BMP...) can be shown instantly with
     // URL.createObjectURL() — the browser already decodes it natively to
@@ -1424,23 +1424,23 @@
           }else{
             entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
             entry.noPreview = true; entry.status = 'error';
-            entry.error = 'এই EPS ফাইলে embedded preview পাওয়া যায়নি, তাই Gemini ছবিটা দেখতে পারছে না। এই ছবির PNG/JPG ভার্সন আলাদাভাবে আপলোড করুন।';
+            entry.error = 'No embedded preview was found in this EPS file, so Gemini can\'t see the image. Please upload a PNG/JPG version of this image separately.';
           }
         }catch(e){
           entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
           entry.noPreview = true; entry.status = 'error';
-          entry.error = 'এই EPS ফাইল প্রসেস করা যায়নি।';
+          entry.error = 'This EPS file could not be processed.';
         }
       }else{
         // TIFF — decode fully now since we need it for a preview anyway;
-        // cache the result so generation doesn't have to redo this.
+        // cache the result so generation doesn\'t have to redo this.
         try{
           const norm = await normalizeImageForApi(f);
           entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType;
         }catch(e){
           entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
           entry.noPreview = true; entry.status = 'error';
-          entry.error = 'এই TIFF ফাইলটা decode করা যায়নি (unsupported compression)। ছবিটা PNG/JPG এ export করে আবার আপলোড করুন।';
+          entry.error = 'This TIFF file could not be decoded (unsupported compression). Please export it as PNG/JPG and upload again.';
         }
       }
       entry._processing = false;
@@ -1472,7 +1472,7 @@
     if(!el) return;
     el.style.display = 'flex';
     document.getElementById('uploadProgressFill').style.width = Math.round(done/total*100)+'%';
-    document.getElementById('uploadProgressText').textContent = 'ছবি প্রসেস হচ্ছে... '+done+' / '+total;
+    document.getElementById('uploadProgressText').textContent = 'Processing images... '+done+' / '+total;
   }
   function hideUploadProgress(){
     const el = document.getElementById('uploadProgress');
@@ -1521,8 +1521,8 @@
 
   /* ---------------- RENDER RESULTS ---------------- */
   // A cheap fingerprint of everything buildCard() actually renders for this
-  // file. If it hasn't changed since the last render, we skip touching that
-  // card's DOM entirely — critically, that means its <img> thumbnail is never
+  // file. If it hasn\'t changed since the last render, we skip touching that
+  // card\'s DOM entirely — critically, that means its <img> thumbnail is never
   // recreated, so the browser never has to re-decode it. With 100 large
   // (5-10MB) images, re-decoding all of them on every progress tick during
   // generation was what caused the page to freeze/"not responding".
@@ -1536,7 +1536,7 @@
   function renderResults(){
     const area = document.getElementById('resultsArea');
     if(state.files.length===0){
-      area.innerHTML = '<div class="empty-state"><div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><h3>Your generated results will appear here.</h3><p>কিছু ছবি আপলোড করে "Generate All" চাপুন।</p></div>';
+      area.innerHTML = '<div class="empty-state"><div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><h3>Your generated results will appear here.</h3><p>Upload some images and press "Generate All".</p></div>';
       return;
     }
     let list = document.getElementById('resultsList');
@@ -1610,7 +1610,7 @@
     body.className = 'card-body';
 
     if(f.noPreview){
-      body.innerHTML = '<div class="err-msg">⚠ '+escapeHtml(f.error||'Preview পাওয়া যায়নি')+'</div>';
+      body.innerHTML = '<div class="err-msg">⚠ '+escapeHtml(f.error||'Preview not available')+'</div>';
       main.appendChild(body);
       card.appendChild(main);
       return card;
@@ -1624,7 +1624,7 @@
       const epsNote = document.createElement('div');
       epsNote.className = 'err-msg';
       epsNote.style.color = 'var(--text-soft)';
-      epsNote.textContent = '📎 EPS-এর embedded preview থেকে বিশ্লেষণ করা হয়েছে (আসল vector আর্টওয়ার্ক নয়)।';
+      epsNote.textContent = '📎 Analyzed from the EPS\'s embedded preview (not the actual vector artwork).';
       body.appendChild(epsNote);
     }
 
@@ -1651,7 +1651,7 @@
       const titleInput = document.createElement('input');
       titleInput.className = 'ed-input';
       titleInput.value = res.title || '';
-      titleInput.placeholder = f.status==='loading' ? 'Generating…' : 'Generate করলে এখানে title আসবে';
+      titleInput.placeholder = f.status==='loading' ? 'Generating…' : 'Title will appear here after generating';
       titleInput.oninput = ()=>{ f.result = f.result || {title:'',description:'',keywords:[]}; f.result.title = titleInput.value; };
       titleRow.appendChild(titleInput);
       titleRow.querySelector('.copy-btn').onclick = ()=>copyText(titleInput.value);
@@ -1665,7 +1665,7 @@
       catRow.innerHTML = '<div class="field-row-head"><span class="lbl">Category</span></div>';
       const catSelect = document.createElement('select');
       catSelect.className = 'txt-input';
-      let opts = '<option value="">— বেছে নাও —</option>';
+      let opts = '<option value="">— Select —</option>';
       opts += ADOBE_CATEGORIES.map(c=>'<option value="'+c.id+'"'+(String(res.category)===String(c.id)?' selected':'')+'>'+c.id+' — '+c.name+'</option>').join('');
       catSelect.innerHTML = opts;
       catSelect.onchange = ()=>{ f.result = f.result || {title:'',description:'',keywords:[],category:''}; f.result.category = catSelect.value; };
@@ -1678,7 +1678,7 @@
       const cats = Array.isArray(res.categories) ? res.categories : [];
       const catRow = document.createElement('div');
       catRow.className = 'field-row';
-      catRow.innerHTML = '<div class="field-row-head"><span class="lbl">Categories (১-২টা)</span></div>';
+      catRow.innerHTML = '<div class="field-row-head"><span class="lbl">Categories (1-2)</span></div>';
       const wrapSel = document.createElement('div');
       wrapSel.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
       const buildSelect = (labelIdx, val)=>{
@@ -1710,7 +1710,7 @@
       const descArea = document.createElement('textarea');
       descArea.className = 'ed-textarea';
       descArea.value = res.description || '';
-      descArea.placeholder = f.status==='loading' ? 'Generating…' : 'Generate করলে এখানে description আসবে';
+      descArea.placeholder = f.status==='loading' ? 'Generating…' : 'Description will appear here after generating';
       descArea.oninput = ()=>{ f.result = f.result || {title:'',description:'',keywords:[]}; f.result.description = descArea.value; };
       descRow.appendChild(descArea);
       descRow.querySelector('.copy-btn').onclick = ()=>copyText(descArea.value);
@@ -1742,7 +1742,7 @@
     addBtn.className = 'kw-add';
     addBtn.textContent = '+ add';
     addBtn.onclick = ()=>{
-      const v = prompt('নতুন keyword:');
+      const v = prompt('New keyword:');
       if(v && v.trim()){
         f.result = f.result || {title:'',description:'',keywords:[]};
         f.result.keywords = f.result.keywords || [];
@@ -1767,7 +1767,7 @@
     area.className = 'ed-textarea';
     area.style.minHeight = '96px';
     area.value = res.prompt || '';
-    area.placeholder = f.status==='loading' ? 'Generating…' : 'Generate করলে এখানে prompt আসবে';
+    area.placeholder = f.status==='loading' ? 'Generating…' : 'Prompt will appear here after generating';
     area.oninput = ()=>{ f.result = f.result || {prompt:''}; f.result.prompt = area.value; };
     row.appendChild(area);
     row.querySelector('.copy-btn').onclick = ()=>copyText(area.value);
@@ -1780,10 +1780,10 @@
   }
 
   /* ---------------- AI PROVIDER CALLS ---------------- */
-  // Gemini enforces our JSON schema strictly, but Mistral/OpenAI's generic
-  // "json_object" mode doesn't guarantee `prompt` comes back as a plain
+  // Gemini enforces our JSON schema strictly, but Mistral/OpenAI\'s generic
+  // "json_object" mode doesn\'t guarantee `prompt` comes back as a plain
   // string — sometimes it nests it as {prompt:{text:"...", style:"..."}} or
-  // similar. Rendering an object directly into a textarea's value shows the
+  // similar. Rendering an object directly into a textarea\'s value shows the
   // literal text "[object Object]", so normalize whatever shape we get into
   // one flat string.
   function toPromptString(v){
@@ -1806,18 +1806,22 @@
     catch(e){
       const m = text.match(/\{[\s\S]*\}/);
       if(m){ try{ return JSON.parse(m[0]); }catch(e2){} }
-      throw new Error('মডেলের রেসপন্স থেকে JSON পার্স করা যায়নি');
+      throw new Error('Could not parse JSON from the model\'s response');
     }
   }
 
-  // Each of these has its own SEPARATE free-tier quota on Google's side, so
-  // rotating through them (per key) multiplies the effective throughput —
-  // ordered from most generous free-tier limit to least.
+  // Ordered for ACCURACY first, not just quota size: gemini-2.5-flash and
+  // gemini-2.5-pro give meaningfully better, more precisely-grounded image
+  // analysis than the "lite" models, which is what actually matters for
+  // metadata that needs to rank/sell on Adobe Stock/Shutterstock. flash-lite
+  // and 3.1-flash-lite are kept as fallbacks (their own separate quota pools)
+  // so a big batch still keeps moving once the stronger models hit their
+  // (smaller) free-tier limits — but they\'re no longer tried first.
   const GEMINI_MODELS = [
-    'gemini-2.5-flash-lite',
     'gemini-2.5-flash',
+    'gemini-2.5-pro',
     'gemini-3.1-flash-lite',
-    'gemini-2.5-pro'
+    'gemini-2.5-flash-lite'
   ];
 
   async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema, model){
@@ -1825,7 +1829,10 @@
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(apiKey);
     const body = {
       contents:[{ parts:[ {text:promptText}, {inline_data:{mime_type:mimeType, data:base64}} ] }],
-      generationConfig:{ responseMimeType:'application/json', responseSchema:schema, temperature:0.8 }
+      // Low temperature on purpose: this is a factual "describe exactly what\'s
+      // in this image" task, not creative writing. A high temperature was
+      // making titles/keywords drift away from what\'s actually visible.
+      generationConfig:{ responseMimeType:'application/json', responseSchema:schema, temperature:0.2 }
     };
     const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     if(!resp.ok){
@@ -1837,7 +1844,7 @@
     const data = await resp.json();
     const cand = data.candidates && data.candidates[0];
     if(!cand || !cand.content || !cand.content.parts || !cand.content.parts[0]){
-      throw new Error('Gemini থেকে খালি রেসপন্স পাওয়া গেছে');
+      throw new Error('Received an empty response from Gemini');
     }
     const txt = cand.content.parts.map(p=>p.text||'').join('');
     return safeParseJson(txt);
@@ -1853,7 +1860,7 @@
         {type:'image_url', image_url:{ url:'data:'+mimeType+';base64,'+base64 }}
       ]}],
       response_format:{ type:'json_object' },
-      temperature:0.8
+      temperature:0.2
     };
     const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body) });
     if(!resp.ok){
@@ -1864,17 +1871,17 @@
     }
     const data = await resp.json();
     const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if(!content) throw new Error('OpenAI থেকে খালি রেসপন্স পাওয়া গেছে');
+    if(!content) throw new Error('Received an empty response from OpenAI');
     return safeParseJson(content);
   }
 
   async function callMistralRaw(apiKey, base64, mimeType, promptText, schema){
-    // ministral-14b-latest is Mistral's small edge/efficient model — its vision
-    // encoder is only ~0.4B parameters, which is fine for basic "what's in this
+    // ministral-14b-latest is Mistral\'s small edge/efficient model — its vision
+    // encoder is only ~0.4B parameters, which is fine for basic "what\'s in this
     // image" but too weak to ground detailed, accurate stock-photo-style
     // descriptions; in practice it tends to hallucinate content unrelated to
     // the actual image. mistral-small-2506 (Mistral Small 3.2) is one of
-    // Mistral's officially recommended vision models and has meaningfully
+    // Mistral\'s officially recommended vision models and has meaningfully
     // stronger image understanding while still being a lightweight/cheap model.
     const model = 'mistral-small-2506';
     const url = 'https://api.mistral.ai/v1/chat/completions';
@@ -1886,7 +1893,7 @@
       ]}],
       response_format:{ type:'json_object' },
       max_tokens: 1000,
-      temperature:0.4
+      temperature:0.2
     };
     const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body) });
     if(!resp.ok){
@@ -1897,7 +1904,7 @@
     }
     const data = await resp.json();
     const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if(!content) throw new Error('Mistral থেকে খালি রেসপন্স পাওয়া গেছে');
+    if(!content) throw new Error('Received an empty response from Mistral');
     return safeParseJson(content);
   }
 
@@ -1909,7 +1916,7 @@
 
   // Builds the full list of things we can try, in priority order: for each Gemini
   // key, one "slot" per model in GEMINI_MODELS (each model has its own quota on
-  // Google's side); for Mistral/OpenAI keys, a single slot (they use one model).
+  // Google\'s side); for Mistral/OpenAI keys, a single slot (they use one model).
   function buildAttemptSlots(){
     const slots = [];
     orderedKeys().forEach(k=>{
@@ -1924,11 +1931,11 @@
   }
   function slotCooldown(s){ return s.model ? (s.key.modelCooldowns && s.key.modelCooldowns[s.model]) || 0 : (s.key.cooldownUntil||0); }
   function setSlotCooldown(s, until){ if(s.model) s.key.modelCooldowns[s.model] = until; else s.key.cooldownUntil = until; }
-  // After any attempt, refresh the key's overall badge:
+  // After any attempt, refresh the key\'s overall badge:
   // - 'exhausted' only when every model slot is cooling down AND the cause was
-  //   genuine rate-limiting (so "limit শেষ" is trustworthy and worth waiting out)
+  //   genuine rate-limiting (so "limit reached" is trustworthy and worth waiting out)
   // - 'error' when slots are cooling down because of a real error (invalid key,
-  //   permission denied, etc.) — waiting won't fix this, the key itself needs
+  //   permission denied, etc.) — waiting won\'t fix this, the key itself needs
   //   attention
   // - 'ok' if at least one model is usable right now
   function refreshKeyStatus(k, outcome, err){
@@ -1946,7 +1953,7 @@
   // NOTE: 403 from Gemini is usually PERMISSION_DENIED (invalid key, API not
   // enabled, key restricted to certain domains/referrers) — NOT a quota issue.
   // Only 429 / explicit quota-ish wording should count as "rate limited",
-  // otherwise a broken/invalid key gets mislabeled as "limit শেষ" (which tells
+  // otherwise a broken/invalid key gets mislabeled as "limit reached" (which tells
   // the user to just wait) when it actually needs to be fixed/replaced.
   function isRateLimitError(err){
     const msg = (err && err.message) ? err.message.toLowerCase() : '';
@@ -1959,7 +1966,7 @@
     const msg = (err && err.message) ? err.message : '';
     const m = msg.match(/retry in\s+([\d.]+)\s*s/i);
     if(m) return Math.ceil(parseFloat(m[1]) * 1000) + 500; // small buffer
-    return 30000; // sensible fallback if Google doesn't tell us
+    return 30000; // sensible fallback if Google doesn\'t tell us
   }
 
   // Tries keys in provider-priority order (all Gemini keys first, then all Mistral,
@@ -1968,29 +1975,29 @@
   // gemini-2.5-pro) since each model has its own separate free-tier quota — so
   // one key alone can absorb several times the throughput of a single model.
   // On rate-limit errors that specific (key, model) pair is put in a cooldown
-  // (parsed from Google's own "retry in Xs" hint) rather than abandoned for the
-  // whole session — once quota resets it's used again automatically. If every
+  // (parsed from Google\'s own "retry in Xs" hint) rather than abandoned for the
+  // whole session — once quota resets it\'s used again automatically. If every
   // slot is in cooldown, we wait for whichever frees up soonest instead of
   // failing outright.
   async function callAIWithFailover(base64, mimeType, promptText, schema){
     if(state.apiKeys.length===0){
-      throw new Error('কোনো API key যোগ করা নেই');
+      throw new Error('No API key has been added');
     }
     const slots = buildAttemptSlots();
-    let lastErr = new Error('কোনো key/model দিয়ে কাজ হলো না');
+    let lastErr = new Error('No key/model combination worked');
     const startedAt = Date.now();
     const MAX_WAIT_MS = 20 * 60 * 1000; // give up only after 20 minutes of genuinely being stuck
     let lastToastAt = 0;
     while(Date.now() - startedAt < MAX_WAIT_MS){
-      if(state.stopRequested) throw new Error('Generate থামানো হয়েছে');
+      if(state.stopRequested) throw new Error('Generation stopped');
       const now = Date.now();
       const readySlot = slots.find(s => slotCooldown(s) <= now);
       if(!readySlot){
         // every (key, model) slot is cooling down — wait for whichever frees up soonest
         const soonest = Math.min(...slots.map(slotCooldown));
         const waitMs = Math.max(300, soonest - now);
-        if(Date.now() - lastToastAt > 4000){ // don't spam toasts every loop tick
-          showToast('সব key/model rate-limit-এ, '+Math.ceil(waitMs/1000)+'s পর auto-resume হবে');
+        if(Date.now() - lastToastAt > 4000){ // don\'t spam toasts every loop tick
+          showToast('All keys/models are rate-limited — will auto-resume in '+Math.ceil(waitMs/1000)+'s');
           lastToastAt = Date.now();
         }
         await new Promise(r=>setTimeout(r, Math.min(waitMs, 4000))); // check in short chunks, respects Stop button
@@ -2028,52 +2035,60 @@
     // Adobe Stock (and other stock sites) auto-reject or flag submissions for
     // "Copyright" / "Intellectual Property" violations when the image itself
     // contains a visible logo, watermark, brand mark, or website/URL. Even if
-    // we can't remove that from the image, metadata must never name/describe
+    // we can\'t remove that from the image, metadata must never name/describe
     // it — doing so is what triggers manual/automatic IP review and rejection.
-    const ipWarning = '- ছবির ভিতরে যদি কোনো logo, watermark, brand mark, trademark, website/URL, বা কোনো company/product-এর নাম দৃশ্যমান থাকে, সেটা title/description/keyword কোথাও উল্লেখ করো না বা বর্ণনা করো না — শুধু এগুলো নাম উল্লেখ করলেই Adobe/Shutterstock "Copyright" বা "Intellectual Property" ভায়োলেশন হিসেবে ছবিটা reject করে দেয়। এই ধরনের element ইগনোর করে শুধু ছবির বাকি genuine visual subject বর্ণনা করো।\n';
+    const ipWarning = '- If the image contains any visible logo, watermark, brand mark, trademark, website/URL, or company/product name, do not mention or describe it anywhere in the title/description/keywords — naming these is exactly what triggers an Adobe/Shutterstock "Copyright" or "Intellectual Property" rejection. Ignore such elements and only describe the image\'s genuine visual subject.\n';
+
+    // The single biggest lever for metadata that actually ranks/sells: it has
+    // to precisely match what\'s in the image, not just be generically
+    // plausible. This instruction (plus the low temperature set on the API
+    // call) is what keeps output grounded instead of generic/hallucinated.
+    const accuracyInstruction = 'Examine the image closely before answering: identify the exact subject(s), their specific attributes (species/type, color, material, pose, action), the setting, lighting, and composition. Every word you produce must correspond to something actually visible in this exact image — never guess, generalize, or reuse boilerplate phrasing that would fit many different images equally well. If you are not confident a detail is present, leave it out rather than assume it.\n';
 
     if(state.platform === 'Adobe Stock'){
       const titleLen = document.getElementById('titleLen').value;
-      p += 'তুমি Adobe Stock-এর জন্য একজন metadata specialist। Adobe Stock-এর অফিসিয়াল contributor guideline অনুসরণ করে এই ছবির জন্য metadata তৈরি করো।\n';
+      p += 'You are a metadata specialist for Adobe Stock. Create metadata for this image following Adobe Stock\'s official contributor guidelines.\n';
+      p += accuracyInstruction;
       p += ipWarning;
-      p += 'TITLE নিয়ম:\n';
-      p += '- সর্বোচ্চ '+titleLen+' characters-এর মধ্যে রাখো (Adobe Stock সীমা 70 char)।\n';
-      p += '- ছবির সবচেয়ে গুরুত্বপূর্ণ visual subject স্পষ্টভাবে বর্ণনা করো, সংক্ষিপ্ত ও পরিষ্কার বাক্যে।\n';
-      p += '- কোনো overly technical/gear-heavy শব্দ ব্যবহার করো না, কোনো trademark/brand/IP, artist name, বা real person-এর নাম উল্লেখ করো না।\n';
-      p += 'KEYWORDS নিয়ম:\n';
-      p += '- ঠিক '+kwCount+' টা keyword দাও (Adobe সীমা সর্বোচ্চ 49টা)।\n';
-      p += '- সবচেয়ে গুরুত্বপূর্ণ ও প্রাসঙ্গিক keyword প্রথম দিকে (Adobe search ranking-এ প্রথম ১০টা keyword-এর প্রভাব সবচেয়ে বেশি)।\n';
-      p += '- general থেকে specific keyword মিশিয়ে দাও: subject, action, concept/mood, setting (indoor/outdoor, day/night), viewpoint/camera angle, color, number of people, এবং প্রাসঙ্গিক হলে model demographic info (যেমন gender, age group, ethnicity) ইত্যাদি বিভিন্ন দিক কভার করো।\n';
-      p += '- buyer-এর মতো ভাবো — একজন customer এই ছবিটা খুঁজতে ঠিক কোন শব্দ সার্চ করবে সেটা মাথায় রেখে keyword বাছো।\n';
-      p += '- শুধু ছবির সাথে সরাসরি প্রাসঙ্গিক keyword দাও; অপ্রাসঙ্গিক keyword দিলে Adobe content reject করতে পারে।\n';
-      p += '- প্রতিটা keyword শুধু একবার ব্যবহার করো, কোনো keyword repeat করো না, কোনো trademark/brand/personal info দিও না।\n';
-      p += '- সবগুলো title ও keyword একটামাত্র ভাষায় (English) লেখো — একাধিক ভাষা মিশিয়ো না।\n';
-      if(negOn && negWords.trim()) p += '- এই শব্দগুলো কোথাও ব্যবহার করো না: '+negWords+'\n';
-      if(f.mimeType==='image/png') p += '- ছবির background যদি transparent/isolated হয়, keyword-এ তা উল্লেখ করো।\n';
-      p += 'CATEGORY নিয়ম:\n';
-      p += '- নিচের Adobe Stock ক্যাটাগরি লিস্ট থেকে ছবির সাথে সবচেয়ে বেশি মানানসই ঠিক একটা ক্যাটাগরি বেছে নাও, এবং শুধু তার id (সংখ্যা) দাও:\n';
+      p += 'TITLE rules:\n';
+      p += '- Keep it within '+titleLen+' characters max (Adobe Stock limit is 70 chars).\n';
+      p += '- Clearly describe the image\'s most important visual subject, in a short, clear sentence.\n';
+      p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
+      p += 'KEYWORDS rules:\n';
+      p += '- Give exactly '+kwCount+' keywords (Adobe\'s max limit is 49).\n';
+      p += '- Put the most important and relevant keywords first (the first 10 keywords carry the most weight in Adobe\'s search ranking).\n';
+      p += '- Mix general and specific keywords: cover subject, action, concept/mood, setting (indoor/outdoor, day/night), viewpoint/camera angle, color, number of people, and where relevant, model demographic info (e.g. gender, age group, ethnicity).\n';
+      p += '- Think like a buyer — choose keywords based on exactly what a customer would search to find this image.\n';
+      p += '- Only give keywords directly relevant to the image; irrelevant keywords can get the content rejected by Adobe.\n';
+      p += '- Use each keyword only once, never repeat a keyword, and don\'t include any trademark/brand/personal info.\n';
+      p += '- Write all titles and keywords in a single language (English) — don\'t mix multiple languages.\n';
+      if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
+      if(f.mimeType==='image/png') p += '- If the image\'s background is transparent/isolated, mention that in the keywords.\n';
+      p += 'CATEGORY rules:\n';
+      p += '- Pick exactly one category from the Adobe Stock list below that best matches the image, and give only its id (number):\n';
       p += ADOBE_CATEGORIES.map(c=>c.id+' = '+c.name).join(', ') + '\n';
-      p += 'শুধু JSON আকারে {"title":"...", "keywords":["...","..."], "category":<id সংখ্যা>} — এই ফরম্যাটে উত্তর দাও।';
+      p += 'Respond only in JSON, in this format: {"title":"...", "keywords":["...","..."], "category":<id number>}.';
     } else {
       const descLen = document.getElementById('descLen').value;
-      p += 'তুমি Shutterstock-এর জন্য একজন metadata specialist। Shutterstock-এর অফিসিয়াল contributor guideline অনুসরণ করে এই ছবির জন্য metadata তৈরি করো।\n';
+      p += 'You are a metadata specialist for Shutterstock. Create metadata for this image following Shutterstock\'s official contributor guidelines.\n';
+      p += accuracyInstruction;
       p += ipWarning;
-      p += '- মানুষের identity সবসময় respectful ও accurate ভাবে represent করো (race, gender, age ইত্যাদি ভুলভাবে বা stereotypically বর্ণনা করো না)।\n';
-      p += '- কোনো personally identifiable information (PII) — যেমন নাম, ঠিকানা, ফোন নম্বর, ইমেইল — description বা keyword-এ উল্লেখ করো না।\n';
-      p += 'DESCRIPTION (এটাই Shutterstock-এ title/description হিসেবে কাজ করে) নিয়ম:\n';
-      p += '- একটা সম্পূর্ণ, unique, detailed বাক্য বা phrase লেখো — শুধু keyword-এর তালিকা কখনো না।\n';
-      p += '- সম্ভব হলে Who, What, When, Where, Why কভার করো, এবং ছবির mood/emotion বোঝাও।\n';
-      p += '- angle, focus এই ধরনের প্রাসঙ্গিক ডিটেইল থাকলে যোগ করো, কিন্তু কোনো link, নির্দিষ্ট camera/lens info বা trademark ব্যবহার করো না, কোনো শব্দ বা phrase repeat করো না।\n';
-      p += '- আনুমানিক '+descLen+' characters-এর মধ্যে রাখো।\n';
-      p += 'KEYWORDS নিয়ম:\n';
-      p += '- ঠিক '+kwCount+' টা keyword দাও (Shutterstock সীমা 7 থেকে 50টার মধ্যে)।\n';
-      p += '- specific, precise এবং unique/compound শব্দ ব্যবহার করো যা সরাসরি ছবির সাথে সম্পর্কিত, সাথে broader topic/feeling/concept/association যোগ করো।\n';
-      p += '- কোনো keyword repeat করো না, অপ্রাসঙ্গিক শব্দ যোগ করো না, কোনো link/camera info/trademark দিও না।\n';
-      if(negOn && negWords.trim()) p += '- এই শব্দগুলো কোথাও ব্যবহার করো না: '+negWords+'\n';
-      p += 'CATEGORY নিয়ম:\n';
-      p += '- নিচের Shutterstock ক্যাটাগরি লিস্ট থেকে ছবির সাথে সবচেয়ে বেশি মানানসই ১টা (এবং প্রাসঙ্গিক হলে সর্বোচ্চ ২টা) category-র exact নাম বেছে নাও, তালিকার বাইরে কোনো নাম দিও না:\n';
+      p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes).\n';
+      p += '- Don\'t mention any personally identifiable information (PII) — such as names, addresses, phone numbers, emails — in the description or keywords.\n';
+      p += 'DESCRIPTION rules (this acts as the title/description on Shutterstock):\n';
+      p += '- Write one complete, unique, detailed sentence or phrase — never just a list of keywords.\n';
+      p += '- Where possible, cover Who, What, When, Where, Why, and convey the image\'s mood/emotion.\n';
+      p += '- Add relevant details like angle, focus if applicable, but don\'t use any links, specific camera/lens info, or trademarks, and don\'t repeat any word or phrase.\n';
+      p += '- Keep it to approximately '+descLen+' characters.\n';
+      p += 'KEYWORDS rules:\n';
+      p += '- Give exactly '+kwCount+' keywords (Shutterstock\'s limit is between 7 and 50).\n';
+      p += '- Use specific, precise, and unique/compound words directly related to the image, plus broader topics/feelings/concepts/associations.\n';
+      p += '- Don\'t repeat any keyword, don\'t add irrelevant words, and don\'t include any links/camera info/trademarks.\n';
+      if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
+      p += 'CATEGORY rules:\n';
+      p += '- Pick the 1 (and up to 2, if relevant) best-matching category name(s) from the Shutterstock list below — don\'t give any name outside this list:\n';
       p += SHUTTERSTOCK_CATEGORIES.join(', ') + '\n';
-      p += 'শুধু JSON আকারে {"description":"...", "keywords":["...","..."], "categories":["...","..."]} — এই ফরম্যাটে উত্তর দাও (categories array-তে ১টা অথবা ২টা category name থাকবে)।';
+      p += 'Respond only in JSON, in this format: {"description":"...", "keywords":["...","..."], "categories":["...","..."]} (the categories array should have 1 or 2 category names).';
     }
     return p;
   }
@@ -2082,11 +2097,11 @@
     const len = document.getElementById('promptLen').value;
     const model = document.getElementById('targetModel').value;
     const camera = document.getElementById('toggle-camera').checked;
-    let p = 'তুমি একজন AI text-to-image prompt engineer। এই ছবিটা মনোযোগ দিয়ে দেখো এবং শুধুমাত্র ছবিতে সত্যিই যা দেখা যাচ্ছে তার ভিত্তিতে '+model+'-এর জন্য একটা reusable, high quality '+style+' style text-to-image prompt লিখো, আনুমানিক '+len+' শব্দের মধ্যে। ছবিতে নেই এমন কোনো বিষয়/বস্তু কল্পনা করে prompt-এ যোগ করো না।\n';
-    p += '- Subject, composition, lighting, color palette, mood স্পষ্টভাবে বর্ণনা করো।\n';
-    if(camera) p += '- সম্ভব হলে camera angle / lens / focal length টাইপ ডিটেইল যোগ করো।\n';
-    p += '- ছবির মূল subject/scene-এর সাথে সরাসরি সম্পর্কহীন কোনো কিছু prompt-এ উল্লেখ করো না — যেমন কোনো logo, watermark, brand mark, text/caption/লেখা, UI icon, website link/URL, বা এমন কোনো বাড়তি object যেটা ছবির আসল বিষয়বস্তুর অংশ না বরং পরে যোগ হওয়া/অপ্রাসঙ্গিক কিছু। শুধু ছবির প্রকৃত visual subject বর্ণনা করো।\n';
-    p += 'শুধু JSON আকারে উত্তর দাও, এই ফরম্যাটে: {"prompt": "..."} — prompt-এর ভ্যালুটা অবশ্যই একটা single plain text string হতে হবে, কোনো nested object/array না।';
+    let p = 'You are an AI text-to-image prompt engineer. Look at this image carefully and, based only on what\'s genuinely visible in it, write a reusable, high-quality '+style+'-style text-to-image prompt for '+model+', in approximately '+len+' words. Don\'t imagine or add any subject/object to the prompt that isn\'t in the image.\n';
+    p += '- Clearly describe the subject, composition, lighting, color palette, and mood.\n';
+    if(camera) p += '- Where possible, add camera angle / lens / focal length type details.\n';
+    p += '- Don\'t mention anything in the prompt that isn\'t directly related to the image\'s main subject/scene — such as any logo, watermark, brand mark, text/caption, UI icon, website link/URL, or any extra object that isn\'t part of the image\'s actual content but rather something added later/irrelevant. Only describe the image\'s genuine visual subject.\n';
+    p += 'Respond only in JSON, in this format: {"prompt": "..."} — the prompt value must be a single plain text string, not a nested object/array.';
     return p;
   }
 
@@ -2120,7 +2135,7 @@
     if(!f) return;
     if(f.noPreview) return; // no raster data available to send to Gemini
     if(state.apiKeys.length===0){
-      showToast('আগে একটা API Key যোগ করুন');
+      showToast('Please add an API Key first');
       document.getElementById('apiKeyBtn').click();
       return;
     }
@@ -2142,7 +2157,7 @@
           f._needsNormalize = false;
         }catch(e2){
           f.status = 'error';
-          f.error = 'এই ছবিটা browser এ decode করা যায়নি — ফাইলটা corrupt হতে পারে অথবা ফরম্যাটটা সাপোর্টেড না। PNG/JPG এ convert করে আবার চেষ্টা করুন।';
+          f.error = 'This image could not be decoded in the browser — the file may be corrupt or the format isn\'t supported. Please convert it to PNG/JPG and try again.';
           renderResults();
           updateToolbar();
           return;
@@ -2209,19 +2224,19 @@
     updateToolbar();
     const doneCount = targets.filter(f=>f.status==='done').length;
     if(state.stopRequested){
-      showToast('Generate থামানো হয়েছে');
+      showToast('Generation stopped');
     }else if(doneCount>0){
       showCompletionModal(doneCount, targets.length);
     }else{
-      showToast('Generate সম্পন্ন হয়েছে');
+      showToast('Generation complete');
     }
   }
 
   function showCompletionModal(doneCount, totalCount){
     const failedCount = totalCount - doneCount;
-    document.getElementById('doneModalTitle').textContent = 'Generate সম্পন্ন হয়েছে ✓';
+    document.getElementById('doneModalTitle').textContent = 'Generation complete ✓';
     document.getElementById('doneModalText').textContent =
-      doneCount+' / '+totalCount+' টা ছবির metadata তৈরি হয়ে গেছে'+(failedCount>0 ? ' ('+failedCount+' টা fail হয়েছে, "Retry Failed" দিয়ে আবার try করতে পারো)' : '')+'। এখনই CSV ডাউনলোড করে নাও, অথবা পরে টুলবারের "Export CSV" বাটন থেকেও করতে পারবে।';
+      doneCount+' / '+totalCount+' images had their metadata generated'+(failedCount>0 ? ' ('+failedCount+' failed — you can try again with "Retry Failed")' : '')+'. Download the CSV now, or later from the "Export CSV" button in the toolbar.';
     document.getElementById('doneModalBg').classList.add('open');
   }
   document.getElementById('doneModalDownload').onclick = ()=>{
@@ -2233,7 +2248,7 @@
 
   async function generateAll(){
     if(state.apiKeys.length===0){
-      showToast('আগে একটা API Key যোগ করুন');
+      showToast('Please add an API Key first');
       document.getElementById('apiKeyBtn').click();
       return;
     }
@@ -2244,12 +2259,12 @@
 
   async function retryFailed(){
     if(state.apiKeys.length===0){
-      showToast('আগে একটা API Key যোগ করুন');
+      showToast('Please add an API Key first');
       document.getElementById('apiKeyBtn').click();
       return;
     }
     const targets = state.files.filter(f=>f.status==='error' && !f.noPreview);
-    if(targets.length===0){ showToast('Retry করার মতো কোনো failed image নেই'); return; }
+    if(targets.length===0){ showToast('No failed images to retry'); return; }
     await runGeneration(targets);
   }
   document.getElementById('retryFailedBtn').onclick = retryFailed;
@@ -2263,7 +2278,7 @@
   }
   function exportCsv(){
     const done = state.files.filter(f=>f.status==='done');
-    if(done.length===0){ showToast('এখনো কিছু generate হয়নি'); return; }
+    if(done.length===0){ showToast('Nothing has been generated yet'); return; }
     let rows;
     if(state.activeTab==='metadata'){
       if(state.platform === 'Adobe Stock'){
@@ -2311,7 +2326,7 @@
   loadKeys();
 
   // Cooldowns expire in the background even when nothing is generating, but
-  // the badge (e.g. "limit শেষ") was previously only re-evaluated on the next
+  // the badge (e.g. "limit reached") was previously only re-evaluated on the next
   // API attempt — so it could look permanently stuck even after the wait was
   // long over. This periodically re-checks and clears it automatically.
   setInterval(()=>{
