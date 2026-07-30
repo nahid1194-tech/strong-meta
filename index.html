@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1360,6 +1360,88 @@
     }
   }
 
+  // --- Real EPS rendering via Ghostscript (WASM) -----------------------------
+  // EPS files only ever embed a *preview* thumbnail (either a proper TIFF or,
+  // for many older/simpler export pipelines, a crude 1-bit "EPSI" bitmap meant
+  // just as a rough placeholder for old viewers). Analyzing that preview
+  // instead of the real artwork is what causes metadata to describe a blocky
+  // black-and-white pattern instead of the actual full-color design — the AI
+  // is accurately describing what it was shown, but what it was shown wasn't
+  // the real image. Ghostscript actually interprets the PostScript and
+  // rasterizes the genuine vector content, so results are accurate regardless
+  // of what (if any) preview the file happens to embed.
+  //
+  // Loaded lazily (only once an EPS file actually shows up) since it's a ~16MB
+  // WASM download — most users uploading plain JPG/PNG batches never pay that
+  // cost at all. Reused for every subsequent EPS in the same session.
+  const GHOSTSCRIPT_CDN_BASE = 'https://cdn.jsdelivr.net/npm/@jspawn/ghostscript-wasm@0.0.2/';
+  let ghostscriptPromise = null;
+  function loadGhostscript(){
+    if(!ghostscriptPromise){
+      ghostscriptPromise = import(GHOSTSCRIPT_CDN_BASE + 'gs.mjs')
+        .then(mod => mod.default({
+          locateFile: (file)=> GHOSTSCRIPT_CDN_BASE + file,
+          print: ()=>{}, printErr: ()=>{}
+        }));
+    }
+    return ghostscriptPromise;
+  }
+
+  // Returns {dataUrl, base64, mimeType:'image/png'}; throws if Ghostscript
+  // can't be loaded or can't parse this particular file (some very old/exotic
+  // EPS variants use PostScript features Ghostscript itself can't parse either
+  // — rare, but extractEpsPreview() is kept as a fallback for exactly that case).
+  async function renderEpsWithGhostscript(file){
+    const gs = await loadGhostscript();
+    const buf = new Uint8Array(await fileToArrayBuffer(file));
+    gs.FS.writeFile('/input.eps', buf);
+    try{
+      gs.callMain(['-sDEVICE=png16m', '-dEPSCrop', '-dBATCH', '-dNOPAUSE', '-r200', '-o', '/output.png', '/input.eps']);
+      const out = gs.FS.readFile('/output.png');
+      if(!out || out.length===0) throw new Error('Ghostscript produced no output');
+      const blob = new Blob([out], {type:'image/png'});
+      const dataUrl = await new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>resolve(reader.result);
+        reader.onerror = ()=>reject(new Error('Blob read failed'));
+        reader.readAsDataURL(blob);
+      });
+      return { dataUrl, base64: dataUrl.split(',')[1], mimeType:'image/png' };
+    }finally{
+      // clean up the virtual FS so memory doesn't grow across a big batch
+      try{ gs.FS.unlink('/input.eps'); }catch(e){}
+      try{ gs.FS.unlink('/output.png'); }catch(e){}
+    }
+  }
+
+  function baseNameNoExt(name){
+    return name.replace(/\.[^.]+$/, '').trim().toLowerCase();
+  }
+
+  // EPS files' own embedded previews are frequently a crude, low-fidelity
+  // rendering (often literally a 1-bit dithered black/white thumbnail — which
+  // is exactly what makes an AI mistakenly describe a full-color design as
+  // "monochrome"/"halftone"/"pixelated"). Real stock contributors almost
+  // always have a proper full-color JPG/PNG preview alongside the EPS
+  // (Adobe Stock's own submission process requires exactly this pairing), so
+  // if one was uploaded in the same batch we use THAT for AI analysis
+  // instead of the EPS's own preview — far more accurate, same EPS filename
+  // still gets used for the exported metadata.
+  function pairEpsWithRasterFiles(){
+    const rasterByBase = new Map();
+    state.files.forEach(f=>{
+      if(!f.isEps && !isTiffFile(f.file)){
+        rasterByBase.set(baseNameNoExt(f.name), f);
+      }
+    });
+    state.files.forEach(f=>{
+      if(f.isEps && !f.pairedFile){
+        const match = rasterByBase.get(baseNameNoExt(f.name));
+        if(match) f.pairedFile = match;
+      }
+    });
+  }
+
   async function handleFiles(fileList){
     const incoming = Array.from(fileList).filter(f=> f.type.startsWith('image/') || isEpsFile(f) || isTiffFile(f));
     if(incoming.length===0) return;
@@ -1399,6 +1481,7 @@
       };
     });
     entries.forEach(e=> state.files.push(e));
+    pairEpsWithRasterFiles();
     renderResults();
     updateToolbar();
 
@@ -1417,19 +1500,42 @@
     async function processOne(entry){
       const f = entry.file;
       if(entry.isEps){
+        if(entry.pairedFile){
+          // A matching JPG/PNG was uploaded alongside this EPS — use it
+          // directly instead of extracting the EPS's own (often low-fidelity)
+          // preview. Far more accurate colors/detail for the AI to analyze.
+          try{
+            const norm = await normalizeImageForApi(entry.pairedFile.file);
+            entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType;
+            entry.epsMethod = 'paired-image';
+            entry._processing = false;
+            return;
+          }catch(e){
+            // fall through to the normal EPS extraction paths below
+          }
+        }
         try{
-          const preview = await extractEpsPreview(f);
-          if(preview){
-            entry.dataUrl = preview.dataUrl; entry.base64 = preview.base64; entry.mimeType = 'image/png';
-          }else{
+          const rendered = await renderEpsWithGhostscript(f);
+          entry.dataUrl = rendered.dataUrl; entry.base64 = rendered.base64; entry.mimeType = rendered.mimeType;
+          entry.epsMethod = 'ghostscript';
+        }catch(gsErr){
+          // Ghostscript couldn't handle this file (or failed to load) — fall
+          // back to whatever preview thumbnail the file itself embeds.
+          try{
+            const preview = await extractEpsPreview(f);
+            if(preview){
+              entry.dataUrl = preview.dataUrl; entry.base64 = preview.base64; entry.mimeType = 'image/png';
+              entry.epsMethod = 'embedded-preview';
+            }else{
+              entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
+              entry.noPreview = true; entry.status = 'error';
+              entry.error = 'No embedded preview was found in this EPS file, so Gemini can\'t see the image. Please upload a PNG/JPG version of this image separately.';
+            }
+          }catch(e){
             entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
             entry.noPreview = true; entry.status = 'error';
-            entry.error = 'No embedded preview was found in this EPS file, so Gemini can\'t see the image. Please upload a PNG/JPG version of this image separately.';
+            entry.error = 'This EPS file could not be processed.';
           }
-        }catch(e){
-          entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
-          entry.noPreview = true; entry.status = 'error';
-          entry.error = 'This EPS file could not be processed.';
         }
       }else{
         // TIFF — decode fully now since we need it for a preview anyway;
@@ -1620,11 +1726,15 @@
       body.innerHTML += '<div class="err-msg">⚠ '+escapeHtml(f.error||'Generation failed')+'</div>';
     }
 
-    if(f.isEps){
+    if(f.isEps && f.epsMethod){
       const epsNote = document.createElement('div');
       epsNote.className = 'err-msg';
       epsNote.style.color = 'var(--text-soft)';
-      epsNote.textContent = '📎 Analyzed from the EPS\'s embedded preview (not the actual vector artwork).';
+      epsNote.textContent = f.epsMethod==='ghostscript'
+        ? '✓ Rendered from the actual EPS vector artwork.'
+        : f.epsMethod==='paired-image'
+          ? '✓ Analyzed from the matching '+f.pairedFile.name+' uploaded alongside it (more accurate than the EPS\'s own preview).'
+          : '📎 Analyzed from the EPS\'s embedded preview (not the actual vector artwork) — for better accuracy, also upload a JPG/PNG with the same filename.';
       body.appendChild(epsNote);
     }
 
