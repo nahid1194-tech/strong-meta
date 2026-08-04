@@ -1097,6 +1097,36 @@
   // limits) and encodes via the non-blocking canvas.toBlob() instead.
   const NORMALIZE_MAX_DIM = 3072;
 
+  // Detects transparent/white/solid-color backgrounds by actually sampling
+  // pixels — not by guessing from file type (every normalized image becomes
+  // a PNG, so checking mimeType==='image/png' told us nothing) and not by
+  // hoping the AI can visually perceive alpha (most vision pipelines flatten
+  // transparency onto a matte before the model ever sees the image, so it
+  // often can't tell). We sample a ring of border pixels, since background
+  // is almost always at the edges with the subject in the middle.
+  function detectBackground(ctx, w, h){
+    let imgData;
+    try{ imgData = ctx.getImageData(0,0,w,h); }catch(e){ return null; } // e.g. tainted canvas
+    const data = imgData.data;
+    const step = Math.max(1, Math.floor(Math.min(w,h)/120)); // sample ~120 points per edge, not every pixel
+    const samples = [];
+    for(let x=0;x<w;x+=step){ samples.push(0,x); samples.push(h-1,x); }
+    for(let y=0;y<h;y+=step){ samples.push(y,0); samples.push(y,w-1); }
+    let transparentCount = 0, whiteCount = 0, total = 0;
+    for(let i=0;i<samples.length;i+=2){
+      const y = samples[i], x = samples[i+1];
+      const idx = (y*w+x)*4;
+      const r=data[idx], g=data[idx+1], b=data[idx+2], a=data[idx+3];
+      total++;
+      if(a < 250) transparentCount++;
+      else if(r>240 && g>240 && b>240) whiteCount++;
+    }
+    if(total===0) return null;
+    if(transparentCount/total > 0.85) return 'transparent';
+    if(whiteCount/total > 0.85) return 'white';
+    return null;
+  }
+
   function encodeSourceToPng(source, naturalW, naturalH){
     return new Promise((resolve,reject)=>{
       try{
@@ -1110,10 +1140,11 @@
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(source,0,0,w,h);
+        const bgType = detectBackground(ctx, w, h);
         canvas.toBlob(blob=>{
           if(!blob){ reject(new Error('Canvas encode failed')); return; }
           const reader = new FileReader();
-          reader.onload = ()=> resolve({dataUrl:reader.result, base64:reader.result.split(',')[1], mimeType:'image/png'});
+          reader.onload = ()=> resolve({dataUrl:reader.result, base64:reader.result.split(',')[1], mimeType:'image/png', bgType:bgType});
           reader.onerror = ()=> reject(new Error('Blob read failed'));
           reader.readAsDataURL(blob);
         }, 'image/png');
@@ -1506,7 +1537,7 @@
           // preview. Far more accurate colors/detail for the AI to analyze.
           try{
             const norm = await normalizeImageForApi(entry.pairedFile.file);
-            entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType;
+            entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType; entry.bgType = norm.bgType;
             entry.epsMethod = 'paired-image';
             entry._processing = false;
             return;
@@ -1542,7 +1573,7 @@
         // cache the result so generation doesn\'t have to redo this.
         try{
           const norm = await normalizeImageForApi(f);
-          entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType;
+          entry.dataUrl = norm.dataUrl; entry.base64 = norm.base64; entry.mimeType = norm.mimeType; entry.bgType = norm.bgType;
         }catch(e){
           entry.dataUrl = EPS_PLACEHOLDER_SVG; entry.base64 = null; entry.mimeType = null;
           entry.noPreview = true; entry.status = 'error';
@@ -2172,11 +2203,26 @@
       '  5) Mood/concept: the feeling or idea the image conveys (only if genuinely supported by what\'s shown).\n' +
       'Use this full picture to write metadata that covers both the big picture and the smaller supporting details — not just a generic summary of the main subject. Every word must correspond to something actually visible in this exact image — never guess, generalize, or reuse boilerplate phrasing that would fit many different images equally well. If unsure a detail is present, leave it out rather than assume it.\n';
 
+    // f.bgType comes from actual pixel sampling done in JS (not a guess by the
+    // model), so this is a verified fact we can state directly rather than
+    // asking the AI to detect it itself — vision models often can't reliably
+    // perceive true alpha transparency anyway.
+    function backgroundFact(headlineFieldName){
+      if(f.bgType === 'transparent'){
+        return '- VERIFIED FACT: this image has a genuinely transparent background (confirmed programmatically, not a guess). You MUST reflect this — mention it in the '+headlineFieldName+' (e.g. "isolated on transparent background" or "cutout with transparent background") and include keywords like "isolated", "transparent background", "cutout", "PNG", "no background".\n';
+      }
+      if(f.bgType === 'white'){
+        return '- VERIFIED FACT: this image has a plain solid white background (confirmed programmatically, not a guess). You MUST reflect this — mention it in the '+headlineFieldName+' (e.g. "isolated on white background") and include keywords like "isolated", "white background", "cutout", "studio shot".\n';
+      }
+      return '';
+    }
+
     if(state.platform === 'Adobe Stock'){
       const titleLen = document.getElementById('titleLen').value;
       p += 'You are a metadata specialist for Adobe Stock. Create metadata for this image following Adobe Stock\'s official contributor guidelines.\n';
       p += accuracyInstruction;
       p += ipWarning;
+      p += backgroundFact('title');
       p += 'TITLE rules:\n';
       p += '- Keep it within '+titleLen+' characters max (Adobe Stock limit is 70 chars).\n';
       p += '- Clearly describe the image\'s most important visual subject, in a short, clear sentence.\n';
@@ -2190,7 +2236,6 @@
       p += '- Use each keyword only once, never repeat a keyword, and don\'t include any trademark/brand/personal info.\n';
       p += '- Write all titles and keywords in a single language (English) — don\'t mix multiple languages.\n';
       if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
-      if(f.mimeType==='image/png') p += '- If the image\'s background is transparent/isolated, mention that in the keywords.\n';
       p += 'CATEGORY rules:\n';
       p += '- Pick exactly one category from the Adobe Stock list below that best matches the image, and give only its id (number):\n';
       p += ADOBE_CATEGORIES.map(c=>c.id+' = '+c.name).join(', ') + '\n';
@@ -2200,6 +2245,7 @@
       p += 'You are a metadata specialist for Shutterstock. Create metadata for this image following Shutterstock\'s official contributor guidelines.\n';
       p += accuracyInstruction;
       p += ipWarning;
+      p += backgroundFact('description');
       p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes).\n';
       p += '- Don\'t mention any personally identifiable information (PII) — such as names, addresses, phone numbers, emails — in the description or keywords.\n';
       p += 'DESCRIPTION rules (this acts as the title/description on Shutterstock):\n';
@@ -2275,7 +2321,7 @@
     if(f._needsNormalize && !f.base64){
       try{
         const norm = await normalizeImageForApi(f.file);
-        f.base64 = norm.base64; f.mimeType = norm.mimeType;
+        f.base64 = norm.base64; f.mimeType = norm.mimeType; f.bgType = norm.bgType;
         f._needsNormalize = false;
       }catch(e){
         try{
