@@ -1937,12 +1937,22 @@
   async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema, model){
     model = model || GEMINI_MODELS[0];
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(apiKey);
+    // Let the model actually "think" through the image before answering,
+    // instead of pattern-matching to a quick first guess — this is what
+    // catches secondary/small details, not just the obvious main subject.
+    // Gemini 2.5 models use thinkingBudget; Gemini 3.x models use
+    // thinkingLevel — sending the wrong one for a given model is a hard
+    // error, so pick based on the model name. (-1 = dynamic/model-decides
+    // budget for 2.5; 'high' = most thorough reasoning for 3.x.)
+    const thinkingConfig = model.startsWith('gemini-3')
+      ? { thinkingLevel: 'high' }
+      : { thinkingBudget: -1 };
     const body = {
       contents:[{ parts:[ {text:promptText}, {inline_data:{mime_type:mimeType, data:base64}} ] }],
       // Low temperature on purpose: this is a factual "describe exactly what\'s
       // in this image" task, not creative writing. A high temperature was
       // making titles/keywords drift away from what\'s actually visible.
-      generationConfig:{ responseMimeType:'application/json', responseSchema:schema, temperature:0.2 }
+      generationConfig:{ responseMimeType:'application/json', responseSchema:schema, temperature:0.2, thinkingConfig:thinkingConfig }
     };
     const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     if(!resp.ok){
@@ -2153,7 +2163,14 @@
     // to precisely match what\'s in the image, not just be generically
     // plausible. This instruction (plus the low temperature set on the API
     // call) is what keeps output grounded instead of generic/hallucinated.
-    const accuracyInstruction = 'Examine the image closely before answering: identify the exact subject(s), their specific attributes (species/type, color, material, pose, action), the setting, lighting, and composition. Every word you produce must correspond to something actually visible in this exact image — never guess, generalize, or reuse boilerplate phrasing that would fit many different images equally well. If you are not confident a detail is present, leave it out rather than assume it.\n';
+    const accuracyInstruction =
+      'Study the image carefully and systematically before answering — do not stop at the first obvious subject. Go through it layer by layer:\n' +
+      '  1) Main subject(s): exact type/species/object, color, material, pose, action, expression.\n' +
+      '  2) Secondary/background elements: anything else visible, even small or partially shown — other objects, people, text, patterns, environment details.\n' +
+      '  3) Setting & context: location, indoor/outdoor, time of day, season, weather if visible.\n' +
+      '  4) Visual qualities: dominant and accent colors actually present, lighting (natural/artificial, direction, harsh/soft), texture, composition/framing, depth of field.\n' +
+      '  5) Mood/concept: the feeling or idea the image conveys (only if genuinely supported by what\'s shown).\n' +
+      'Use this full picture to write metadata that covers both the big picture and the smaller supporting details — not just a generic summary of the main subject. Every word must correspond to something actually visible in this exact image — never guess, generalize, or reuse boilerplate phrasing that would fit many different images equally well. If unsure a detail is present, leave it out rather than assume it.\n';
 
     if(state.platform === 'Adobe Stock'){
       const titleLen = document.getElementById('titleLen').value;
