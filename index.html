@@ -2195,13 +2195,18 @@
     // plausible. This instruction (plus the low temperature set on the API
     // call) is what keeps output grounded instead of generic/hallucinated.
     const accuracyInstruction =
-      'Study the image carefully and systematically before answering — do not stop at the first obvious subject. Go through it layer by layer:\n' +
-      '  1) Main subject(s): exact type/species/object, color, material, pose, action, expression.\n' +
-      '  2) Secondary/background elements: anything else visible, even small or partially shown — other objects, people, text, patterns, environment details.\n' +
-      '  3) Setting & context: location, indoor/outdoor, time of day, season, weather if visible.\n' +
-      '  4) Visual qualities: dominant and accent colors actually present, lighting (natural/artificial, direction, harsh/soft), texture, composition/framing, depth of field.\n' +
-      '  5) Mood/concept: the feeling or idea the image conveys (only if genuinely supported by what\'s shown).\n' +
-      'Use this full picture to write metadata that covers both the big picture and the smaller supporting details — not just a generic summary of the main subject. Every word must correspond to something actually visible in this exact image — never guess, generalize, or reuse boilerplate phrasing that would fit many different images equally well. If unsure a detail is present, leave it out rather than assume it.\n';
+      'Study the image carefully and systematically before answering — do not stop at the first obvious subject, and do not settle for a shallow, generic pass. Examine every one of these layers in detail:\n' +
+      '  1) MAIN SUBJECT: exact type/species/object, color(s), material, pose, facial expression if any, what it is doing.\n' +
+      '  2) SECONDARY/BACKGROUND ELEMENTS: everything else visible, even small, blurred, or partially shown — other objects, people, text, patterns, props, environment details behind or around the subject.\n' +
+      '  3) SETTING & CONTEXT: location/place, indoor or outdoor, time of day, season, weather, cultural/geographic cues if visible.\n' +
+      '  4) LIGHTING: natural or artificial, direction (front/side/back-lit), quality (soft/diffused vs hard/harsh), color temperature (warm/cool), time-of-day light (golden hour, overcast, studio light, neon, etc.) — describe what the light is actually doing in this image.\n' +
+      '  5) BACKGROUND: what it consists of (plain/studio, blurred bokeh, busy/detailed, outdoor scenery, textured surface, etc.) and how it relates to the subject.\n' +
+      '  6) FOCUS & DEPTH: what is sharp vs blurred, shallow vs deep depth of field, any bokeh, motion blur, or soft focus — and where the eye is drawn.\n' +
+      '  7) ANGLE & COMPOSITION: camera angle/perspective (eye-level, low-angle, high-angle/top-down, close-up, macro, wide shot, aerial), framing, symmetry, rule-of-thirds, negative space.\n' +
+      '  8) MOVEMENT: is the subject static/still, or is there motion (walking, running, flying, flowing, splashing, wind-blown) — and is that motion frozen sharply or shown as motion blur/streaks.\n' +
+      '  9) COLOR & TEXTURE: dominant and accent colors actually present, surface textures/materials visible.\n' +
+      '  10) MOOD/CONCEPT: the feeling or idea the image conveys (only if genuinely supported by what\'s shown).\n' +
+      'This checklist is for your own thorough analysis — but it only helps if it actually shows up in the output: make sure the title/description AND the keyword list concretely reflect the specific lighting, background, focus, angle, and movement details you observed (not just the main subject). Every word must correspond to something actually visible in this exact image — never guess, generalize, or reuse boilerplate phrasing that would fit many different images equally well. If unsure a detail is present, leave it out rather than assume it.\n';
 
     // f.bgType comes from actual pixel sampling done in JS (not a guess by the
     // model), so this is a verified fact we can state directly rather than
@@ -2230,7 +2235,7 @@
       p += 'KEYWORDS rules:\n';
       p += '- Give exactly '+kwCount+' keywords (Adobe\'s max limit is 49).\n';
       p += '- Put the most important and relevant keywords first (the first 10 keywords carry the most weight in Adobe\'s search ranking).\n';
-      p += '- Mix general and specific keywords: cover subject, action, concept/mood, setting (indoor/outdoor, day/night), viewpoint/camera angle, color, number of people, and where relevant, model demographic info (e.g. gender, age group, ethnicity).\n';
+      p += '- Mix general and specific keywords: cover subject, action, concept/mood, setting (indoor/outdoor, day/night), lighting (e.g. golden hour, backlit, studio light, soft/harsh), background type (e.g. blurred, bokeh, plain, busy), focus/depth of field (e.g. shallow focus, sharp, motion blur), camera angle/viewpoint (e.g. close-up, aerial, low-angle), movement (e.g. running, flowing, still/static), color, number of people, and where relevant, model demographic info (e.g. gender, age group, ethnicity). Don\'t skip the lighting/background/focus/angle/movement keywords — they matter as much as the subject itself for search.\n';
       p += '- Think like a buyer — choose keywords based on exactly what a customer would search to find this image.\n';
       p += '- Only give keywords directly relevant to the image; irrelevant keywords can get the content rejected by Adobe.\n';
       p += '- Use each keyword only once, never repeat a keyword, and don\'t include any trademark/brand/personal info.\n';
@@ -2251,11 +2256,11 @@
       p += 'DESCRIPTION rules (this acts as the title/description on Shutterstock):\n';
       p += '- Write one complete, unique, detailed sentence or phrase — never just a list of keywords.\n';
       p += '- Where possible, cover Who, What, When, Where, Why, and convey the image\'s mood/emotion.\n';
-      p += '- Add relevant details like angle, focus if applicable, but don\'t use any links, specific camera/lens info, or trademarks, and don\'t repeat any word or phrase.\n';
+      p += '- Where relevant, weave in specific lighting (e.g. golden hour, backlit, soft studio light), background (e.g. blurred bokeh, plain studio, busy street), focus/depth of field (e.g. shallow focus, sharp throughout), camera angle (e.g. close-up, aerial, low-angle), and movement (e.g. mid-motion, frozen action, still) — but don\'t use any links, specific camera/lens model names, or trademarks, and don\'t repeat any word or phrase.\n';
       p += '- Keep it to approximately '+descLen+' characters.\n';
       p += 'KEYWORDS rules:\n';
       p += '- Give exactly '+kwCount+' keywords (Shutterstock\'s limit is between 7 and 50).\n';
-      p += '- Use specific, precise, and unique/compound words directly related to the image, plus broader topics/feelings/concepts/associations.\n';
+      p += '- Use specific, precise, and unique/compound words directly related to the image, plus broader topics/feelings/concepts/associations. Make sure to include keywords for lighting (e.g. golden hour, backlit, soft light), background type (e.g. blurred, bokeh, plain, busy), focus/depth of field (e.g. shallow focus, sharp, motion blur), camera angle (e.g. close-up, aerial, low-angle), and movement (e.g. running, flowing, still) whenever those are actually present in the image — not just subject keywords.\n';
       p += '- Don\'t repeat any keyword, don\'t add irrelevant words, and don\'t include any links/camera info/trademarks.\n';
       if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
       p += 'CATEGORY rules:\n';
