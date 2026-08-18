@@ -2238,6 +2238,7 @@
       p += '- Build it around this formula: [Main Subject] + [Action/Context] + [Style/Design Type, if it\'s a vector/icon/illustration/3D render/mockup] + [Color/Composition detail]. Put the most important 4-7 words first — that\'s what gets read/weighted most.\n';
       p += '- If this is a vector/icon/logo/illustration/3D-render/design asset, name that style explicitly (e.g. "Minimalist vector icon of a green plant sprout for agriculture branding" — NOT "Vector icon, agriculture, plant, leaf, green, logo design"). If it\'s a photo, describe the real scene naturally (e.g. "Classic vintage sports car parked in a studio with a clean minimalist background" — NOT "Car, sports car, old car, vintage, fast").\n';
       p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
+      p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar — go straight into the actual description. Don\'t use ALL CAPS, exclamation marks, or a trailing period — write it as a natural descriptive phrase, not a sentence with terminal punctuation.\n';
       p += 'KEYWORDS rules:\n';
       p += '- Give exactly '+kwCount+' keywords (Adobe\'s max limit is 49). No keyword stuffing or spamming irrelevant/trending words just to get more tags — Adobe\'s moderation can reject or suspend for this.\n';
       p += '- Order matters: the first 5-10 keywords must be the single most relevant, primary search terms a buyer would actually type — put those before anything broader.\n';
@@ -2266,6 +2267,7 @@
       p += '- Don\'t mention any personally identifiable information (PII) — such as names, addresses, phone numbers, emails — in the description or keywords.\n';
       p += 'DESCRIPTION rules (this acts as the title/description on Shutterstock):\n';
       p += '- Write one complete, unique, detailed sentence or phrase — never just a list of keywords.\n';
+      p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar — go straight into the actual description.\n';
       p += '- Where possible, cover Who, What, When, Where, Why, and convey the image\'s mood/emotion.\n';
       p += '- Where relevant, weave in specific lighting (e.g. golden hour, backlit, soft studio light), background (e.g. blurred bokeh, plain studio, busy street), focus/depth of field (e.g. shallow focus, sharp throughout), camera angle (e.g. close-up, aerial, low-angle), and movement (e.g. mid-motion, frozen action, still) — but don\'t use any links, specific camera/lens model names, or trademarks, and don\'t repeat any word or phrase.\n';
       p += '- Keep it to approximately '+descLen+' characters.\n';
@@ -2278,7 +2280,9 @@
       p += 'CATEGORY rules:\n';
       p += '- Pick the 1 (and up to 2, if relevant) best-matching category name(s) from the Shutterstock list below — don\'t give any name outside this list:\n';
       p += SHUTTERSTOCK_CATEGORIES.join(', ') + '\n';
-      p += 'Respond only in JSON, in this format: {"description":"...", "keywords":["...","..."], "categories":["...","..."]} (the categories array should have 1 or 2 category names).';
+      p += 'ILLUSTRATION FLAG:\n';
+      p += '- Determine whether this asset is an illustration/vector/digital-art/3D-render/icon/graphic design piece (isIllustration: true) as opposed to a real photograph (isIllustration: false). Judge this from the actual visual style, not the file format.\n';
+      p += 'Respond only in JSON, in this format: {"description":"...", "keywords":["...","..."], "categories":["...","..."], "isIllustration": true or false} (the categories array should have 1 or 2 category names).';
     }
     return p;
   }
@@ -2299,7 +2303,7 @@
     if(state.platform === 'Adobe Stock'){
       return { type:'OBJECT', properties:{ title:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, category:{type:'INTEGER'} }, required:['title','keywords','category'] };
     }
-    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, categories:{type:'ARRAY', items:{type:'STRING'}} }, required:['description','keywords','categories'] };
+    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, categories:{type:'ARRAY', items:{type:'STRING'}}, isIllustration:{type:'BOOLEAN'} }, required:['description','keywords','categories','isIllustration'] };
   }
   const PROMPT_SCHEMA = {
     type:'OBJECT',
@@ -2372,7 +2376,8 @@
             title:'',
             description: applyPrefixSuffix(json.description||''),
             keywords: Array.isArray(json.keywords) ? json.keywords : [],
-            categories: validCats
+            categories: validCats,
+            isIllustration: json.isIllustration === true
           };
         }
       }else{
@@ -2475,8 +2480,8 @@
         rows = [['Filename','Title','Keywords','Category']];
         done.forEach(f=>{ rows.push([f.name, f.result.title, (f.result.keywords||[]).join(', '), f.result.category||'']); });
       }else{
-        rows = [['Filename','Description','Keywords','Categories']];
-        done.forEach(f=>{ rows.push([f.name, f.result.description, (f.result.keywords||[]).join(', '), (f.result.categories||[]).join(', ')]); });
+        rows = [['Filename','Description','Keywords','Categories','Illustration']];
+        done.forEach(f=>{ rows.push([f.name, f.result.description, (f.result.keywords||[]).join(', '), (f.result.categories||[]).join(', '), f.result.isIllustration ? 'Yes' : 'No']); });
       }
     }else{
       rows = [['Filename','Prompt']];
