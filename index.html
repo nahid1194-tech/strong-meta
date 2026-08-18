@@ -1951,18 +1951,23 @@
     }
   }
 
-  // Ordered for ACCURACY first, not just quota size: gemini-2.5-flash and
-  // gemini-2.5-pro give meaningfully better, more precisely-grounded image
-  // analysis than the "lite" models, which is what actually matters for
-  // metadata that needs to rank/sell on Adobe Stock/Shutterstock. flash-lite
-  // and 3.1-flash-lite are kept as fallbacks (their own separate quota pools)
-  // so a big batch still keeps moving once the stronger models hit their
-  // (smaller) free-tier limits — but they\'re no longer tried first.
+  // Ordered for ACCURACY first, not just quota size: the newer/larger models
+  // give meaningfully better, more precisely-grounded image analysis than the
+  // "lite" models, which is what actually matters for metadata that needs to
+  // rank/sell on Adobe Stock/Shutterstock. The "lite" models are kept at the
+  // end as fallbacks — each one is its own separate free-tier quota pool, so
+  // a big batch keeps moving once the stronger models hit their (smaller)
+  // limits, but they\'re not tried first.
   const GEMINI_MODELS = [
+    'gemini-3.7-flash',       // newest, strongest Flash-tier model (released Aug 13, 2026)
+    'gemini-3.6-flash',       // previous-gen Flash, still strong, generous free tier
+    'gemini-2.5-pro',         // most capable reasoning, but the smallest free quota
+    'gemini-3.5-flash',
     'gemini-2.5-flash',
-    'gemini-2.5-pro',
+    'gemini-3-flash-preview',
     'gemini-3.1-flash-lite',
-    'gemini-2.5-flash-lite'
+    'gemini-3.5-flash-lite',
+    'gemini-2.5-flash-lite'   // highest-volume fallback, weakest analysis quality
   ];
 
   async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema, model){
