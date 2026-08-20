@@ -323,6 +323,13 @@
   }
   .card-topbar .regen-btn:hover{color:var(--ink);border-color:var(--ink-soft2,var(--card-line));}
   .card-topbar .regen-btn svg{width:11px;height:11px;flex-shrink:0;}
+  .quality-badge{
+    display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:7px;flex-shrink:0;
+    font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:default;
+  }
+  .quality-badge.quality-good{background:rgba(52,211,153,.16);color:#34D399;}
+  .quality-badge.quality-mid{background:rgba(251,191,36,.16);color:#FBBF24;}
+  .quality-badge.quality-low{background:rgba(248,113,113,.18);color:#F87171;}
   .card-main{display:grid;grid-template-columns:96px 1fr;}
   @media (max-width:520px){.card-main{grid-template-columns:1fr;}}
   .card-thumb{
@@ -392,8 +399,26 @@
     background:#16101F;border:1px solid var(--card-line);border-radius:16px;padding:26px;width:100%;max-width:420px;
     box-shadow:0 20px 60px rgba(0,0,0,.5);
   }
+  .modal.modal-wide{max-width:600px;max-height:85vh;overflow-y:auto;}
   .modal h3{margin:0 0 6px;font-size:16.5px;}
   .modal p{margin:0 0 16px;font-size:13px;color:var(--text-soft);line-height:1.55;}
+  .qd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+  .qd-stat{background:var(--card);border:1px solid var(--card-line);border-radius:10px;padding:12px;text-align:center;}
+  .qd-stat .num{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;}
+  .qd-stat .lbl{font-size:10.5px;color:var(--text-soft);margin-top:3px;}
+  .qd-stat.good .num{color:#34D399;}
+  .qd-stat.mid .num{color:#FBBF24;}
+  .qd-stat.low .num{color:#F87171;}
+  .qd-worst-row{
+    display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--card-line);font-size:12.5px;
+  }
+  .qd-worst-row:last-child{border-bottom:none;}
+  .qd-worst-row .qd-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);}
+  .qd-worst-row button{
+    background:var(--card);border:1px solid var(--card-line);color:var(--text-soft);border-radius:7px;
+    padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;
+  }
+  .qd-worst-row button:hover{color:var(--text);}
   .modal input{
     padding:10px 12px;border:1px solid var(--card-line);border-radius:10px;font-size:13.5px;
     font-family:'JetBrains Mono',monospace;outline:none;background:var(--paper);color:var(--text);
@@ -628,6 +653,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
           Export CSV
         </button>
+        <button class="btn btn-ghost" id="qualityDashBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l3-4 3 2 4-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Quality Dashboard
+        </button>
       </div>
     </div>
 
@@ -689,8 +718,19 @@
   </div>
 </div>
 
-<div class="toast" id="toast">Copied</div>
+<div class="modal-bg" id="qualityModalBg">
+  <div class="modal modal-wide">
+    <h3>Quality Dashboard</h3>
+    <p>Auto-scored on every generation — combining the model's own honest self-check with code-verified structural checks (length, keyword count/uniqueness/ordering/formatting). Nothing here is just "generated quickly and accepted" — low scores are flagged so you know exactly what to regenerate.</p>
+    <div id="qualitySummary"></div>
+    <div id="qualityWorstList"></div>
+    <div class="row" style="margin-top:16px;">
+      <button class="btn btn-ghost" id="qualityModalClose">Close</button>
+    </div>
+  </div>
+</div>
 
+<div class="toast" id="toast">Copied</div>
 <script>
 (function(){
   "use strict";
@@ -1650,6 +1690,7 @@
     document.getElementById('clearAllBtn').disabled = n===0;
     document.getElementById('generateAllBtn').disabled = n===0 || state.uploadingBatch;
     document.getElementById('exportCsvBtn').disabled = !state.files.some(f=>f.status==='done');
+    document.getElementById('qualityDashBtn').disabled = !state.files.some(f=>f.status==='done');
     const doneCount = state.files.filter(f=>f.status==='done').length;
     const errorCount = state.files.filter(f=>f.status==='error' || f.noPreview).length;
     const processingCount = state.files.filter(f=>f._processing).length;
@@ -1731,6 +1772,24 @@
     return '<div class="status-pill status-pending">Pending</div>';
   }
 
+  function qualityBadgeHtml(f){
+    if(f.status !== 'done' || typeof f.quality !== 'number') return '';
+    const q = f.quality;
+    const tier = q>=85 ? 'good' : (q>=60 ? 'mid' : 'low');
+    const label = q>=85 ? 'Excellent' : (q>=60 ? 'Needs review' : 'Low quality — regenerate');
+    const bd = f.qualityBreakdown || {};
+    const tooltip = 'Quality: '+q+'/100 ('+label+')\n'+
+      'Image relevance: '+bd.imageRelevance+'/30\n'+
+      'Keyword relevance: '+bd.keywordRelevance+'/15\n'+
+      'Title/description quality: '+bd.titleQuality+'/15\n'+
+      'Keyword uniqueness: '+bd.keywordUniqueness+'/10\n'+
+      'Keyword ordering: '+bd.keywordOrdering+'/10\n'+
+      'Keyword formatting: '+bd.keywordFormatting+'/10\n'+
+      'Character count: '+bd.characterCount+'/5\n'+
+      'Keyword count: '+bd.keywordCount+'/5';
+    return '<span class="quality-badge quality-'+tier+'" title="'+escapeHtml(tooltip)+'">Quality: '+q+'/100</span>';
+  }
+
   function buildCard(f){
     const card = document.createElement('div');
     card.className = 'card';
@@ -1741,6 +1800,7 @@
     topbar.className = 'card-topbar';
     topbar.innerHTML = statusPillHtml(f) +
       '<span class="fname">'+escapeHtml(f.name)+'</span>' +
+      qualityBadgeHtml(f) +
       ((f.noPreview || f._processing) ? '' : '<button class="regen-btn" title="Regenerate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 9A8 8 0 0119.5 9M19.5 15A8 8 0 014.5 15" stroke-linecap="round"/></svg>Regenerate</button>') +
       '<button class="remove-x" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>';
     topbar.querySelector('.remove-x').onclick = ()=>removeFile(f.id);
@@ -2195,6 +2255,104 @@
   }
 
 
+  // Composite 0-100 quality score for a generated result. Combines the model's
+  // own honest self-grade (image relevance, keyword relevance — things that
+  // genuinely require understanding the image, so we ask the model itself
+  // right after it writes the metadata) with deterministic, code-verified
+  // structural checks (character count, keyword count, uniqueness, ordering,
+  // formatting) that don't need AI judgment at all. Weights sum to 100:
+  //   image relevance (AI)      x3  -> up to 30
+  //   keyword relevance (AI)    x1.5-> up to 15
+  //   title/description quality     -> up to 15
+  //   keyword uniqueness             -> up to 10
+  //   keyword ordering                -> up to 10
+  //   keyword formatting               -> up to 10
+  //   character count                  -> up to 5
+  //   keyword count                     -> up to 5
+  function computeQualityScore(f){
+    const r = f.result;
+    if(!r){ f.quality = null; return; }
+    const cfg = PLATFORM_CONFIG[state.platform];
+    const headline = state.platform === 'Adobe Stock' ? (r.title||'') : (r.description||'');
+    const keywords = Array.isArray(r.keywords) ? r.keywords : [];
+    const breakdown = {};
+
+    // --- AI self-grades (already 0-10, honest per-image judgment) ---
+    const imageRelevance = (typeof r.aiImageRelevance === 'number') ? r.aiImageRelevance : 7; // neutral default if missing (e.g. Mistral/OpenAI don't return this yet)
+    const keywordRelevance = (typeof r.aiKeywordRelevance === 'number') ? r.aiKeywordRelevance : 7;
+    breakdown.imageRelevance = Math.round(imageRelevance*3*10)/10;
+    breakdown.keywordRelevance = Math.round(keywordRelevance*1.5*10)/10;
+
+    // --- Title/description quality: length target + formatting red flags ---
+    let titleScore = 15;
+    const wordCount = headline.trim().split(/\s+/).filter(Boolean).length;
+    if(!headline.trim()) titleScore = 0;
+    else{
+      if(wordCount < 4) titleScore -= 5; // too short to be descriptive
+      if(/^(a|an|the)\s+(photo|image|picture)\s+of\b/i.test(headline.trim())) titleScore -= 6; // filler opening
+      if(/^[A-Z0-9\s.,!?'"-]+$/.test(headline) && /[A-Z]{4,}/.test(headline)) titleScore -= 4; // ALL CAPS shouting
+      if(/[.!]\s*$/.test(headline.trim())) titleScore -= 2; // trailing period/exclamation
+      const limit = state.platform === 'Adobe Stock' ? cfg.titleMax : cfg.descMax;
+      if(headline.length > limit) titleScore -= 5; // over the platform's hard limit
+    }
+    breakdown.titleQuality = Math.max(0, titleScore);
+
+    // --- Keyword uniqueness: % of keywords that are NOT case-insensitive duplicates ---
+    let uniquenessScore = 10;
+    if(keywords.length){
+      const seen = new Set();
+      let dupes = 0;
+      keywords.forEach(k=>{ const kk=(k||'').trim().toLowerCase(); if(seen.has(kk)) dupes++; else seen.add(kk); });
+      uniquenessScore = Math.max(0, 10 - Math.round((dupes/keywords.length)*10));
+    }else uniquenessScore = 0;
+    breakdown.keywordUniqueness = uniquenessScore;
+
+    // --- Keyword ordering: do the words that also appear in the title/description
+    // (i.e. the core, most obviously relevant terms) show up early in the list,
+    // the way Adobe/Shutterstock's own ranking weights the first keywords? ---
+    let orderingScore = 10;
+    if(keywords.length >= 4){
+      const headlineWords = new Set(headline.toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>2));
+      const half = Math.ceil(keywords.length/2);
+      const firstHalf = keywords.slice(0, half);
+      const matchesInFirstHalf = firstHalf.filter(k=> headlineWords.has((k||'').trim().toLowerCase())).length;
+      const totalMatches = keywords.filter(k=> headlineWords.has((k||'').trim().toLowerCase())).length;
+      if(totalMatches === 0) orderingScore = 7; // no overlap to judge from — neutral, not penalized
+      else orderingScore = Math.round((matchesInFirstHalf/totalMatches)*10);
+    }
+    breakdown.keywordOrdering = orderingScore;
+
+    // --- Keyword formatting: single-word compliance + non-empty + reasonable length ---
+    let formattingScore = 10;
+    if(keywords.length){
+      const bad = keywords.filter(k=>{
+        const t = (k||'').trim();
+        return !t || /\s/.test(t) || t.length > 30;
+      }).length;
+      formattingScore = Math.max(0, 10 - Math.round((bad/keywords.length)*10));
+    }else formattingScore = 0;
+    breakdown.keywordFormatting = formattingScore;
+
+    // --- Character count: headline length within the platform's configured range ---
+    let charScore = 5;
+    if(!headline.trim()) charScore = 0;
+    else{
+      const limit = state.platform === 'Adobe Stock' ? cfg.titleMax : cfg.descMax;
+      const min = state.platform === 'Adobe Stock' ? 20 : cfg.descMin;
+      if(headline.length > limit || headline.length < min) charScore = 2;
+    }
+    breakdown.characterCount = charScore;
+
+    // --- Keyword count: within the configured min/max for this platform ---
+    let countScore = 5;
+    if(keywords.length < cfg.kwMin || keywords.length > cfg.kwMax) countScore = 1;
+    breakdown.keywordCount = countScore;
+
+    const total = Object.values(breakdown).reduce((a,b)=>a+b,0);
+    f.quality = Math.max(0, Math.min(100, Math.round(total)));
+    f.qualityBreakdown = breakdown;
+  }
+
   function buildMetadataPrompt(f){
     const cfg = PLATFORM_CONFIG[state.platform];
     const kwCount = document.getElementById('kwCount').value;
@@ -2270,7 +2428,8 @@
       p += 'CATEGORY rules:\n';
       p += '- Pick exactly one category from the Adobe Stock list below that best matches the image, and give only its id (number):\n';
       p += ADOBE_CATEGORIES.map(c=>c.id+' = '+c.name).join(', ') + '\n';
-      p += 'Respond only in JSON, in this format: {"title":"...", "keywords":["...","..."], "category":<id number>}.';
+      p += 'SELF-CHECK (do this last, after writing the title/keywords above): honestly grade your own output against the actual image, on a 0-10 scale each: "imageRelevance" — does the title+keywords genuinely, specifically match what\'s in THIS image (10 = perfectly specific and accurate, 0 = generic/could describe almost any image); "keywordRelevance" — are the keywords precise and directly tied to this image with no filler/irrelevant ones (10 = every keyword earns its place, 0 = mostly generic filler). Be a strict, honest grader, not generous — this score is used to flag low-quality results for regeneration.\n';
+      p += 'Respond only in JSON, in this format: {"title":"...", "keywords":["...","..."], "category":<id number>, "imageRelevance":<0-10>, "keywordRelevance":<0-10>}.';
     } else {
       const descLen = document.getElementById('descLen').value;
       p += 'You are a metadata specialist for Shutterstock. Create metadata for this image following Shutterstock\'s official contributor guidelines.\n';
@@ -2297,7 +2456,8 @@
       p += SHUTTERSTOCK_CATEGORIES.join(', ') + '\n';
       p += 'ILLUSTRATION FLAG:\n';
       p += '- Determine whether this asset is an illustration/vector/digital-art/3D-render/icon/graphic design piece (isIllustration: true) as opposed to a real photograph (isIllustration: false). Judge this from the actual visual style, not the file format.\n';
-      p += 'Respond only in JSON, in this format: {"description":"...", "keywords":["...","..."], "categories":["...","..."], "isIllustration": true or false} (the categories array should have 1 or 2 category names).';
+      p += 'SELF-CHECK (do this last, after writing the description/keywords above): honestly grade your own output against the actual image, on a 0-10 scale each: "imageRelevance" — does the description+keywords genuinely, specifically match what\'s in THIS image (10 = perfectly specific and accurate, 0 = generic/could describe almost any image); "keywordRelevance" — are the keywords precise and directly tied to this image with no filler/irrelevant ones (10 = every keyword earns its place, 0 = mostly generic filler). Be a strict, honest grader, not generous — this score is used to flag low-quality results for regeneration.\n';
+      p += 'Respond only in JSON, in this format: {"description":"...", "keywords":["...","..."], "categories":["...","..."], "isIllustration": true or false, "imageRelevance":<0-10>, "keywordRelevance":<0-10>} (the categories array should have 1 or 2 category names).';
     }
     return p;
   }
@@ -2316,9 +2476,9 @@
 
   function currentMetadataSchema(){
     if(state.platform === 'Adobe Stock'){
-      return { type:'OBJECT', properties:{ title:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, category:{type:'INTEGER'} }, required:['title','keywords','category'] };
+      return { type:'OBJECT', properties:{ title:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, category:{type:'INTEGER'}, imageRelevance:{type:'INTEGER'}, keywordRelevance:{type:'INTEGER'} }, required:['title','keywords','category','imageRelevance','keywordRelevance'] };
     }
-    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, categories:{type:'ARRAY', items:{type:'STRING'}}, isIllustration:{type:'BOOLEAN'} }, required:['description','keywords','categories','isIllustration'] };
+    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, categories:{type:'ARRAY', items:{type:'STRING'}}, isIllustration:{type:'BOOLEAN'}, imageRelevance:{type:'INTEGER'}, keywordRelevance:{type:'INTEGER'} }, required:['description','keywords','categories','isIllustration','imageRelevance','keywordRelevance'] };
   }
   const PROMPT_SCHEMA = {
     type:'OBJECT',
@@ -2378,12 +2538,15 @@
         const promptText = buildMetadataPrompt(f);
         const schema = currentMetadataSchema();
         const json = await callAIWithFailover(f.base64, f.mimeType, promptText, schema);
+        const clampScore = (v)=> Math.max(0, Math.min(10, Number(v)||0));
         if(state.platform === 'Adobe Stock'){
           f.result = {
             title: applyPrefixSuffix(json.title||''),
             description: '',
             keywords: Array.isArray(json.keywords) ? json.keywords : [],
-            category: (function(){ const cid = Number(json.category); return ADOBE_CATEGORIES.some(c=>c.id===cid) ? cid : ''; })()
+            category: (function(){ const cid = Number(json.category); return ADOBE_CATEGORIES.some(c=>c.id===cid) ? cid : ''; })(),
+            aiImageRelevance: clampScore(json.imageRelevance),
+            aiKeywordRelevance: clampScore(json.keywordRelevance)
           };
         }else{
           const validCats = Array.isArray(json.categories) ? json.categories.filter(c=>SHUTTERSTOCK_CATEGORIES.includes(c)).slice(0,2) : [];
@@ -2392,9 +2555,12 @@
             description: applyPrefixSuffix(json.description||''),
             keywords: Array.isArray(json.keywords) ? json.keywords : [],
             categories: validCats,
-            isIllustration: json.isIllustration === true
+            isIllustration: json.isIllustration === true,
+            aiImageRelevance: clampScore(json.imageRelevance),
+            aiKeywordRelevance: clampScore(json.keywordRelevance)
           };
         }
+        computeQualityScore(f);
       }else{
         const promptText = buildPromptPrompt();
         const json = await callAIWithFailover(f.base64, f.mimeType, promptText, PROMPT_SCHEMA);
@@ -2444,9 +2610,17 @@
 
   function showCompletionModal(doneCount, totalCount){
     const failedCount = totalCount - doneCount;
+    const scored = state.files.filter(f=>f.status==='done' && typeof f.quality==='number');
+    const lowCount = scored.filter(f=>f.quality<60).length;
+    const midCount = scored.filter(f=>f.quality>=60 && f.quality<85).length;
     document.getElementById('doneModalTitle').textContent = 'Generation complete ✓';
-    document.getElementById('doneModalText').textContent =
-      doneCount+' / '+totalCount+' images had their metadata generated'+(failedCount>0 ? ' ('+failedCount+' failed — you can try again with "Retry Failed")' : '')+'. Download the CSV now, or later from the "Export CSV" button in the toolbar.';
+    let msg = doneCount+' / '+totalCount+' images had their metadata generated'+(failedCount>0 ? ' ('+failedCount+' failed — you can try again with "Retry Failed")' : '')+'. Download the CSV now, or later from the "Export CSV" button in the toolbar.';
+    if(lowCount>0){
+      msg += ' ⚠️ '+lowCount+' result'+(lowCount>1?'s':'')+' scored below 60/100 — check the Quality Dashboard before uploading, these likely need regenerating.';
+    }else if(midCount>0){
+      msg += ' '+midCount+' result'+(midCount>1?'s':'')+' could use a review (60-84/100) — see the Quality Dashboard.';
+    }
+    document.getElementById('doneModalText').textContent = msg;
     document.getElementById('doneModalBg').classList.add('open');
   }
   document.getElementById('doneModalDownload').onclick = ()=>{
@@ -2514,6 +2688,49 @@
     URL.revokeObjectURL(url);
   }
   document.getElementById('exportCsvBtn').onclick = exportCsv;
+
+  function renderQualityDashboard(){
+    const done = state.files.filter(f=>f.status==='done' && typeof f.quality==='number');
+    const summary = document.getElementById('qualitySummary');
+    const worstList = document.getElementById('qualityWorstList');
+    if(done.length===0){
+      summary.innerHTML = '<p style="color:var(--text-soft);font-size:13px;">No scored results yet — generate some metadata first.</p>';
+      worstList.innerHTML = '';
+      return;
+    }
+    const avg = Math.round(done.reduce((a,f)=>a+f.quality,0)/done.length);
+    const good = done.filter(f=>f.quality>=85).length;
+    const mid = done.filter(f=>f.quality>=60 && f.quality<85).length;
+    const low = done.filter(f=>f.quality<60).length;
+    const avgTier = avg>=85?'good':(avg>=60?'mid':'low');
+    summary.innerHTML =
+      '<div class="qd-stats">'+
+        '<div class="qd-stat '+avgTier+'"><div class="num">'+avg+'</div><div class="lbl">Avg Quality</div></div>'+
+        '<div class="qd-stat good"><div class="num">'+good+'</div><div class="lbl">Excellent (85+)</div></div>'+
+        '<div class="qd-stat mid"><div class="num">'+mid+'</div><div class="lbl">Needs review (60-84)</div></div>'+
+        '<div class="qd-stat low"><div class="num">'+low+'</div><div class="lbl">Low quality (&lt;60)</div></div>'+
+      '</div>';
+    const worst = done.slice().sort((a,b)=>a.quality-b.quality).slice(0,10).filter(f=>f.quality<85);
+    if(worst.length===0){
+      worstList.innerHTML = '<p style="color:var(--text-soft);font-size:13px;">Everything scored 85+ — nothing flagged for regeneration. 🎉</p>';
+    }else{
+      worstList.innerHTML = '<div style="font-size:12px;color:var(--text-soft);margin-bottom:6px;font-weight:600;">LOWEST-SCORING — REGENERATE THESE</div>' +
+        worst.map(f=>'<div class="qd-worst-row"><span class="quality-badge quality-'+(f.quality>=60?'mid':'low')+'">'+f.quality+'/100</span><span class="qd-name">'+escapeHtml(f.name)+'</span><button data-id="'+f.id+'">Regenerate</button></div>').join('');
+      worstList.querySelectorAll('button[data-id]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const id = btn.dataset.id;
+          document.getElementById('qualityModalBg').classList.remove('open');
+          generateForFile(id, true);
+        };
+      });
+    }
+  }
+  document.getElementById('qualityDashBtn').onclick = ()=>{
+    renderQualityDashboard();
+    document.getElementById('qualityModalBg').classList.add('open');
+  };
+  document.getElementById('qualityModalClose').onclick = ()=> document.getElementById('qualityModalBg').classList.remove('open');
+  document.getElementById('qualityModalBg').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
   /* ---------------- INIT ---------------- */
   renderPlatformGrid();
