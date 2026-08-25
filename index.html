@@ -540,6 +540,10 @@
             <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <div class="collapsible-body" id="body-options">
+          <div class="field" style="margin-bottom:14px;">
+            <div class="field-label">Parallel Generations <span class="val" id="concurrencyVal"></span></div>
+            <input type="range" id="concurrencySlider" min="1" max="12" value="6">
+          </div>
           <div class="toggle-row" style="border-top:none;">
             <span class="lbl">Prefix</span>
             <label class="switch"><input type="checkbox" id="toggle-prefix"><span class="slider-pill"></span></label>
@@ -769,6 +773,7 @@
     activeKeyIndex: 0,
     stopRequested: false,
     uploadingBatch: false,
+    concurrency: (function(){ const v = Number(localStorage.getItem('gen-concurrency')); return (v>=1 && v<=12) ? v : 6; })(),
     activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider\'s keys are actually used
     activeTab: "metadata",
     platform: "Adobe Stock",
@@ -1026,7 +1031,16 @@
     if(pl && plVal) plVal.textContent = '~ ' + pl.value + ' words';
     const plCur = document.getElementById('promptLenCurVal');
     if(pl && plCur) plCur.textContent = '~ ' + pl.value + ' words';
+    const cc = document.getElementById('concurrencySlider');
+    if(cc) document.getElementById('concurrencyVal').textContent = cc.value + (cc.value==='1' ? ' image at once' : ' images at once');
   }
+  const concurrencySlider = document.getElementById('concurrencySlider');
+  concurrencySlider.value = state.concurrency;
+  concurrencySlider.addEventListener('input', ()=>{
+    state.concurrency = Number(concurrencySlider.value);
+    localStorage.setItem('gen-concurrency', String(state.concurrency));
+    syncSliderLabels();
+  });
   document.getElementById('promptLen').addEventListener('input', syncSliderLabels);
   const targetModelEl = document.getElementById('targetModel');
   const targetModelCurValEl = document.getElementById('targetModelCurVal');
@@ -2611,7 +2625,7 @@
   }
 
   async function runGeneration(targets){
-    const CONCURRENCY = 6; // bumped up from 3 — 9-model rotation gives plenty of quota headroom for more parallel work
+    const CONCURRENCY = state.concurrency || 6; // user-controlled via the "Parallel Generations" slider in Options
     let idx = 0;
     state.stopRequested = false;
     const generateBtn = document.getElementById('generateAllBtn');
