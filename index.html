@@ -400,6 +400,24 @@
     box-shadow:0 20px 60px rgba(0,0,0,.5);
   }
   .modal.modal-wide{max-width:600px;max-height:85vh;overflow-y:auto;}
+  .modal.modal-done{position:relative;text-align:center;max-width:440px;padding:34px 28px 30px;}
+  .modal-x{
+    position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;
+    background:transparent;border:none;color:var(--text-soft);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .modal-x:hover{color:var(--text);background:rgba(255,255,255,.06);}
+  .modal-x svg{width:16px;height:16px;}
+  .done-check{
+    width:56px;height:56px;border-radius:50%;background:rgba(52,211,153,.14);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 18px;color:#34D399;
+  }
+  .done-check svg{width:28px;height:28px;}
+  .modal-done h3{font-size:19px;margin:0 0 8px;}
+  .modal-done p{margin:0;font-size:13px;}
+  .modal-done #doneModalWarning{color:#FBBF24;margin-top:8px;font-size:12.5px;line-height:1.5;}
+  .modal-done .btn-primary{border-radius:999px;background:var(--ink);color:#F2EFFA;}
+  .modal-done .btn-primary:hover{filter:brightness(1.15);}
   .modal h3{margin:0 0 6px;font-size:16.5px;}
   .modal p{margin:0 0 16px;font-size:13px;color:var(--text-soft);line-height:1.55;}
   .qd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
@@ -705,15 +723,25 @@
 </div>
 
 <div class="modal-bg" id="doneModalBg">
-  <div class="modal">
-    <h3 id="doneModalTitle">Generation complete</h3>
-    <p id="doneModalText">Your images' metadata has been generated.</p>
-    <div class="row" style="margin-top:18px;gap:10px;">
-      <button class="btn btn-primary" id="doneModalDownload">
+  <div class="modal modal-done">
+    <button class="modal-x" id="doneModalX" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+    </button>
+    <div class="done-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h3 id="doneModalTitle">Metadata generated successfully</h3>
+    <p id="doneModalText">CSV ready</p>
+    <p id="doneModalWarning" style="display:none;"></p>
+    <div class="row" style="margin-top:20px;gap:10px;flex-wrap:wrap;justify-content:center;" id="doneModalDownloadRow">
+      <button class="btn btn-primary" id="doneModalDownloadAdobe">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Download CSV
+        Adobe CSV
       </button>
-      <button class="btn btn-ghost" id="doneModalClose">Close</button>
+      <button class="btn btn-primary" id="doneModalDownloadShutter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Shutterstock CSV
+      </button>
     </div>
   </div>
 </div>
@@ -2051,11 +2079,12 @@
     // catches secondary/small details, not just the obvious main subject.
     // Gemini 2.5 models use thinkingBudget; Gemini 3.x models use
     // thinkingLevel — sending the wrong one for a given model is a hard
-    // error, so pick based on the model name. (-1 = dynamic/model-decides
-    // budget for 2.5; 'high' = most thorough reasoning for 3.x.)
+    // error, so pick based on the model name. Set to medium: a balance
+    // between 'high'/unlimited (most thorough, but the biggest latency
+    // contributor) and 'low' (fastest, but least analytical depth).
     const thinkingConfig = model.startsWith('gemini-3')
-      ? { thinkingLevel: 'high' }
-      : { thinkingBudget: -1 };
+      ? { thinkingLevel: 'medium' }
+      : { thinkingBudget: 4096 };
     const body = {
       contents:[{ parts:[ {text:promptText}, {inline_data:{mime_type:mimeType, data:base64}} ] }],
       // Low temperature on purpose: this is a factual "describe exactly what\'s
@@ -2269,11 +2298,10 @@
   //   keyword formatting               -> up to 10
   //   character count                  -> up to 5
   //   keyword count                     -> up to 5
-  function computeQualityScore(f){
-    const r = f.result;
-    if(!r){ f.quality = null; return; }
-    const cfg = PLATFORM_CONFIG[state.platform];
-    const headline = state.platform === 'Adobe Stock' ? (r.title||'') : (r.description||'');
+  function scoreResult(r, platformName){
+    if(!r) return null;
+    const cfg = PLATFORM_CONFIG[platformName];
+    const headline = platformName === 'Adobe Stock' ? (r.title||'') : (r.description||'');
     const keywords = Array.isArray(r.keywords) ? r.keywords : [];
     const breakdown = {};
 
@@ -2292,7 +2320,7 @@
       if(/^(a|an|the)\s+(photo|image|picture)\s+of\b/i.test(headline.trim())) titleScore -= 6; // filler opening
       if(/^[A-Z0-9\s.,!?'"-]+$/.test(headline) && /[A-Z]{4,}/.test(headline)) titleScore -= 4; // ALL CAPS shouting
       if(/[.!]\s*$/.test(headline.trim())) titleScore -= 2; // trailing period/exclamation
-      const limit = state.platform === 'Adobe Stock' ? cfg.titleMax : cfg.descMax;
+      const limit = platformName === 'Adobe Stock' ? cfg.titleMax : cfg.descMax;
       if(headline.length > limit) titleScore -= 5; // over the platform's hard limit
     }
     breakdown.titleQuality = Math.max(0, titleScore);
@@ -2337,8 +2365,8 @@
     let charScore = 5;
     if(!headline.trim()) charScore = 0;
     else{
-      const limit = state.platform === 'Adobe Stock' ? cfg.titleMax : cfg.descMax;
-      const min = state.platform === 'Adobe Stock' ? 20 : cfg.descMin;
+      const limit = platformName === 'Adobe Stock' ? cfg.titleMax : cfg.descMax;
+      const min = platformName === 'Adobe Stock' ? 20 : cfg.descMin;
       if(headline.length > limit || headline.length < min) charScore = 2;
     }
     breakdown.characterCount = charScore;
@@ -2349,12 +2377,12 @@
     breakdown.keywordCount = countScore;
 
     const total = Object.values(breakdown).reduce((a,b)=>a+b,0);
-    f.quality = Math.max(0, Math.min(100, Math.round(total)));
-    f.qualityBreakdown = breakdown;
+    return { score: Math.max(0, Math.min(100, Math.round(total))), breakdown };
   }
 
   function buildMetadataPrompt(f){
-    const cfg = PLATFORM_CONFIG[state.platform];
+    const titleLen = document.getElementById('titleLen') ? document.getElementById('titleLen').value : PLATFORM_CONFIG['Adobe Stock'].titleMax;
+    const descLen = document.getElementById('descLen') ? document.getElementById('descLen').value : PLATFORM_CONFIG['Shutterstock'].descDefault;
     const kwCount = document.getElementById('kwCount').value;
     const negOn = document.getElementById('toggle-negkw').checked;
     const negWords = document.getElementById('negkwInput').value;
@@ -2362,12 +2390,12 @@
     // Adobe Stock (and other stock sites) auto-reject or flag submissions for
     // "Copyright" / "Intellectual Property" violations when the image itself
     // contains a visible logo, watermark, brand mark, or website/URL. Even if
-    // we can\'t remove that from the image, metadata must never name/describe
+    // we can't remove that from the image, metadata must never name/describe
     // it — doing so is what triggers manual/automatic IP review and rejection.
     const ipWarning = '- If the image contains any visible logo, watermark, brand mark, trademark, website/URL, or company/product name, do not mention or describe it anywhere in the title/description/keywords — naming these is exactly what triggers an Adobe/Shutterstock "Copyright" or "Intellectual Property" rejection. Ignore such elements and only describe the image\'s genuine visual subject.\n';
 
     // The single biggest lever for metadata that actually ranks/sells: it has
-    // to precisely match what\'s in the image, not just be generically
+    // to precisely match what's in the image, not just be generically
     // plausible. This instruction (plus the low temperature set on the API
     // call) is what keeps output grounded instead of generic/hallucinated.
     const accuracyInstruction =
@@ -2388,77 +2416,56 @@
     // model), so this is a verified fact we can state directly rather than
     // asking the AI to detect it itself — vision models often can't reliably
     // perceive true alpha transparency anyway.
-    function backgroundFact(headlineFieldName){
-      if(f.bgType === 'transparent'){
-        return '- VERIFIED FACT: this image has a genuinely transparent background (confirmed programmatically, not a guess). You MUST reflect this — mention it in the '+headlineFieldName+' (e.g. "isolated on transparent background" or "cutout with transparent background") and include keywords like "isolated", "transparent background", "cutout", "PNG", "no background".\n';
-      }
-      if(f.bgType === 'white'){
-        return '- VERIFIED FACT: this image has a plain solid white background (confirmed programmatically, not a guess). You MUST reflect this — mention it in the '+headlineFieldName+' (e.g. "isolated on white background") and include keywords like "isolated", "white background", "cutout", "studio shot".\n';
-      }
-      return '';
+    let backgroundFact = '';
+    if(f.bgType === 'transparent'){
+      backgroundFact = '- VERIFIED FACT: this image has a genuinely transparent background (confirmed programmatically, not a guess). You MUST reflect this — mention it in both the title and description (e.g. "isolated on transparent background" or "cutout with transparent background") and include keywords like "isolated", "transparent", "cutout", "png".\n';
+    }else if(f.bgType === 'white'){
+      backgroundFact = '- VERIFIED FACT: this image has a plain solid white background (confirmed programmatically, not a guess). You MUST reflect this — mention it in both the title and description (e.g. "isolated on white background") and include keywords like "isolated", "white", "cutout", "studio".\n';
     }
 
-    if(state.platform === 'Adobe Stock'){
-      const titleLen = document.getElementById('titleLen').value;
-      p += 'You are a metadata specialist for Adobe Stock. Create metadata for this image following Adobe Stock\'s official contributor guidelines.\n';
-      p += accuracyInstruction;
-      p += ipWarning;
-      p += backgroundFact('title');
-      p += 'TITLE rules:\n';
-      p += '- Keep it within '+titleLen+' characters max (Adobe Stock limit is 70 chars). Simple, clear, descriptive — never a stuffed list of keywords crammed into a sentence.\n';
-      p += '- Build it around this formula: [Main Subject] + [Action/Context] + [Style/Design Type, if it\'s a vector/icon/illustration/3D render/mockup] + [Color/Composition detail]. Put the most important 4-7 words first — that\'s what gets read/weighted most.\n';
-      p += '- If this is a vector/icon/logo/illustration/3D-render/design asset, name that style explicitly (e.g. "Minimalist vector icon of a green plant sprout for agriculture branding" — NOT "Vector icon, agriculture, plant, leaf, green, logo design"). If it\'s a photo, describe the real scene naturally (e.g. "Classic vintage sports car parked in a studio with a clean minimalist background" — NOT "Car, sports car, old car, vintage, fast").\n';
-      p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
-      p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar — go straight into the actual description. Don\'t use ALL CAPS, exclamation marks, or a trailing period — write it as a natural descriptive phrase, not a sentence with terminal punctuation.\n';
-      p += 'KEYWORDS rules:\n';
-      p += '- Give exactly '+kwCount+' keywords (Adobe\'s max limit is 49). No keyword stuffing or spamming irrelevant/trending words just to get more tags — Adobe\'s moderation can reject or suspend for this.\n';
-      p += '- Order matters: the first 5-10 keywords must be the single most relevant, primary search terms a buyer would actually type — put those before anything broader.\n';
-      p += '- Cover all four of these categories, not just the obvious subject:\n';
-      p += '    • Core subject: what it actually is, broken into separate single words (e.g. for a sports car: "car", "sports", "vehicle" — not "sports car" as one keyword).\n';
-      p += '    • Style/medium: vector, flat, line-art, 3D, mockup, realistic, illustration, minimalist, etc. — whichever genuinely applies, each as one word.\n';
-      p += '    • Concept/emotion: premium, luxury, business, eco-friendly, modern, creative, playful, professional, etc. — only ones truly supported by the image, each as one word.\n';
-      p += '    • Color & composition: isolated, white, transparent, background, vertical, horizontal, plus dominant colors, vibrant/muted, and the lighting/background/focus/angle/movement details from your analysis above — each as its own single word.\n';
-      p += '- Think like a buyer — choose keywords based on exactly what a customer would search to find this image.\n';
-      p += '- SINGLE WORDS ONLY: every keyword must be exactly one word — no multi-word phrases, no compound phrases strung together as a single keyword (e.g. write "vintage", "sports", "car", "studio", "background" as five separate keywords, never "vintage sports car studio background" as one keyword). Each keyword in the array must be a single standalone word.\n';
-      p += '- Make every single word count: pick the strongest, most precise, highest-search-value individual words — core subject, style/medium, setting, color, mood/concept, lighting, background type, focus, angle, movement — each as its own separate single-word keyword rather than bundled into phrases.\n';
-      p += '- Only give keywords directly relevant to the image; irrelevant keywords can get the content rejected by Adobe.\n';
-      p += '- Use each keyword only once, never repeat a keyword, and don\'t include any trademark/brand/personal info.\n';
-      p += '- Write all titles and keywords in a single language (English) — don\'t mix multiple languages.\n';
-      if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
-      p += 'CATEGORY rules:\n';
-      p += '- Pick exactly one category from the Adobe Stock list below that best matches the image, and give only its id (number):\n';
-      p += ADOBE_CATEGORIES.map(c=>c.id+' = '+c.name).join(', ') + '\n';
-      p += 'SELF-CHECK (do this last, after writing the title/keywords above): honestly grade your own output against the actual image, on a 0-10 scale each: "imageRelevance" — does the title+keywords genuinely, specifically match what\'s in THIS image (10 = perfectly specific and accurate, 0 = generic/could describe almost any image); "keywordRelevance" — are the keywords precise and directly tied to this image with no filler/irrelevant ones (10 = every keyword earns its place, 0 = mostly generic filler). Be a strict, honest grader, not generous — this score is used to flag low-quality results for regeneration.\n';
-      p += 'Respond only in JSON, in this format: {"title":"...", "keywords":["...","..."], "category":<id number>, "imageRelevance":<0-10>, "keywordRelevance":<0-10>}.';
-    } else {
-      const descLen = document.getElementById('descLen').value;
-      p += 'You are a metadata specialist for Shutterstock. Create metadata for this image following Shutterstock\'s official contributor guidelines.\n';
-      p += accuracyInstruction;
-      p += ipWarning;
-      p += backgroundFact('description');
-      p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes).\n';
-      p += '- Don\'t mention any personally identifiable information (PII) — such as names, addresses, phone numbers, emails — in the description or keywords.\n';
-      p += 'DESCRIPTION rules (this acts as the title/description on Shutterstock):\n';
-      p += '- Write one complete, unique, detailed sentence or phrase — never just a list of keywords.\n';
-      p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar — go straight into the actual description.\n';
-      p += '- Where possible, cover Who, What, When, Where, Why, and convey the image\'s mood/emotion.\n';
-      p += '- Where relevant, weave in specific lighting (e.g. golden hour, backlit, soft studio light), background (e.g. blurred bokeh, plain studio, busy street), focus/depth of field (e.g. shallow focus, sharp throughout), camera angle (e.g. close-up, aerial, low-angle), and movement (e.g. mid-motion, frozen action, still) — but don\'t use any links, specific camera/lens model names, or trademarks, and don\'t repeat any word or phrase.\n';
-      p += '- Keep it to approximately '+descLen+' characters.\n';
-      p += 'KEYWORDS rules:\n';
-      p += '- Give exactly '+kwCount+' keywords (Shutterstock\'s limit is between 7 and 50).\n';
-      p += '- Use specific, precise, individual words directly related to the image, plus broader topics/feelings/concepts as separate single words. Make sure to include separate single-word keywords for lighting (e.g. "backlit", "golden", "soft"), background type (e.g. "blurred", "bokeh", "plain", "busy"), focus/depth of field (e.g. "shallow", "sharp", "blur"), camera angle (e.g. "closeup", "aerial"), and movement (e.g. "running", "flowing", "still") whenever those are actually present in the image — not just subject keywords.\n';
-      p += '- SINGLE WORDS ONLY: every keyword must be exactly one word — no multi-word phrases, no compound phrases strung together as a single keyword (e.g. write "vintage", "sports", "car", "studio", "background" as five separate keywords, never "vintage sports car studio background" as one keyword). Each keyword in the array must be a single standalone word.\n';
-      p += '- Make every single word count: pick the strongest, most precise, highest-search-value individual words — core subject, style/medium, setting, color, mood/concept, lighting, background type, focus, angle, movement — each as its own separate single-word keyword rather than bundled into phrases.\n';
-      p += '- Don\'t repeat any keyword, don\'t add irrelevant words, and don\'t include any links/camera info/trademarks.\n';
-      if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
-      p += 'CATEGORY rules:\n';
-      p += '- Pick the 1 (and up to 2, if relevant) best-matching category name(s) from the Shutterstock list below — don\'t give any name outside this list:\n';
-      p += SHUTTERSTOCK_CATEGORIES.join(', ') + '\n';
-      p += 'ILLUSTRATION FLAG:\n';
-      p += '- Determine whether this asset is an illustration/vector/digital-art/3D-render/icon/graphic design piece (isIllustration: true) as opposed to a real photograph (isIllustration: false). Judge this from the actual visual style, not the file format.\n';
-      p += 'SELF-CHECK (do this last, after writing the description/keywords above): honestly grade your own output against the actual image, on a 0-10 scale each: "imageRelevance" — does the description+keywords genuinely, specifically match what\'s in THIS image (10 = perfectly specific and accurate, 0 = generic/could describe almost any image); "keywordRelevance" — are the keywords precise and directly tied to this image with no filler/irrelevant ones (10 = every keyword earns its place, 0 = mostly generic filler). Be a strict, honest grader, not generous — this score is used to flag low-quality results for regeneration.\n';
-      p += 'Respond only in JSON, in this format: {"description":"...", "keywords":["...","..."], "categories":["...","..."], "isIllustration": true or false, "imageRelevance":<0-10>, "keywordRelevance":<0-10>} (the categories array should have 1 or 2 category names).';
-    }
+    // One single generation covers BOTH Adobe Stock (title + keywords + numeric
+    // category) and Shutterstock (description + the SAME keyword list +
+    // named categories + illustration flag) — one API call per image instead
+    // of two, since the two platforms' keyword rules are close enough to
+    // share a single well-built list.
+    p += 'You are a metadata specialist preparing ONE image for submission to BOTH Adobe Stock and Shutterstock at once. Generate a title (for Adobe Stock), a description (for Shutterstock), and ONE shared keyword list that works for both platforms\' official contributor guidelines.\n';
+    p += accuracyInstruction;
+    p += ipWarning;
+    p += backgroundFact;
+    p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes). Don\'t mention any personally identifiable information (PII) — names, addresses, phone numbers, emails.\n';
+    p += 'TITLE rules (for Adobe Stock):\n';
+    p += '- Keep it within '+titleLen+' characters max (Adobe Stock limit is 70 chars). Simple, clear, descriptive — never a stuffed list of keywords crammed into a sentence.\n';
+    p += '- Build it around this formula: [Main Subject] + [Action/Context] + [Style/Design Type, if it\'s a vector/icon/illustration/3D render/mockup] + [Color/Composition detail]. Put the most important 4-7 words first.\n';
+    p += '- If this is a vector/icon/logo/illustration/3D-render/design asset, name that style explicitly (e.g. "Minimalist vector icon of a green plant sprout for agriculture branding"). If it\'s a photo, describe the real scene naturally (e.g. "Classic vintage sports car parked in a studio with a clean minimalist background").\n';
+    p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
+    p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar. Don\'t use ALL CAPS, exclamation marks, or a trailing period.\n';
+    p += 'DESCRIPTION rules (for Shutterstock — a separate field from the title, not just the title repeated):\n';
+    p += '- Write one complete, unique, detailed sentence or phrase — never just a list of keywords, and don\'t just repeat the title verbatim.\n';
+    p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", or similar.\n';
+    p += '- Where possible, cover Who, What, When, Where, Why, and convey the image\'s mood/emotion.\n';
+    p += '- Where relevant, weave in specific lighting, background, focus/depth of field, camera angle, and movement — but don\'t use any links, specific camera/lens model names, or trademarks, and don\'t repeat any word or phrase.\n';
+    p += '- Keep it to approximately '+descLen+' characters.\n';
+    p += 'KEYWORDS rules (ONE shared list used for both Adobe Stock and Shutterstock):\n';
+    p += '- Give exactly '+kwCount+' keywords (works within both Adobe\'s max-49 and Shutterstock\'s 7-50 limits). No keyword stuffing or spamming irrelevant/trending words just to get more tags — this can get submissions rejected or suspended.\n';
+    p += '- Order matters: the first 5-10 keywords must be the single most relevant, primary search terms a buyer would actually type — put those before anything broader.\n';
+    p += '- Cover all four of these categories, not just the obvious subject:\n';
+    p += '    • Core subject: what it actually is, broken into separate single words (e.g. for a sports car: "car", "sports", "vehicle" — not "sports car" as one keyword).\n';
+    p += '    • Style/medium: vector, flat, line-art, 3D, mockup, realistic, illustration, minimalist, etc. — whichever genuinely applies, each as one word.\n';
+    p += '    • Concept/emotion: premium, luxury, business, eco-friendly, modern, creative, playful, professional, etc. — only ones truly supported by the image, each as one word.\n';
+    p += '    • Color & composition: isolated, white, transparent, background, vertical, horizontal, plus dominant colors, vibrant/muted, and the lighting/background/focus/angle/movement details from your analysis above — each as its own single word.\n';
+    p += '- Think like a buyer — choose keywords based on exactly what a customer would search to find this image.\n';
+    p += '- SINGLE WORDS ONLY: every keyword must be exactly one word — no multi-word phrases, no compound phrases strung together as a single keyword (e.g. write "vintage", "sports", "car", "studio", "background" as five separate keywords, never "vintage sports car studio background" as one keyword).\n';
+    p += '- Make every single word count: pick the strongest, most precise, highest-search-value individual words — core subject, style/medium, setting, color, mood/concept, lighting, background type, focus, angle, movement — each as its own separate single-word keyword rather than bundled into phrases.\n';
+    p += '- Only give keywords directly relevant to the image. Use each keyword only once, never repeat a keyword, and don\'t include any trademark/brand/personal info.\n';
+    p += '- Write everything in a single language (English) — don\'t mix multiple languages.\n';
+    if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
+    p += 'CATEGORY rules:\n';
+    p += '- "category" (for Adobe Stock): pick exactly one category from this list that best matches the image, and give only its id (number): '+ADOBE_CATEGORIES.map(c=>c.id+' = '+c.name).join(', ')+'\n';
+    p += '- "categories" (for Shutterstock): pick the 1 (and up to 2, if relevant) best-matching category NAME(s) from this list — don\'t give any name outside this list: '+SHUTTERSTOCK_CATEGORIES.join(', ')+'\n';
+    p += 'ILLUSTRATION FLAG:\n';
+    p += '- Determine whether this asset is an illustration/vector/digital-art/3D-render/icon/graphic design piece (isIllustration: true) as opposed to a real photograph (isIllustration: false). Judge this from the actual visual style, not the file format.\n';
+    p += 'SELF-CHECK (do this last, after writing everything above): honestly grade your own output against the actual image, on a 0-10 scale each: "imageRelevance" — does the title+description+keywords genuinely, specifically match what\'s in THIS image (10 = perfectly specific and accurate, 0 = generic/could describe almost any image); "keywordRelevance" — are the keywords precise and directly tied to this image with no filler/irrelevant ones (10 = every keyword earns its place, 0 = mostly generic filler). Be a strict, honest grader, not generous — this score is used to flag low-quality results for regeneration.\n';
+    p += 'Respond only in JSON, in this format: {"title":"...", "description":"...", "keywords":["...","..."], "category":<id number>, "categories":["...","..."], "isIllustration": true or false, "imageRelevance":<0-10>, "keywordRelevance":<0-10>}.';
     return p;
   }
   function buildPromptPrompt(){
@@ -2474,11 +2481,28 @@
     return p;
   }
 
+  // ONE unified schema per image (not one call per platform) — a single
+  // generation produces the Adobe-style title, the Shutterstock-style
+  // description, one shared keyword set, and both platforms\' category
+  // picks. CSV export later just selects the relevant fields per platform:
+  // Adobe uses title+keywords+category; Shutterstock uses
+  // description+keywords+categories+isIllustration (Shutterstock doesn\'t
+  // need a separate title field at all, per its own CSV guide).
   function currentMetadataSchema(){
-    if(state.platform === 'Adobe Stock'){
-      return { type:'OBJECT', properties:{ title:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, category:{type:'INTEGER'}, imageRelevance:{type:'INTEGER'}, keywordRelevance:{type:'INTEGER'} }, required:['title','keywords','category','imageRelevance','keywordRelevance'] };
-    }
-    return { type:'OBJECT', properties:{ description:{type:'STRING'}, keywords:{type:'ARRAY', items:{type:'STRING'}}, categories:{type:'ARRAY', items:{type:'STRING'}}, isIllustration:{type:'BOOLEAN'}, imageRelevance:{type:'INTEGER'}, keywordRelevance:{type:'INTEGER'} }, required:['description','keywords','categories','isIllustration','imageRelevance','keywordRelevance'] };
+    return {
+      type:'OBJECT',
+      properties:{
+        title:{type:'STRING'},
+        description:{type:'STRING'},
+        keywords:{type:'ARRAY', items:{type:'STRING'}},
+        category:{type:'INTEGER'},
+        categories:{type:'ARRAY', items:{type:'STRING'}},
+        isIllustration:{type:'BOOLEAN'},
+        imageRelevance:{type:'INTEGER'},
+        keywordRelevance:{type:'INTEGER'}
+      },
+      required:['title','description','keywords','category','categories','isIllustration','imageRelevance','keywordRelevance']
+    };
   }
   const PROMPT_SCHEMA = {
     type:'OBJECT',
@@ -2497,6 +2521,25 @@
       if(suf) t = t + ' ' + suf;
     }
     return t;
+  }
+
+  // Parses the ONE unified JSON response into a single result object that
+  // carries everything both platforms need — title AND description AND one
+  // shared keyword list AND both category formats. Nothing here requires a
+  // second API call; the platform split happens only later, at CSV export.
+  function parseMetadataJson(json){
+    const clampScore = (v)=> Math.max(0, Math.min(10, Number(v)||0));
+    const validCats = Array.isArray(json.categories) ? json.categories.filter(c=>SHUTTERSTOCK_CATEGORIES.includes(c)).slice(0,2) : [];
+    return {
+      title: applyPrefixSuffix(json.title||''),
+      description: applyPrefixSuffix(json.description||''),
+      keywords: Array.isArray(json.keywords) ? json.keywords : [],
+      category: (function(){ const cid = Number(json.category); return ADOBE_CATEGORIES.some(c=>c.id===cid) ? cid : ''; })(),
+      categories: validCats,
+      isIllustration: json.isIllustration === true,
+      aiImageRelevance: clampScore(json.imageRelevance),
+      aiKeywordRelevance: clampScore(json.keywordRelevance)
+    };
   }
 
   async function generateForFile(id, autoScroll){
@@ -2538,35 +2581,27 @@
         const promptText = buildMetadataPrompt(f);
         const schema = currentMetadataSchema();
         const json = await callAIWithFailover(f.base64, f.mimeType, promptText, schema);
-        const clampScore = (v)=> Math.max(0, Math.min(10, Number(v)||0));
-        if(state.platform === 'Adobe Stock'){
-          f.result = {
-            title: applyPrefixSuffix(json.title||''),
-            description: '',
-            keywords: Array.isArray(json.keywords) ? json.keywords : [],
-            category: (function(){ const cid = Number(json.category); return ADOBE_CATEGORIES.some(c=>c.id===cid) ? cid : ''; })(),
-            aiImageRelevance: clampScore(json.imageRelevance),
-            aiKeywordRelevance: clampScore(json.keywordRelevance)
-          };
-        }else{
-          const validCats = Array.isArray(json.categories) ? json.categories.filter(c=>SHUTTERSTOCK_CATEGORIES.includes(c)).slice(0,2) : [];
-          f.result = {
-            title:'',
-            description: applyPrefixSuffix(json.description||''),
-            keywords: Array.isArray(json.keywords) ? json.keywords : [],
-            categories: validCats,
-            isIllustration: json.isIllustration === true,
-            aiImageRelevance: clampScore(json.imageRelevance),
-            aiKeywordRelevance: clampScore(json.keywordRelevance)
-          };
-        }
-        computeQualityScore(f);
+        f.result = parseMetadataJson(json);
+        // Score against both platforms' criteria from this one result — no
+        // extra API call needed, it's pure JS over data we already have.
+        const scoredAdobe = scoreResult(f.result, 'Adobe Stock');
+        const scoredShutter = scoreResult(f.result, 'Shutterstock');
+        f.qualityAdobe = scoredAdobe ? scoredAdobe.score : null;
+        f.qualityBreakdownAdobe = scoredAdobe ? scoredAdobe.breakdown : null;
+        f.qualityShutter = scoredShutter ? scoredShutter.score : null;
+        f.qualityBreakdownShutter = scoredShutter ? scoredShutter.breakdown : null;
+        // Keep f.quality/f.qualityBreakdown as an alias for whichever platform
+        // is currently selected, so the existing card badge / dashboard code
+        // (which reads f.quality directly) keeps working unchanged.
+        f.quality = state.platform === 'Adobe Stock' ? f.qualityAdobe : f.qualityShutter;
+        f.qualityBreakdown = state.platform === 'Adobe Stock' ? f.qualityBreakdownAdobe : f.qualityBreakdownShutter;
+        f.status = 'done';
       }else{
         const promptText = buildPromptPrompt();
         const json = await callAIWithFailover(f.base64, f.mimeType, promptText, PROMPT_SCHEMA);
         f.result = { prompt: toPromptString(json.prompt) };
+        f.status = 'done';
       }
-      f.status = 'done';
     }catch(e){
       f.status = 'error';
       f.error = e.message || 'Unknown error';
@@ -2576,7 +2611,7 @@
   }
 
   async function runGeneration(targets){
-    const CONCURRENCY = 3;
+    const CONCURRENCY = 6; // bumped up from 3 — 9-model rotation gives plenty of quota headroom for more parallel work
     let idx = 0;
     state.stopRequested = false;
     const generateBtn = document.getElementById('generateAllBtn');
@@ -2613,21 +2648,27 @@
     const scored = state.files.filter(f=>f.status==='done' && typeof f.quality==='number');
     const lowCount = scored.filter(f=>f.quality<60).length;
     const midCount = scored.filter(f=>f.quality>=60 && f.quality<85).length;
-    document.getElementById('doneModalTitle').textContent = 'Generation complete ✓';
-    let msg = doneCount+' / '+totalCount+' images had their metadata generated'+(failedCount>0 ? ' ('+failedCount+' failed — you can try again with "Retry Failed")' : '')+'. Download the CSV now, or later from the "Export CSV" button in the toolbar.';
+    document.getElementById('doneModalTitle').textContent = 'Metadata generated successfully';
+    document.getElementById('doneModalText').textContent = 'CSV ready · '+doneCount+' result'+(doneCount!==1?'s':'')+(failedCount>0 ? ' · '+failedCount+' failed' : '');
+    const warnEl = document.getElementById('doneModalWarning');
     if(lowCount>0){
-      msg += ' ⚠️ '+lowCount+' result'+(lowCount>1?'s':'')+' scored below 60/100 — check the Quality Dashboard before uploading, these likely need regenerating.';
+      warnEl.textContent = '⚠️ '+lowCount+' result'+(lowCount>1?'s':'')+' scored below 60/100 — check the Quality Dashboard, these likely need regenerating.';
+      warnEl.style.display = 'block';
     }else if(midCount>0){
-      msg += ' '+midCount+' result'+(midCount>1?'s':'')+' could use a review (60-84/100) — see the Quality Dashboard.';
+      warnEl.textContent = midCount+' result'+(midCount>1?'s':'')+' could use a review (60-84/100) — see the Quality Dashboard.';
+      warnEl.style.display = 'block';
+    }else{
+      warnEl.style.display = 'none';
     }
-    document.getElementById('doneModalText').textContent = msg;
     document.getElementById('doneModalBg').classList.add('open');
   }
-  document.getElementById('doneModalDownload').onclick = ()=>{
-    exportCsv();
-    document.getElementById('doneModalBg').classList.remove('open');
+  document.getElementById('doneModalDownloadAdobe').onclick = ()=>{
+    exportCsv('Adobe Stock');
   };
-  document.getElementById('doneModalClose').onclick = ()=> document.getElementById('doneModalBg').classList.remove('open');
+  document.getElementById('doneModalDownloadShutter').onclick = ()=>{
+    exportCsv('Shutterstock');
+  };
+  document.getElementById('doneModalX').onclick = ()=> document.getElementById('doneModalBg').classList.remove('open');
   document.getElementById('doneModalBg').addEventListener('click', (e)=>{ if(e.target===document.getElementById('doneModalBg')) e.currentTarget.classList.remove('open'); });
 
   async function generateAll(){
@@ -2660,28 +2701,35 @@
     if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
     return v;
   }
-  function exportCsv(){
-    const done = state.files.filter(f=>f.status==='done');
-    if(done.length===0){ showToast('Nothing has been generated yet'); return; }
-    let rows;
+  function exportCsv(platformName){
     if(state.activeTab==='metadata'){
-      if(state.platform === 'Adobe Stock'){
+      platformName = platformName || state.platform;
+      const done = state.files.filter(f=>f.status==='done' && f.result);
+      if(done.length===0){ showToast('Nothing has been generated yet'); return; }
+      let rows;
+      if(platformName === 'Adobe Stock'){
         rows = [['Filename','Title','Keywords','Category']];
         done.forEach(f=>{ rows.push([f.name, f.result.title, (f.result.keywords||[]).join(', '), f.result.category||'']); });
       }else{
         rows = [['Filename','Description','Keywords','Categories','Illustration']];
         done.forEach(f=>{ rows.push([f.name, f.result.description, (f.result.keywords||[]).join(', '), (f.result.categories||[]).join(', '), f.result.isIllustration ? 'Yes' : 'No']); });
       }
+      downloadCsvRows(rows, platformName+'_metadata');
     }else{
-      rows = [['Filename','Prompt']];
+      const done = state.files.filter(f=>f.status==='done');
+      if(done.length===0){ showToast('Nothing has been generated yet'); return; }
+      const rows = [['Filename','Prompt']];
       done.forEach(f=>{ rows.push([f.name, f.result.prompt]); });
+      downloadCsvRows(rows, 'prompts');
     }
+  }
+  function downloadCsvRows(rows, filenameBase){
     const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = (state.platform + (state.activeTab==='metadata' ? '_metadata' : '_prompts')).replace(/\s+/g,'-').toLowerCase() + '_export.csv';
+    a.download = filenameBase.replace(/\s+/g,'-').toLowerCase() + '_export.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
