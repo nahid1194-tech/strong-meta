@@ -123,21 +123,17 @@
   }
 
   .side-block.collapsible .panel-title{
-    cursor:pointer;user-select:none;justify-content:space-between;padding-bottom:0;
+    cursor:default;user-select:none;justify-content:space-between;padding-bottom:0;
   }
   .side-block.collapsible .panel-title .ptitle-left{display:flex;align-items:center;gap:8px;min-width:0;}
   .side-block.collapsible .panel-title .curval{
     font-size:10.5px;color:#D8D8D8;font-weight:500;text-transform:none;letter-spacing:0;
     font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .side-block.collapsible .panel-title .chev{
-    width:14px;height:14px;flex-shrink:0;transition:transform .18s ease;color:var(--ink-soft);
-  }
-  .side-block.collapsible.open .panel-title .chev{transform:rotate(180deg);}
+  .side-block.collapsible .panel-title .chev{display:none;}
   .side-block.collapsible .collapsible-body{
-    display:none;flex-direction:column;gap:14px;padding-top:14px;
+    display:flex;flex-direction:column;gap:14px;padding-top:14px;
   }
-  .side-block.collapsible.open .collapsible-body{display:flex;}
 
   .field{margin-bottom:16px;}
   .field:last-child{margin-bottom:0;}
@@ -278,6 +274,20 @@
   .btn-primary .spark{color:#F2F2F2;}
   .btn-retry{border-color:var(--accent-soft);color:var(--accent);}
   .btn-retry:hover:not(:disabled){background:var(--accent-wash);border-color:var(--accent);}
+  .export-menu-wrap{position:relative;display:inline-block;}
+  .export-menu{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:190px;
+    background:#16101F;border:1px solid var(--card-line);border-radius:12px;padding:6px;
+    box-shadow:0 12px 32px rgba(0,0,0,.45);
+  }
+  .export-menu.open{display:block;}
+  .export-menu button{
+    display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border-radius:8px;
+    background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;
+    cursor:pointer;text-align:left;
+  }
+  .export-menu button:hover{background:var(--card);}
+  .export-menu button svg{width:14px;height:14px;flex-shrink:0;color:var(--text-soft);}
 
   .empty-state{
     text-align:center;padding:70px 20px;color:var(--text-soft);
@@ -534,6 +544,16 @@
             <div id="metadataSliders"></div>
           </div>
         </div>
+        <div class="side-block" id="block-thinking">
+          <div class="panel-title" style="cursor:default;">
+            <span class="ptitle-left">Thinking Level</span>
+          </div>
+          <div class="provider-filter" id="thinkingFilter" style="margin-top:8px;margin-bottom:4px;">
+            <button data-thinking="high">High — Best Quality</button>
+            <button data-thinking="low">Low — Fast</button>
+          </div>
+          <div style="font-size:11px;color:var(--ink-soft2);line-height:1.5;">High: model reasons deeply before answering — more accurate, slower. Low: quick response — faster batches, slightly less thorough.</div>
+        </div>
         <div class="side-block collapsible" id="block-options">
           <div class="panel-title" data-target="body-options">
             <span class="ptitle-left">Options</span>
@@ -671,10 +691,23 @@
           <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
           Stop
         </button>
-        <button class="btn btn-ghost" id="exportCsvBtn" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-          Export CSV
-        </button>
+        <div class="export-menu-wrap">
+          <button class="btn btn-ghost" id="exportCsvBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+            Export CSV
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;margin-left:2px;"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="export-menu" id="exportMenu">
+            <button id="exportMenuAdobe">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Adobe Stock CSV
+            </button>
+            <button id="exportMenuShutter">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Shutterstock CSV
+            </button>
+          </div>
+        </div>
         <button class="btn btn-ghost" id="qualityDashBtn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l3-4 3 2 4-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Quality Dashboard
@@ -774,6 +807,7 @@
     stopRequested: false,
     uploadingBatch: false,
     concurrency: (function(){ const v = Number(localStorage.getItem('gen-concurrency')); return (v>=1 && v<=12) ? v : 6; })(),
+    thinkingLevel: (function(){ const v = localStorage.getItem('thinking-level'); return (v==='high' || v==='low') ? v : 'low'; })(),
     activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider\'s keys are actually used
     activeTab: "metadata",
     platform: "Adobe Stock",
@@ -1041,6 +1075,19 @@
     localStorage.setItem('gen-concurrency', String(state.concurrency));
     syncSliderLabels();
   });
+  function renderThinkingFilter(){
+    document.querySelectorAll('#thinkingFilter button').forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.thinking === state.thinkingLevel);
+    });
+  }
+  document.getElementById('thinkingFilter').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-thinking]');
+    if(!btn) return;
+    state.thinkingLevel = btn.dataset.thinking;
+    localStorage.setItem('thinking-level', state.thinkingLevel);
+    renderThinkingFilter();
+  });
+  renderThinkingFilter();
   document.getElementById('promptLen').addEventListener('input', syncSliderLabels);
   const targetModelEl = document.getElementById('targetModel');
   const targetModelCurValEl = document.getElementById('targetModelCurVal');
@@ -1049,12 +1096,6 @@
   syncTargetModelLabel();
 
   /* ---- collapsible sidebar sections: click header to expand/collapse ---- */
-  document.querySelectorAll('.side-block.collapsible > .panel-title[data-target]').forEach(header=>{
-    header.addEventListener('click', ()=>{
-      header.closest('.side-block.collapsible').classList.toggle('open');
-    });
-  });
-
   /* toggle -> reveal text input */
   function wireToggleReveal(toggleId, wrapId){
     document.getElementById(toggleId).addEventListener('change', (e)=>{
@@ -2093,12 +2134,12 @@
     // catches secondary/small details, not just the obvious main subject.
     // Gemini 2.5 models use thinkingBudget; Gemini 3.x models use
     // thinkingLevel — sending the wrong one for a given model is a hard
-    // error, so pick based on the model name. Set to medium: a balance
-    // between 'high'/unlimited (most thorough, but the biggest latency
-    // contributor) and 'low' (fastest, but least analytical depth).
-    const thinkingConfig = model.startsWith('gemini-3')
-      ? { thinkingLevel: 'medium' }
-      : { thinkingBudget: 4096 };
+    // error, so pick based on the model name. User-controlled via the
+    // "Thinking Level" toggle in the sidebar: 'high' = deepest reasoning,
+    // most accurate, slowest; 'low' = quick response, fastest batches.
+    const thinkingConfig = state.thinkingLevel === 'high'
+      ? (model.startsWith('gemini-3') ? { thinkingLevel: 'high' } : { thinkingBudget: -1 })
+      : (model.startsWith('gemini-3') ? { thinkingLevel: 'low' } : { thinkingBudget: 1024 });
     const body = {
       contents:[{ parts:[ {text:promptText}, {inline_data:{mime_type:mimeType, data:base64}} ] }],
       // Low temperature on purpose: this is a factual "describe exactly what\'s
@@ -2691,7 +2732,12 @@
       document.getElementById('apiKeyBtn').click();
       return;
     }
-    const targets = state.files.filter(f=>f.status!=='loading' && !f.noPreview && !f._processing);
+    // Skip files that already have metadata — if the user hit Stop mid-batch
+    // and clicks Generate All again, this resumes with only what's left
+    // (pending or previously-errored) instead of wastefully redoing
+    // everything that already finished.
+    const targets = state.files.filter(f=>f.status!=='loading' && f.status!=='done' && !f.noPreview && !f._processing);
+    if(targets.length===0){ showToast('Everything already has metadata — nothing left to generate'); return; }
     await runGeneration(targets);
   }
   document.getElementById('generateAllBtn').onclick = generateAll;
@@ -2749,7 +2795,22 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
-  document.getElementById('exportCsvBtn').onclick = exportCsv;
+  document.getElementById('exportCsvBtn').onclick = (e)=>{
+    e.stopPropagation();
+    document.getElementById('exportMenu').classList.toggle('open');
+  };
+  document.getElementById('exportMenuAdobe').onclick = ()=>{
+    exportCsv('Adobe Stock');
+    document.getElementById('exportMenu').classList.remove('open');
+  };
+  document.getElementById('exportMenuShutter').onclick = ()=>{
+    exportCsv('Shutterstock');
+    document.getElementById('exportMenu').classList.remove('open');
+  };
+  document.addEventListener('click', (e)=>{
+    const wrap = document.querySelector('.export-menu-wrap');
+    if(wrap && !wrap.contains(e.target)) document.getElementById('exportMenu').classList.remove('open');
+  });
 
   function renderQualityDashboard(){
     const done = state.files.filter(f=>f.status==='done' && typeof f.quality==='number');
