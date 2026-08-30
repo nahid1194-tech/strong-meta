@@ -808,6 +808,11 @@
     uploadingBatch: false,
     concurrency: (function(){ const v = Number(localStorage.getItem('gen-concurrency')); return (v>=1 && v<=12) ? v : 6; })(),
     thinkingLevel: (function(){ const v = localStorage.getItem('thinking-level'); return (v==='high' || v==='low') ? v : 'low'; })(),
+    // Rolling window of recently-generated titles/descriptions — passed back
+    // into the prompt so similar-looking images in the same batch (e.g. 5
+    // near-duplicate product shots) don't all get identical or near-identical
+    // wording, which stock sites flag as duplicate-content.
+    recentHeadlines: [],
     activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider\'s keys are actually used
     activeTab: "metadata",
     platform: "Adobe Stock",
@@ -1763,6 +1768,7 @@
   document.getElementById('clearAllBtn').onclick = ()=>{
     state.files.forEach(f=>{ if(f._isObjectUrl) URL.revokeObjectURL(f.dataUrl); });
     state.files = [];
+    state.recentHeadlines = [];
     renderResults();
     updateToolbar();
   };
@@ -2467,6 +2473,21 @@
       '  10) MOOD/CONCEPT: the feeling or idea the image conveys (only if genuinely supported by what\'s shown).\n' +
       'This checklist is for your own thorough analysis — but it only helps if it actually shows up in the output: make sure the title/description AND the keyword list concretely reflect the specific lighting, background, focus, angle, and movement details you observed (not just the main subject). Every word must correspond to something actually visible in this exact image — never guess, generalize, or reuse boilerplate phrasing that would fit many different images equally well. If unsure a detail is present, leave it out rather than assume it.\n';
 
+    // If the person is uploading a batch of similar/near-duplicate images
+    // (e.g. the same product shot from slightly different angles), stock
+    // sites treat near-identical metadata across them as duplicate content
+    // and can reject it. Show the model what's already been used in this
+    // session so it deliberately varies its wording, phrasing, and keyword
+    // choice for this image even if the subject looks similar.
+    let duplicateAvoidance = '';
+    if(state.recentHeadlines.length){
+      const recent = state.recentHeadlines.slice(-8);
+      duplicateAvoidance =
+        'AVOID DUPLICATE-SOUNDING METADATA: these titles/descriptions were already generated for other images earlier in this same batch:\n' +
+        recent.map(h=>'  - "'+h+'"').join('\n') + '\n' +
+        'If this image looks similar to any of those (e.g. the same subject from a different angle, or a near-duplicate shot), you MUST still write genuinely different wording, sentence structure, and word choice for THIS image — describe what is specifically different or distinctive about this exact shot (different angle, crop, lighting, pose, moment, etc.) rather than reusing the same phrasing. Never output a title/description that is identical or near-identical to one already listed above. The keyword list should also vary — don\'t just copy the same keyword set verbatim if this image has any distinguishing details.\n';
+    }
+
     // f.bgType comes from actual pixel sampling done in JS (not a guess by the
     // model), so this is a verified fact we can state directly rather than
     // asking the AI to detect it itself — vision models often can't reliably
@@ -2485,6 +2506,7 @@
     // share a single well-built list.
     p += 'You are a metadata specialist preparing ONE image for submission to BOTH Adobe Stock and Shutterstock at once. Generate a title (for Adobe Stock), a description (for Shutterstock), and ONE shared keyword list that works for both platforms\' official contributor guidelines.\n';
     p += accuracyInstruction;
+    p += duplicateAvoidance;
     p += ipWarning;
     p += backgroundFact;
     p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes). Don\'t mention any personally identifiable information (PII) — names, addresses, phone numbers, emails.\n';
@@ -2637,6 +2659,14 @@
         const schema = currentMetadataSchema();
         const json = await callAIWithFailover(f.base64, f.mimeType, promptText, schema);
         f.result = parseMetadataJson(json);
+        // Remember this headline so subsequent generations (possibly of a
+        // near-duplicate image later in the same batch) know to avoid
+        // reusing the same wording.
+        const headlineForTracking = (f.result.title || f.result.description || '').trim();
+        if(headlineForTracking){
+          state.recentHeadlines.push(headlineForTracking);
+          if(state.recentHeadlines.length > 20) state.recentHeadlines.shift(); // keep it bounded
+        }
         // Score against both platforms' criteria from this one result — no
         // extra API call needed, it's pure JS over data we already have.
         const scoredAdobe = scoreResult(f.result, 'Adobe Stock');
