@@ -706,6 +706,10 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Shutterstock CSV
             </button>
+            <button id="exportMenuMagnific">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Magnific CSV
+            </button>
           </div>
         </div>
         <button class="btn btn-ghost" id="qualityDashBtn" disabled>
@@ -779,6 +783,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Shutterstock CSV
       </button>
+      <button class="btn btn-primary" id="doneModalDownloadMagnific">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Magnific CSV
+      </button>
     </div>
   </div>
 </div>
@@ -820,7 +828,7 @@
     files: [] // {id, file, name, dataUrl, base64, mimeType, status, result, error}
   };
 
-  const PLATFORMS = ["Adobe Stock","Shutterstock"];
+  const PLATFORMS = ["Adobe Stock","Shutterstock","Magnific"];
   const STYLES = ["Photographic","Cinematic","Artistic","Minimal","3D Render","Anime"];
 
   const EPS_PLACEHOLDER_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
@@ -877,6 +885,11 @@
       hasTitle:false, hasDescription:true, hasCategory:true,
       descMin:60, descMax:250, descDefault:150, kwMin:7, kwMax:50, kwDefault:35,
       hint:'Per Shutterstock guidelines: Description acts as the title (sentence-style, covering Who/What/When/Where/Why) + 7–50 Keywords + 1-2 official Categories.'
+    },
+    "Magnific":{
+      hasTitle:true, hasDescription:false, hasCategory:false,
+      titleMax:70, kwMin:5, kwMax:50, kwDefault:40,
+      hint:'Per Magnific\'s contributor CSV guide: just Title + Keywords — no category needed. The CSV export uses semicolon-separated columns, exactly as Magnific\'s format requires.'
     }
   };
 
@@ -2113,14 +2126,17 @@
     }
   }
 
-  // Ordered for ACCURACY first, not just quota size: the newer/larger models
-  // give meaningfully better, more precisely-grounded image analysis than the
-  // "lite" models, which is what actually matters for metadata that needs to
-  // rank/sell on Adobe Stock/Shutterstock. The "lite" models are kept at the
-  // end as fallbacks — each one is its own separate free-tier quota pool, so
-  // a big batch keeps moving once the stronger models hit their (smaller)
-  // limits, but they\'re not tried first.
-  const GEMINI_MODELS = [
+  // Two different priority orders depending on the Thinking Level toggle:
+  // - Quality/High: lead with the newest, most capable models (best analysis,
+  //   but each individual request is inherently slower — this was the ONLY
+  //   order used before, which is why "Low" didn't actually feel faster:
+  //   the thinking budget was reduced, but these heavier models were still
+  //   tried first regardless).
+  // - Speed/Low: lead with the small, fast "lite" models instead — these
+  //   respond much quicker per-request, independent of thinking budget.
+  //   Heavier models are kept as fallbacks for when lite models are
+  //   rate-limited, but are no longer tried first.
+  const GEMINI_MODELS_QUALITY = [
     'gemini-3.7-flash',       // newest, strongest Flash-tier model (released Aug 13, 2026)
     'gemini-3.6-flash',       // previous-gen Flash, still strong, generous free tier
     'gemini-2.5-pro',         // most capable reasoning, but the smallest free quota
@@ -2129,11 +2145,25 @@
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite',
     'gemini-3.5-flash-lite',
-    'gemini-2.5-flash-lite'   // highest-volume fallback, weakest analysis quality
+    'gemini-2.5-flash-lite'
   ];
+  const GEMINI_MODELS_SPEED = [
+    'gemini-2.5-flash-lite',  // fastest, highest free quota
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-2.5-flash',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.7-flash',
+    'gemini-2.5-pro'          // heaviest/slowest, kept only as a last-resort fallback
+  ];
+  function currentGeminiModels(){
+    return state.thinkingLevel === 'high' ? GEMINI_MODELS_QUALITY : GEMINI_MODELS_SPEED;
+  }
 
   async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema, model){
-    model = model || GEMINI_MODELS[0];
+    model = model || currentGeminiModels()[0];
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(apiKey);
     // Let the model actually "think" through the image before answering,
     // instead of pattern-matching to a quick first guess — this is what
@@ -2234,14 +2264,16 @@
   }
 
   // Builds the full list of things we can try, in priority order: for each Gemini
-  // key, one "slot" per model in GEMINI_MODELS (each model has its own quota on
-  // Google\'s side); for Mistral/OpenAI keys, a single slot (they use one model).
+  // key, one "slot" per model (each model has its own quota on Google\'s side),
+  // ordered by the current Thinking Level speed/quality preference; for
+  // Mistral/OpenAI keys, a single slot (they use one model).
   function buildAttemptSlots(){
     const slots = [];
+    const models = currentGeminiModels();
     orderedKeys().forEach(k=>{
       if(k.provider === 'gemini'){
         if(!k.modelCooldowns) k.modelCooldowns = {};
-        GEMINI_MODELS.forEach(m=> slots.push({key:k, model:m}));
+        models.forEach(m=> slots.push({key:k, model:m}));
       }else{
         slots.push({key:k, model:null});
       }
@@ -2264,7 +2296,7 @@
       return;
     }
     const now = Date.now();
-    const anyReady = GEMINI_MODELS.some(m => (k.modelCooldowns[m]||0) <= now);
+    const anyReady = currentGeminiModels().some(m => (k.modelCooldowns[m]||0) <= now);
     if(anyReady){ k.status = 'ok'; return; }
     k.status = (outcome === 'ratelimit') ? 'exhausted' : 'error';
   }
@@ -2504,7 +2536,7 @@
     // named categories + illustration flag) — one API call per image instead
     // of two, since the two platforms' keyword rules are close enough to
     // share a single well-built list.
-    p += 'You are a metadata specialist preparing ONE image for submission to BOTH Adobe Stock and Shutterstock at once. Generate a title (for Adobe Stock), a description (for Shutterstock), and ONE shared keyword list that works for both platforms\' official contributor guidelines.\n';
+    p += 'You are a metadata specialist preparing ONE image for submission to Adobe Stock, Shutterstock, AND Magnific.com at once. Generate a title (used for Adobe Stock and for Magnific, which both just need a clean title + keyword list), a description (for Shutterstock), and ONE shared keyword list that works for all three platforms\' official contributor guidelines.\n';
     p += accuracyInstruction;
     p += duplicateAvoidance;
     p += ipWarning;
@@ -2677,9 +2709,10 @@
         f.qualityBreakdownShutter = scoredShutter ? scoredShutter.breakdown : null;
         // Keep f.quality/f.qualityBreakdown as an alias for whichever platform
         // is currently selected, so the existing card badge / dashboard code
-        // (which reads f.quality directly) keeps working unchanged.
-        f.quality = state.platform === 'Adobe Stock' ? f.qualityAdobe : f.qualityShutter;
-        f.qualityBreakdown = state.platform === 'Adobe Stock' ? f.qualityBreakdownAdobe : f.qualityBreakdownShutter;
+        // (which reads f.quality directly) keeps working unchanged. Magnific
+        // reuses the same title+keywords as Adobe Stock, so it shares that score.
+        f.quality = state.platform === 'Shutterstock' ? f.qualityShutter : f.qualityAdobe;
+        f.qualityBreakdown = state.platform === 'Shutterstock' ? f.qualityBreakdownShutter : f.qualityBreakdownAdobe;
         f.status = 'done';
       }else{
         const promptText = buildPromptPrompt();
@@ -2753,6 +2786,9 @@
   document.getElementById('doneModalDownloadShutter').onclick = ()=>{
     exportCsv('Shutterstock');
   };
+  document.getElementById('doneModalDownloadMagnific').onclick = ()=>{
+    exportCsv('Magnific');
+  };
   document.getElementById('doneModalX').onclick = ()=> document.getElementById('doneModalBg').classList.remove('open');
   document.getElementById('doneModalBg').addEventListener('click', (e)=>{ if(e.target===document.getElementById('doneModalBg')) e.currentTarget.classList.remove('open'); });
 
@@ -2796,6 +2832,10 @@
       platformName = platformName || state.platform;
       const done = state.files.filter(f=>f.status==='done' && f.result);
       if(done.length===0){ showToast('Nothing has been generated yet'); return; }
+      if(platformName === 'Magnific'){
+        exportMagnificCsv(done);
+        return;
+      }
       let rows;
       if(platformName === 'Adobe Stock'){
         rows = [['Filename','Title','Keywords','Category']];
@@ -2812,6 +2852,27 @@
       done.forEach(f=>{ rows.push([f.name, f.result.prompt]); });
       downloadCsvRows(rows, 'prompts');
     }
+  }
+  // Magnific's own CSV guide uses a different format from Adobe/Shutterstock:
+  // columns separated by SEMICOLON (not comma), and every field value wrapped
+  // in single quotes — e.g. 'file.jpg';'Title here';'kw1,kw2,kw3'. Keywords
+  // within a field stay comma-separated as normal.
+  function exportMagnificCsv(done){
+    const q = (v)=> "'" + String(v==null?'':v).replace(/'/g,"\\'") + "'";
+    const lines = ['Filename;Title;Keywords'];
+    done.forEach(f=>{
+      lines.push([q(f.name), q(f.result.title||''), q((f.result.keywords||[]).join(','))].join(';'));
+    });
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'magnific_metadata_export.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
   function downloadCsvRows(rows, filenameBase){
     const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
@@ -2835,6 +2896,10 @@
   };
   document.getElementById('exportMenuShutter').onclick = ()=>{
     exportCsv('Shutterstock');
+    document.getElementById('exportMenu').classList.remove('open');
+  };
+  document.getElementById('exportMenuMagnific').onclick = ()=>{
+    exportCsv('Magnific');
     document.getElementById('exportMenu').classList.remove('open');
   };
   document.addEventListener('click', (e)=>{
@@ -2915,7 +2980,7 @@
       if(k.status==='exhausted' || k.status==='error'){
         const now = Date.now();
         const anyReady = k.provider==='gemini'
-          ? GEMINI_MODELS.some(m => (k.modelCooldowns && k.modelCooldowns[m]||0) <= now)
+          ? currentGeminiModels().some(m => (k.modelCooldowns && k.modelCooldowns[m]||0) <= now)
           : (k.cooldownUntil||0) <= now;
         if(anyReady){ k.status='ok'; changed = true; }
       }
