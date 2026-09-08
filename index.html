@@ -878,8 +878,8 @@
   const PLATFORM_CONFIG = {
     "Adobe Stock":{
       hasTitle:true, hasDescription:false, hasCategory:true,
-      titleMax:70, kwMin:5, kwMax:49, kwDefault:40,
-      hint:'Per Adobe Stock guidelines: Title (≤70 chars) + Keywords (≤49) + Category — no separate Description needed.'
+      titleMax:200, titleDefault:70, kwMin:5, kwMax:49, kwDefault:40,
+      hint:'Per Adobe Stock guidelines: Title (Adobe\'s hard cap is 200 chars; ~70 is the SEO-friendly sweet spot, but icon sets legitimately run longer) + Keywords (≤49) + Category — no separate Description needed.'
     },
     "Shutterstock":{
       hasTitle:false, hasDescription:true, hasCategory:true,
@@ -888,7 +888,7 @@
     },
     "Magnific":{
       hasTitle:true, hasDescription:false, hasCategory:false,
-      titleMax:70, kwMin:5, kwMax:50, kwDefault:40,
+      titleMax:200, titleDefault:70, kwMin:5, kwMax:50, kwDefault:40,
       hint:'Per Magnific\'s contributor CSV guide: just Title + Keywords — no category needed. The CSV export uses semicolon-separated columns, exactly as Magnific\'s format requires.'
     }
   };
@@ -1048,7 +1048,7 @@
       const f = document.createElement('div');
       f.className = 'field';
       f.innerHTML = '<div class="field-label">Title Length <span class="val" id="titleLenVal"></span></div>'+
-        '<input type="range" id="titleLen" min="20" max="'+cfg.titleMax+'" value="'+cfg.titleMax+'">';
+        '<input type="range" id="titleLen" min="20" max="'+cfg.titleMax+'" value="'+(cfg.titleDefault||cfg.titleMax)+'">';
       wrap.appendChild(f);
     }
     if(cfg.hasDescription){
@@ -2543,9 +2543,10 @@
     p += backgroundFact;
     p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes). Don\'t mention any personally identifiable information (PII) — names, addresses, phone numbers, emails.\n';
     p += 'TITLE rules (for Adobe Stock):\n';
-    p += '- Keep it within '+titleLen+' characters max (Adobe Stock limit is 70 chars). Simple, clear, descriptive — never a stuffed list of keywords crammed into a sentence.\n';
+    p += '- Keep it within '+titleLen+' characters max (Adobe Stock\'s hard cap is 200 chars; ~70 is just the SEO-friendly sweet spot for single-subject images). For a single-subject image: simple, clear, descriptive — never a stuffed list of keywords crammed into a sentence. (Icon sets are the one exception — see below.)\n';
     p += '- Build it around this formula: [Main Subject] + [Action/Context] + [Style/Design Type, if it\'s a vector/icon/illustration/3D render/mockup] + [Color/Composition detail]. Put the most important 4-7 words first.\n';
     p += '- If this is a vector/icon/logo/illustration/3D-render/design asset, name that style explicitly (e.g. "Minimalist vector icon of a green plant sprout for agriculture branding"). If it\'s a photo, describe the real scene naturally (e.g. "Classic vintage sports car parked in a studio with a clean minimalist background").\n';
+    p += '- SPECIAL CASE — icon SETS / multi-element vector packs (i.e. the image shows several distinct icons or design elements together, not one single subject): use this exact real-world Adobe Stock convention instead — "[Set name] icon set, [style descriptor], " followed by a plain comma-separated list naming every distinct icon/element actually visible in the set (e.g. "Banking and investment icon set, thin line style, finance, money, business, bank, credit card, piggy bank, wallet, growth, calculator, report, safe, coin, settings, vector illustration"). This enumeration is expected and correct for sets — it tells the buyer exactly what\'s included — unlike a single-subject image where the same comma-stuffing would be wrong. Only use this style when there are genuinely multiple distinct icons/elements to enumerate; for a single subject, use the natural-phrase style above instead.\n';
     p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
     p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar. Don\'t use ALL CAPS, exclamation marks, or a trailing period.\n';
     p += 'DESCRIPTION rules (for Shutterstock — a separate field from the title, not just the title repeated):\n';
