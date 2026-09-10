@@ -815,6 +815,7 @@
     stopRequested: false,
     uploadingBatch: false,
     concurrency: (function(){ const v = Number(localStorage.getItem('gen-concurrency')); return (v>=1 && v<=12) ? v : 6; })(),
+    exportedSinceLastGenerate: true, // becomes false once new results exist, true again after an export
     thinkingLevel: (function(){ const v = localStorage.getItem('thinking-level'); return (v==='high' || v==='low') ? v : 'low'; })(),
     // Rolling window of recently-generated titles/descriptions — passed back
     // into the prompt so similar-looking images in the same batch (e.g. 5
@@ -2715,11 +2716,13 @@
         f.quality = state.platform === 'Shutterstock' ? f.qualityShutter : f.qualityAdobe;
         f.qualityBreakdown = state.platform === 'Shutterstock' ? f.qualityBreakdownShutter : f.qualityBreakdownAdobe;
         f.status = 'done';
+        state.exportedSinceLastGenerate = false;
       }else{
         const promptText = buildPromptPrompt();
         const json = await callAIWithFailover(f.base64, f.mimeType, promptText, PROMPT_SCHEMA);
         f.result = { prompt: toPromptString(json.prompt) };
         f.status = 'done';
+        state.exportedSinceLastGenerate = false;
       }
     }catch(e){
       f.status = 'error';
@@ -2874,6 +2877,7 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    state.exportedSinceLastGenerate = true;
   }
   function downloadCsvRows(rows, filenameBase){
     const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
@@ -2886,6 +2890,7 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    state.exportedSinceLastGenerate = true;
   }
   document.getElementById('exportCsvBtn').onclick = (e)=>{
     e.stopPropagation();
@@ -2988,6 +2993,17 @@
     });
     if(changed) renderApiKeyList();
   }, 2000);
+
+  // Prevent accidentally losing a whole batch of generated metadata to a
+  // stray refresh/tab-close — browsers won't show custom text, but they will
+  // show their own native "leave site? changes may not be saved" prompt,
+  // which is exactly the safety net needed here.
+  window.addEventListener('beforeunload', (e)=>{
+    if(state.files.some(f=>f.status==='done') && !state.exportedSinceLastGenerate){
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
 
 })();
 </script>
