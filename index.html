@@ -712,6 +712,14 @@
             </button>
           </div>
         </div>
+        <button class="btn btn-ghost" id="embedAllBtn" disabled title="Embed generated metadata into all completed JPG and PNG images">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" stroke-linecap="round"/></svg>
+          Embed All
+        </button>
+        <button class="btn btn-ghost" id="epsToJpegAllBtn" disabled title="Export all EPS files as JPEG using their EPS artboard (BoundingBox) at 72 DPI">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 16l3-4 2 2 2-3 2 5M8 8h.01M16 8h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          EPS → JPEG
+        </button>
         <button class="btn btn-ghost" id="qualityDashBtn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l3-4 3 2 4-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Quality Dashboard
@@ -826,7 +834,7 @@
     activeTab: "metadata",
     platform: "Adobe Stock",
     styleChoice: "Photographic",
-    files: [] // {id, file, name, dataUrl, base64, mimeType, status, result, error}
+    files: [] // {id, file, name, dataUrl, base64, mimeType, status, result, error, metadataStatus, metadataError, metadataOutputName, epsJpegStatus, epsJpegError, epsJpegOutputName}
   };
 
   const PLATFORMS = ["Adobe Stock","Shutterstock","Magnific"];
@@ -1655,6 +1663,8 @@
           file:f, name:f.name, dataUrl:URL.createObjectURL(f), base64:null, mimeType:null,
           isEps:false, noPreview:false,
           status:'pending', result:null, error:null,
+          metadataStatus:'idle', metadataError:'', metadataOutputName:'',
+          epsJpegStatus:'idle', epsJpegError:'', epsJpegOutputName:'',
           _processing:false, _isObjectUrl:true, _needsNormalize:true
         };
       }
@@ -1663,6 +1673,8 @@
         file:f, name:f.name, dataUrl:EPS_PLACEHOLDER_SVG, base64:null, mimeType:null,
         isEps:eps, noPreview:false,
         status:'pending', result:null, error:null,
+        metadataStatus:'idle', metadataError:'', metadataOutputName:'',
+        epsJpegStatus:'idle', epsJpegError:'', epsJpegOutputName:'',
         _processing:true, _isObjectUrl:false, _needsNormalize:false
       };
     });
@@ -1794,6 +1806,16 @@
     document.getElementById('generateAllBtn').disabled = n===0 || state.uploadingBatch;
     document.getElementById('exportCsvBtn').disabled = !state.files.some(f=>f.status==='done');
     document.getElementById('qualityDashBtn').disabled = !state.files.some(f=>f.status==='done');
+    const embedAllBtn = document.getElementById('embedAllBtn');
+    if(embedAllBtn){
+      const embeddableCount = state.files.filter(f=>f.status==='done' && f.result && isMetadataEmbeddableFile(f.file)).length;
+      embedAllBtn.disabled = embeddableCount===0 || state.uploadingBatch;
+    }
+    const epsToJpegAllBtn = document.getElementById('epsToJpegAllBtn');
+    if(epsToJpegAllBtn){
+      const epsCount = state.files.filter(f=>f.isEps && !f._processing && !f.noPreview).length;
+      epsToJpegAllBtn.disabled = epsCount===0 || state.uploadingBatch;
+    }
     const doneCount = state.files.filter(f=>f.status==='done').length;
     const errorCount = state.files.filter(f=>f.status==='error' || f.noPreview).length;
     const processingCount = state.files.filter(f=>f._processing).length;
@@ -1823,6 +1845,8 @@
   function cardSignature(f){
     return [
       f.status, f._processing?1:0, f.noPreview?1:0, f.error||'',
+      f.metadataStatus||'', f.metadataError||'', f.metadataOutputName||'',
+      f.epsJpegStatus||'', f.epsJpegError||'', f.epsJpegOutputName||'',
       f.dataUrl, JSON.stringify(f.result||null)
     ].join('|');
   }
@@ -1943,6 +1967,39 @@
           ? '✓ Analyzed from the matching '+f.pairedFile.name+' uploaded alongside it (more accurate than the EPS\'s own preview).'
           : '📎 Analyzed from the EPS\'s embedded preview (not the actual vector artwork) — for better accuracy, also upload a JPG/PNG with the same filename.';
       body.appendChild(epsNote);
+    }
+
+    if(f.isEps){
+      const epsExportRow = document.createElement('div');
+      epsExportRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin:8px 0 10px;';
+      const epsExportBtn = document.createElement('button');
+      epsExportBtn.className = 'btn btn-ghost';
+      epsExportBtn.style.cssText = 'padding:7px 11px;font-size:12px;';
+      epsExportBtn.title = 'Render EPS to JPEG using the EPS BoundingBox/artboard at 72 DPI';
+      if(f._processing){
+        epsExportBtn.disabled = true;
+        epsExportBtn.textContent = 'Preparing EPS…';
+      }else if(f.epsJpegStatus==='loading'){
+        epsExportBtn.disabled = true;
+        epsExportBtn.textContent = 'Exporting JPEG…';
+      }else if(f.epsJpegStatus==='done'){
+        epsExportBtn.disabled = false;
+        epsExportBtn.textContent = '✓ EPS → JPEG';
+      }else if(f.epsJpegStatus==='error'){
+        epsExportBtn.disabled = false;
+        epsExportBtn.textContent = 'Retry EPS → JPEG';
+        epsExportBtn.title = f.epsJpegError || 'EPS to JPEG export failed';
+      }else{
+        epsExportBtn.disabled = false;
+        epsExportBtn.textContent = 'EPS → JPEG';
+      }
+      epsExportBtn.onclick = ()=>exportEpsToJpeg(f);
+      epsExportRow.appendChild(epsExportBtn);
+      const epsExportHint = document.createElement('span');
+      epsExportHint.style.cssText = 'font-size:11px;color:var(--text-soft);';
+      epsExportHint.textContent = 'Artboard / BoundingBox • 72 DPI';
+      epsExportRow.appendChild(epsExportHint);
+      body.appendChild(epsExportRow);
     }
 
     if(state.activeTab==='metadata'){
@@ -2070,6 +2127,61 @@
     kwWrap.appendChild(addBtn);
     kwRow.appendChild(kwWrap);
     wrap.appendChild(kwRow);
+
+    // ---------------- EMBED METADATA ----------------
+    const embedRow = document.createElement('div');
+    embedRow.className = 'field-row';
+    embedRow.style.marginTop = '14px';
+
+    const embedHead = document.createElement('div');
+    embedHead.className = 'field-row-head';
+    const embedLabel = document.createElement('span');
+    embedLabel.className = 'lbl';
+    embedLabel.textContent = 'File metadata';
+    embedHead.appendChild(embedLabel);
+    embedRow.appendChild(embedHead);
+
+    const embedBtn = document.createElement('button');
+    embedBtn.className = 'btn btn-primary';
+    embedBtn.style.width = '100%';
+    embedBtn.style.marginTop = '8px';
+
+    const isEmbeddable = isMetadataEmbeddableFile(f.file);
+    if(!isEmbeddable){
+      embedBtn.disabled = true;
+      embedBtn.textContent = 'Embed Metadata — JPG/PNG only';
+      embedBtn.title = 'Currently supported for JPG/JPEG and PNG files.';
+    }else if(f.status!=='done' || !f.result){
+      embedBtn.disabled = true;
+      embedBtn.textContent = 'Generate metadata first';
+    }else if(f.metadataStatus==='done'){
+      embedBtn.disabled = false;
+      embedBtn.textContent = '✓ Metadata embedded';
+    }else if(f.metadataStatus==='loading'){
+      embedBtn.disabled = true;
+      embedBtn.textContent = 'Embedding…';
+    }else if(f.metadataStatus==='error'){
+      embedBtn.disabled = false;
+      embedBtn.textContent = 'Retry embed metadata';
+    }else{
+      embedBtn.disabled = false;
+      embedBtn.textContent = 'Embed Metadata';
+    }
+
+    embedBtn.onclick = async ()=>{
+      if(f.status!=='done' || !f.result){
+        showToast('Generate metadata first');
+        return;
+      }
+      await embedMetadataForFile(f);
+    };
+    embedRow.appendChild(embedBtn);
+
+    const embedHint = document.createElement('div');
+    embedHint.style.cssText = 'font-size:11px;color:var(--text-soft);line-height:1.45;margin-top:7px;';
+    embedHint.textContent = 'Embeds title, description, keywords and 5-star rating directly into the JPG/PNG. No AI API call is used.';
+    embedRow.appendChild(embedHint);
+    wrap.appendChild(embedRow);
 
     return wrap;
   }
@@ -2545,9 +2657,13 @@
     p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes). Don\'t mention any personally identifiable information (PII) — names, addresses, phone numbers, emails.\n';
     p += 'TITLE rules (for Adobe Stock):\n';
     p += '- Keep it within '+titleLen+' characters max (Adobe Stock\'s hard cap is 200 chars; ~70 is just the SEO-friendly sweet spot for single-subject images). For a single-subject image: simple, clear, descriptive — never a stuffed list of keywords crammed into a sentence. (Icon sets are the one exception — see below.)\n';
-    p += '- Build it around this formula: [Main Subject] + [Action/Context] + [Style/Design Type, if it\'s a vector/icon/illustration/3D render/mockup] + [Color/Composition detail]. Put the most important 4-7 words first.\n';
-    p += '- If this is a vector/icon/logo/illustration/3D-render/design asset, name that style explicitly (e.g. "Minimalist vector icon of a green plant sprout for agriculture branding"). If it\'s a photo, describe the real scene naturally (e.g. "Classic vintage sports car parked in a studio with a clean minimalist background").\n';
-    p += '- SPECIAL CASE — icon SETS / multi-element vector packs (i.e. the image shows several distinct icons or design elements together, not one single subject): use this exact real-world Adobe Stock convention instead — "[Set name] icon set, [style descriptor], " followed by a plain comma-separated list naming every distinct icon/element actually visible in the set (e.g. "Banking and investment icon set, thin line style, finance, money, business, bank, credit card, piggy bank, wallet, growth, calculator, report, safe, coin, settings, vector illustration"). This enumeration is expected and correct for sets — it tells the buyer exactly what\'s included — unlike a single-subject image where the same comma-stuffing would be wrong. Only use this style when there are genuinely multiple distinct icons/elements to enumerate; for a single subject, use the natural-phrase style above instead.\n';
+    p += '- USE A FEATURED-STYLE STOCK TITLE STRUCTURE. Before writing the title, silently classify the asset into: (1) a short subject/set name, (2) asset type such as vector illustration, line icon set, editable stroke icon set, 3D render, photo, template, or background, (3) the visual/style descriptor, (4) the business/use-case concepts supported by the image, and (5) the most important visible elements. Then combine the strongest parts into a natural buyer-facing title.\n';
+    p += '- For VECTOR / ILLUSTRATION / ICON-SET assets, prefer this structure: "[Short subject or collection name]. [Asset type + visual/style descriptor]. [5-10 strongest visible subjects, concepts, or use cases], [optional final format word such as Vector or illustration]." Example patterns: "Basic business. Vector illustrations of people in various activities of business, management, marketing, startup, finance." or "Business Project line icon set in editable stroke style. Project management, planning, strategy, workflow, tasks, timeline, teamwork, goals, progress, budget, resources, collection. Vector" — these are structural references only; never copy their wording unless it is independently accurate for the current image.\n';
+    p += '- The first phrase should work like a compact collection/subject label (usually 2-5 words), followed by a sentence describing what the asset contains and why it is useful. For icon sets or multi-element vectors, it is useful to enumerate the most important visible icons/elements and related buyer concepts instead of writing a generic sentence. For a single subject, do NOT create a long inventory list.\n';
+    p += '- For multi-element sets, inspect the whole image and prioritize the actual visible inventory: subject family, icon themes, actions, business concepts, objects, workflows, industries, or use cases. Mention only elements that are clearly visible or strongly supported by the artwork. Never invent icons or concepts just to make the title longer.\n';
+    p += '- Put the strongest search intent near the beginning: main subject/set name, asset type, style, then the most valuable content/use-case terms. Use natural punctuation (periods and commas) to separate the lead phrase from the descriptive inventory. Do not turn the title into an unnatural keyword dump.\n';
+    p += '- If the image is a normal photo or single-object asset, use a natural descriptive title instead of the featured-style inventory pattern.\n';
+    p += '- If it is a vector/icon/illustration/3D design asset, explicitly identify the medium/style when visually justified: vector, line icon, editable stroke, flat illustration, 3D render, etc.\n';
     p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
     p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar. Don\'t use ALL CAPS, exclamation marks, or a trailing period.\n';
     p += 'DESCRIPTION rules (for Shutterstock — a separate field from the title, not just the title repeated):\n';
@@ -2824,6 +2940,279 @@
   }
   document.getElementById('retryFailedBtn').onclick = retryFailed;
   document.getElementById('stopAllBtn').onclick = ()=>{ state.stopRequested = true; };
+  document.getElementById('embedAllBtn').onclick = embedAllMetadata;
+
+  /* ---------------- EPS → JPEG EXPORT ---------------- */
+
+  function getEpsJpegOutputName(originalName){
+    const name=String(originalName||'image.eps');
+    const m=name.match(/^(.*?)(\.[^.]+)?$/);
+    return `${m?m[1]:name}_jpeg.jpg`;
+  }
+
+  async function renderEpsToJpegWithGhostscript(file){
+    const gs = await loadGhostscript();
+    const buf = new Uint8Array(await fileToArrayBuffer(file));
+    gs.FS.writeFile('/input-eps-to-jpeg.eps', buf);
+    try{
+      // -dEPSCrop uses the EPS BoundingBox as the output page/artboard.
+      // 72 DPI exports at the EPS artboard scale (1 PostScript point = 1 pixel) while preserving
+      // the original aspect ratio and artboard boundaries.
+      gs.callMain([
+        '-sDEVICE=jpeg',
+        '-dEPSCrop',
+        '-dBATCH',
+        '-dNOPAUSE',
+        '-dSAFER',
+        '-r72',
+        '-dJPEGQ=95',
+        '-sOutputFile=/output-eps-to-jpeg.jpg',
+        '/input-eps-to-jpeg.eps'
+      ]);
+      const out = gs.FS.readFile('/output-eps-to-jpeg.jpg');
+      if(!out || out.length===0) throw new Error('Ghostscript produced no JPEG output');
+      return new Uint8Array(out);
+    }finally{
+      try{ gs.FS.unlink('/input-eps-to-jpeg.eps'); }catch(e){}
+      try{ gs.FS.unlink('/output-eps-to-jpeg.jpg'); }catch(e){}
+    }
+  }
+
+  function downloadBlob(blob,name){
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+
+  async function exportEpsToJpeg(f){
+    if(!f || !f.isEps){ showToast('Select an EPS file'); return; }
+    if(f._processing){ showToast('EPS is still being prepared'); return; }
+    try{
+      f.epsJpegStatus='loading';
+      f.epsJpegError='';
+      renderResults(); updateToolbar();
+
+      const jpegBytes = await renderEpsToJpegWithGhostscript(f.file);
+      const outputName = getEpsJpegOutputName(f.name);
+      downloadBlob(new Blob([jpegBytes],{type:'image/jpeg'}), outputName);
+
+      f.epsJpegStatus='done';
+      f.epsJpegError='';
+      f.epsJpegOutputName=outputName;
+      renderResults(); updateToolbar();
+      showToast(`EPS exported as ${outputName}`);
+    }catch(error){
+      console.error('EPS → JPEG export failed:',error);
+      f.epsJpegStatus='error';
+      f.epsJpegError=error?.message||'EPS to JPEG export failed';
+      renderResults(); updateToolbar();
+      showToast(`EPS → JPEG failed: ${f.epsJpegError}`);
+    }
+  }
+
+  async function exportAllEpsToJpeg(){
+    const targets=state.files.filter(f=>f.isEps && !f._processing && !f.noPreview);
+    if(targets.length===0){ showToast('No ready EPS files available'); return; }
+    showToast(`Exporting ${targets.length} EPS file${targets.length>1?'s':''} as JPEG…`);
+    for(const f of targets) await exportEpsToJpeg(f);
+    showToast(`Finished exporting ${targets.length} EPS file${targets.length>1?'s':''}`);
+  }
+
+  document.getElementById('epsToJpegAllBtn').onclick = exportAllEpsToJpeg;
+
+  /* ---------------- JPG/PNG XMP METADATA EMBEDDING ---------------- */
+
+  function isJpegFile(file){
+    if(!file) return false;
+    const name = String(file.name||'').toLowerCase();
+    const type = String(file.type||'').toLowerCase();
+    return type==='image/jpeg' || type==='image/jpg' || /\.(jpg|jpeg)$/i.test(name);
+  }
+
+  function isPngFile(file){
+    if(!file) return false;
+    const name = String(file.name||'').toLowerCase();
+    const type = String(file.type||'').toLowerCase();
+    return type==='image/png' || /\.png$/i.test(name);
+  }
+
+  function isMetadataEmbeddableFile(file){
+    return isJpegFile(file) || isPngFile(file);
+  }
+
+  function xmpEscape(value){
+    return String(value??'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+
+  function utf8Bytes(text){ return new TextEncoder().encode(text); }
+
+  function createXmpPacket(metadata){
+    const title=String(metadata.title||'').trim();
+    const description=String(metadata.description||'').trim();
+    const keywords=Array.isArray(metadata.keywords)
+      ? metadata.keywords.map(k=>String(k||'').trim()).filter(Boolean) : [];
+    const keywordItems=keywords.map(k=>`<rdf:li>${xmpEscape(k)}</rdf:li>`).join('');
+    return `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
+      <dc:title><rdf:Alt><rdf:li xml:lang="x-default">${xmpEscape(title)}</rdf:li></rdf:Alt></dc:title>
+      <dc:description><rdf:Alt><rdf:li xml:lang="x-default">${xmpEscape(description)}</rdf:li></rdf:Alt></dc:description>
+      <dc:subject><rdf:Bag>${keywordItems}</rdf:Bag></dc:subject>
+      <xmp:Rating>5</xmp:Rating>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end="w"?>`;
+  }
+
+  const XMP_IDENTIFIER='http://ns.adobe.com/xap/1.0/\0';
+
+  function concatUint8Arrays(parts){
+    const total=parts.reduce((n,p)=>n+p.length,0);
+    const out=new Uint8Array(total); let off=0;
+    for(const p of parts){out.set(p,off);off+=p.length;}
+    return out;
+  }
+
+  function removeExistingXmpSegments(bytes){
+    if(bytes.length<4 || bytes[0]!==0xFF || bytes[1]!==0xD8) throw new Error('Invalid JPEG file');
+    const parts=[bytes.slice(0,2)]; let offset=2;
+    while(offset<bytes.length){
+      if(bytes[offset]!==0xFF){parts.push(bytes.slice(offset));break;}
+      const markerStart=offset;
+      while(offset<bytes.length && bytes[offset]===0xFF) offset++;
+      if(offset>=bytes.length) break;
+      const marker=bytes[offset++];
+      if(marker===0xD9){parts.push(bytes.slice(markerStart,offset));break;}
+      if(marker===0xDA){parts.push(bytes.slice(markerStart));break;}
+      if(marker===0x01 || (marker>=0xD0 && marker<=0xD7)){parts.push(bytes.slice(markerStart,offset));continue;}
+      if(offset+2>bytes.length) throw new Error('Corrupt JPEG segment');
+      const len=(bytes[offset]<<8)|bytes[offset+1];
+      if(len<2 || offset+len>bytes.length) throw new Error('Corrupt JPEG metadata segment');
+      let isXmp=false;
+      if(marker===0xE1 && len>=2+XMP_IDENTIFIER.length){
+        const id=utf8Bytes(XMP_IDENTIFIER), start=offset+2;
+        isXmp=start+id.length<=bytes.length;
+        if(isXmp) for(let i=0;i<id.length;i++) if(bytes[start+i]!==id[i]){isXmp=false;break;}
+      }
+      if(!isXmp) parts.push(bytes.slice(markerStart,offset+len));
+      offset+=len;
+    }
+    return concatUint8Arrays(parts);
+  }
+
+  function createXmpApp1Segment(xmpString){
+    const id=utf8Bytes(XMP_IDENTIFIER), x=utf8Bytes(xmpString);
+    const payloadLen=id.length+x.length, segmentLen=payloadLen+2;
+    if(segmentLen>65535) throw new Error('Metadata is too large for a JPEG APP1 segment');
+    const out=new Uint8Array(4+payloadLen); out.set([0xFF,0xE1,(segmentLen>>8)&255,segmentLen&255]);
+    out.set(id,4); out.set(x,4+id.length); return out;
+  }
+
+  function insertXmpIntoJpeg(bytes,xmp){
+    const cleaned=removeExistingXmpSegments(bytes), seg=createXmpApp1Segment(xmp);
+    return concatUint8Arrays([cleaned.slice(0,2),seg,cleaned.slice(2)]);
+  }
+
+  const PNG_SIGNATURE=new Uint8Array([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]);
+
+  function crc32(bytes){
+    let crc=0xFFFFFFFF;
+    for(let i=0;i<bytes.length;i++){
+      crc^=bytes[i];
+      for(let j=0;j<8;j++) crc=(crc>>>1)^(0xEDB88320&-(crc&1));
+    }
+    return (crc^0xFFFFFFFF)>>>0;
+  }
+
+  function writeUint32BE(value){
+    return new Uint8Array([(value>>>24)&255,(value>>>16)&255,(value>>>8)&255,value&255]);
+  }
+
+  function bytesEqual(a,b){
+    if(a.length!==b.length) return false;
+    for(let i=0;i<a.length;i++) if(a[i]!==b[i]) return false;
+    return true;
+  }
+
+  function createPngXmpChunk(xmpString){
+    const keywordBytes=utf8Bytes('XML:com.adobe.xmp'), xmpBytes=utf8Bytes(xmpString);
+    const payload=concatUint8Arrays([keywordBytes,new Uint8Array([0,0,0,0]),xmpBytes]);
+    const typeBytes=utf8Bytes('iTXt');
+    const crcBytes=writeUint32BE(crc32(concatUint8Arrays([typeBytes,payload])));
+    return concatUint8Arrays([writeUint32BE(payload.length),typeBytes,payload,crcBytes]);
+  }
+
+  function insertXmpIntoPng(bytes,xmpString){
+    if(bytes.length<8 || !bytesEqual(bytes.slice(0,8),PNG_SIGNATURE)) throw new Error('File is not a valid PNG');
+    const xmpChunk=createPngXmpChunk(xmpString), parts=[bytes.slice(0,8)];
+    let offset=8, found=false;
+    while(offset<bytes.length){
+      if(offset+12>bytes.length) throw new Error('Corrupt PNG chunk');
+      const len=((bytes[offset]<<24)>>>0)|(bytes[offset+1]<<16)|(bytes[offset+2]<<8)|bytes[offset+3];
+      const end=offset+12+len;
+      if(end>bytes.length) throw new Error('Corrupt PNG chunk length');
+      const type=String.fromCharCode(bytes[offset+4],bytes[offset+5],bytes[offset+6],bytes[offset+7]);
+      let isXmp=false;
+      if(type==='iTXt' && len>0){
+        const data=bytes.slice(offset+8,offset+8+len); let nul=-1;
+        for(let i=0;i<data.length;i++){if(data[i]===0){nul=i;break;}}
+        if(nul>0) isXmp=new TextDecoder().decode(data.slice(0,nul))==='XML:com.adobe.xmp';
+      }
+      if(type==='IEND'){
+        parts.push(xmpChunk,bytes.slice(offset,end)); found=true; break;
+      }
+      if(!isXmp) parts.push(bytes.slice(offset,end));
+      offset=end;
+    }
+    if(!found) throw new Error('PNG IEND chunk not found');
+    return concatUint8Arrays(parts);
+  }
+
+  function getEmbeddedOutputName(originalName){
+    const name=String(originalName||'image.jpg');
+    const m=name.match(/^(.*?)(\.[^.]+)?$/);
+    return `${m?m[1]:name}_embedded${m&&m[2]?m[2]:'.jpg'}`;
+  }
+
+  function downloadEmbeddedFile(blob,originalName){
+    const name=getEmbeddedOutputName(originalName), url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500); return name;
+  }
+
+  async function embedMetadataForFile(f){
+    if(!f || !isMetadataEmbeddableFile(f.file)){
+      showToast('Metadata embedding currently supports JPG/JPEG and PNG only'); return;
+    }
+    if(f.status!=='done' || !f.result){showToast('Generate metadata first');return;}
+    try{
+      f.metadataStatus='loading'; f.metadataError=''; renderResults(); updateToolbar();
+      const bytes=new Uint8Array(await f.file.arrayBuffer());
+      const xmp=createXmpPacket({title:f.result.title||'',description:f.result.description||'',keywords:Array.isArray(f.result.keywords)?f.result.keywords:[]});
+      let embeddedBytes,mimeType;
+      if(isJpegFile(f.file)){embeddedBytes=insertXmpIntoJpeg(bytes,xmp);mimeType='image/jpeg';}
+      else{embeddedBytes=insertXmpIntoPng(bytes,xmp);mimeType='image/png';}
+      const outputName=downloadEmbeddedFile(new Blob([embeddedBytes],{type:mimeType}),f.name);
+      f.metadataStatus='done'; f.metadataError=''; f.metadataOutputName=outputName;
+      renderResults(); updateToolbar(); showToast(`Metadata embedded successfully: ${outputName}`);
+    }catch(error){
+      console.error('Metadata embedding failed:',error);
+      f.metadataStatus='error'; f.metadataError=error?.message||'Metadata embedding failed';
+      renderResults(); updateToolbar(); showToast(`Metadata embedding failed: ${f.metadataError}`);
+    }
+  }
+
+  async function embedAllMetadata(){
+    const targets=state.files.filter(f=>f.status==='done'&&f.result&&isMetadataEmbeddableFile(f.file));
+    if(targets.length===0){showToast('No completed JPG/PNG files available');return;}
+    showToast(`Embedding metadata into ${targets.length} image${targets.length>1?'s':''}…`);
+    for(const f of targets) await embedMetadataForFile(f);
+    showToast(`Finished embedding metadata into ${targets.length} image${targets.length>1?'s':''}`);
+  }
 
   /* ---------------- EXPORT CSV ---------------- */
   function csvEscape(v){
