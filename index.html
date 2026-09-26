@@ -101,6 +101,17 @@
   .apikey-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--err);flex-shrink:0;}
   .apikey-btn.set .dot{background:#F2F2F2;}
 
+  .main-nav{
+    display:flex;flex-direction:column;gap:8px;margin-top:12px;margin-bottom:10px;
+  }
+  .main-nav-btn{
+    width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;
+    background:var(--ink-panel);border:1px solid var(--ink-line);color:#F2F2F2;
+    font:600 13px Inter,sans-serif;cursor:pointer;transition:.15s ease;text-align:left;
+  }
+  .main-nav-btn:hover{border-color:var(--accent-soft);}
+  .main-nav-btn.active{background:#F2F2F2;color:var(--ink);border-color:transparent;}
+  .main-nav-btn svg{width:16px;height:16px;flex-shrink:0;}
   .tabs{
     display:flex;background:var(--ink-panel);padding:4px;border-radius:11px;gap:4px;
     border:1px solid var(--ink-line);
@@ -493,6 +504,104 @@
     box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:60;opacity:0;pointer-events:none;transition:.2s ease;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  /* ---------- ADOBE ANALYTICS ---------- */
+  .analytics-view{display:none;width:100%;box-sizing:border-box;}
+  .analytics-view.active{display:block !important;}
+  .sidebar.analytics-mode .side-scroll{display:none;}
+  .analytics-nav-btn{
+    width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;
+    background:var(--ink-panel);border:1px solid var(--ink-line);color:#F2F2F2;
+    font:600 13px Inter,sans-serif;cursor:pointer;transition:.15s ease;text-align:left;
+  }
+  .analytics-nav-btn:hover{border-color:var(--accent-soft);}
+  .analytics-nav-btn.active{background:var(--accent-grad);border-color:transparent;color:#fff;}
+  .analytics-nav-btn svg{width:16px;height:16px;flex-shrink:0;}
+  .analytics-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:20px;}
+  .analytics-head h1{margin:0 0 5px;font-size:22px;letter-spacing:-.02em;}
+  .analytics-head p{margin:0;color:var(--text-soft);font-size:13.5px;line-height:1.5;}
+  .analytics-key-status{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-soft);}
+  .analytics-key-status .dot{width:8px;height:8px;border-radius:50%;background:var(--err);}
+  .analytics-key-status.ok .dot{background:var(--ok);}
+  .analytics-key-btn{margin-top:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--card-line);background:var(--card);color:var(--text);font:600 11.5px Inter,sans-serif;cursor:pointer;}
+  .analytics-tabs{display:flex;gap:5px;background:var(--card);border:1px solid var(--card-line);padding:4px;border-radius:11px;width:max-content;margin-bottom:12px;}
+  .analytics-tab{border:0;background:transparent;color:var(--text-soft);padding:8px 13px;border-radius:8px;font:600 12.5px Inter,sans-serif;cursor:pointer;}
+  .analytics-tab.active{background:#F2F2F2;color:var(--ink);}
+  .analytics-search-row{display:grid;grid-template-columns:minmax(260px,1fr) auto auto;gap:9px;margin-bottom:12px;}
+  .analytics-input{width:100%;background:var(--card);border:1px solid var(--card-line);color:var(--text);padding:11px 13px;border-radius:10px;font:13px Inter,sans-serif;outline:none;}
+  .analytics-input:focus{border-color:var(--accent-soft);}
+  .analytics-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  .analytics-filter-group{min-width:0;}
+  .analytics-filter-label{display:block;margin:0 0 7px;color:var(--ink-soft);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+  .analytics-select{width:100%;background:var(--ink-panel);border:1px solid var(--ink-line);color:#F2F2F2;padding:9px 10px;border-radius:9px;font:12px Inter,sans-serif;outline:none;cursor:pointer;color-scheme:dark;}
+  .analytics-select:hover{border-color:var(--accent-soft);}
+  .analytics-select:focus{border-color:var(--accent-soft);box-shadow:0 0 0 2px rgba(144,97,249,.14);}
+  .analytics-select option{background:#1E1432;color:#F2F2F2;}
+  .analytics-select option:checked{background:#352548;color:#FFFFFF;}
+  .analytics-select option:hover{background:#352548;color:#FFFFFF;}
+  .analytics-moodboard{margin-left:auto;}
+  .analytics-menu-wrap{position:relative;}
+  .analytics-download-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:165px;padding:5px;background:var(--card);border:1px solid var(--card-line);border-radius:10px;box-shadow:0 16px 36px rgba(0,0,0,.28);z-index:20;}
+  .analytics-download-menu.open{display:block;}
+  .analytics-download-menu button{display:block;width:100%;padding:9px 10px;border:0;background:transparent;color:var(--text);text-align:left;border-radius:7px;font:600 11.5px Inter,sans-serif;cursor:pointer;}
+  .analytics-download-menu button:hover{background:var(--paper);}
+  .analytics-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-4px 0 18px;color:var(--text-soft);font-size:11px;}
+  .analytics-moodboard-btn{border:1px solid var(--card-line);background:var(--card);color:var(--text);padding:8px 11px;border-radius:9px;font:600 11.5px Inter,sans-serif;cursor:pointer;}
+  .analytics-moodboard-btn.active{background:#F2F2F2;color:var(--ink);}
+  .analytics-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  .analytics-stat{background:var(--card);border:1px solid var(--card-line);border-radius:12px;padding:14px 15px;}
+  .analytics-stat .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-soft);font-weight:700;}
+  .analytics-stat .value{font:700 20px 'JetBrains Mono',monospace;margin-top:6px;color:var(--text);}
+  .analytics-results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;}
+  .analytics-card{display:flex;flex-direction:column;min-width:0;min-height:100%;background:linear-gradient(180deg,#1b1d23 0%,#17191f 100%);border:1px solid rgba(255,255,255,.08);border-radius:13px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.12);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;}
+  .analytics-card:hover{transform:translateY(-2px);border-color:rgba(157,113,255,.38);box-shadow:0 14px 30px rgba(0,0,0,.2);}
+  .analytics-thumb{height:164px;background:#0e1015;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.07);}
+  .analytics-gallery{display:flex;gap:6px;width:100%;height:100%;padding:10px 8px;overflow:hidden;align-items:center;}
+  .analytics-gallery.single{padding:0;}
+  .analytics-gallery img{display:block;flex:1 1 0;min-width:0;width:100%;height:100%;object-fit:cover;border-radius:2px;background:#14161b;}
+  .analytics-gallery.single img{border-radius:0;}
+  .analytics-badges{position:absolute;top:9px;left:9px;display:flex;gap:5px;flex-wrap:wrap;z-index:2;}
+  .analytics-badge{padding:4px 7px;border-radius:6px;background:rgba(12,10,18,.84);border:1px solid rgba(255,255,255,.13);font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.03em;color:#fff;backdrop-filter:blur(5px);}
+  .analytics-badge.type{background:rgba(30,24,47,.88);}
+  .analytics-badge.ai{background:rgba(25,112,78,.9);border-color:rgba(93,236,173,.22);}
+  .analytics-badge.nonai{background:rgba(31,38,48,.9);}
+  .analytics-body{display:flex;flex-direction:column;padding:12px 12px 0;min-width:0;flex:1;}
+  .analytics-title{font-size:12px;line-height:1.42;font-weight:650;margin:0 0 8px;color:var(--text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:51px;}
+  .analytics-meta{display:flex;flex-direction:column;gap:6px;font-size:10.5px;color:var(--text-soft);margin-bottom:9px;}
+  .analytics-meta-item{display:flex;align-items:center;gap:6px;min-width:0;}
+  .analytics-meta-item span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .analytics-meta-item svg{width:13px;height:13px;flex:0 0 auto;opacity:.78;}
+  .analytics-keywords{display:flex;gap:5px;flex-wrap:wrap;align-content:flex-start;min-height:45px;max-height:58px;overflow:hidden;margin:0 0 10px;}
+  .analytics-keyword{padding:4px 7px;border-radius:999px;background:#25212f;border:1px solid rgba(255,255,255,.07);color:#b9aecb;font-size:9px;line-height:1;white-space:nowrap;}
+  .analytics-keyword.more{background:transparent;color:#8f7eb0;border-color:rgba(143,126,176,.18);}
+  .analytics-stats-row{display:grid;grid-template-columns:1fr 1fr;margin:0 -12px;border-top:1px solid rgba(255,255,255,.07);background:#211f29;}
+  .analytics-stat-cell{padding:9px 11px;min-width:0;}
+  .analytics-stat-cell+ .analytics-stat-cell{border-left:1px solid rgba(255,255,255,.07);}
+  .analytics-stat-label{display:flex;align-items:center;gap:5px;color:#8e8a99;font-size:8px;text-transform:uppercase;letter-spacing:.04em;font-weight:750;margin-bottom:3px;}
+  .analytics-stat-label svg{width:11px;height:11px;}
+  .analytics-stat-value{font:700 11px 'JetBrains Mono',monospace;color:#f2eef8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .analytics-footer{display:flex;align-items:center;gap:6px;padding:8px 0 10px;min-height:32px;}
+  .analytics-action{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border-radius:7px;border:1px solid rgba(255,255,255,.08);background:#211f29;color:#b9b2c5;font:600 9px Inter,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;}
+  .analytics-action:hover{color:#fff;border-color:rgba(157,113,255,.42);background:#282334;}
+  .analytics-action.stock{margin-right:auto;}
+  .analytics-icon-action{width:26px;height:26px;padding:0;justify-content:center;}
+  .analytics-empty{text-align:center;padding:65px 20px;color:var(--text-soft);background:var(--card);border:1px solid var(--card-line);border-radius:13px;grid-column:1/-1;}
+  .analytics-empty h3{color:var(--text);font-size:15px;margin:0 0 6px;}
+  .analytics-empty p{margin:0;font-size:12.5px;line-height:1.5;}
+  .analytics-loading{display:flex;align-items:center;justify-content:center;gap:9px;padding:45px;color:var(--text-soft);font-size:12.5px;grid-column:1/-1;}
+  .analytics-spinner{width:14px;height:14px;border:2px solid var(--card-line);border-top-color:var(--accent-soft);border-radius:50%;animation:spin .7s linear infinite;}
+  .analytics-error{padding:13px 14px;border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.08);color:#FCA5A5;border-radius:10px;font-size:12px;line-height:1.5;margin-bottom:14px;}
+  .analytics-key-modal-note{font-size:11.5px;line-height:1.5;color:var(--text-soft);margin:0 0 12px;}
+  @media(max-width:1180px){.analytics-results{grid-template-columns:repeat(3,minmax(0,1fr));}}
+  @media(max-width:900px){.analytics-results{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:700px){
+    .analytics-search-row{grid-template-columns:1fr;}
+    .analytics-filters{grid-template-columns:1fr;}
+    .analytics-stats{grid-template-columns:1fr;}
+    .analytics-results{grid-template-columns:1fr;}
+    .analytics-thumb{height:220px;}
+  }
+
 </style>
 </head>
 <body>
@@ -512,7 +621,18 @@
 
     <button class="apikey-btn" id="apiKeyBtn"><span class="dot" id="apiDot"></span><span id="apiKeyLabel">Add API Key</span></button>
 
-    <div class="tabs">
+    <div class="main-nav" aria-label="Main menu">
+      <button class="main-nav-btn active" id="metadataNavBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6" stroke-linecap="round"/></svg>
+        Metadata
+      </button>
+      <button class="main-nav-btn" id="analyticsNavBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16" stroke-linecap="round"/><path d="M7 15l3-4 3 2 4-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Adobe Analytics
+      </button>
+    </div>
+
+    <div class="tabs" id="metadataModeTabs">
       <button class="tab active" data-tab="metadata">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>
         Metadata
@@ -647,6 +767,7 @@
 
   <!-- MAIN -->
   <main class="main">
+    <div id="generatorView">
     <div class="topbar">
       <div>
         <h1 id="mainTitle">Image → Metadata</h1>
@@ -740,8 +861,104 @@
         <h3>Your generated results will appear here.</h3>
         <p>Upload some images and press "Generate All".</p>
       </div>
-    </div>
+    </div><!-- /generatorView content -->
+    </div><!-- /generatorView -->
+
+    <section class="analytics-view" id="analyticsView">
+      <div class="analytics-head">
+        <div>
+          <h1>Adobe Analytics</h1>
+          <p>Search Adobe Stock assets, inspect downloads and contributor portfolios, and discover what is performing in the marketplace.</p>
+        </div>
+        <div style="text-align:right;">
+          <div class="analytics-key-status" id="analyticsKeyStatus"><span class="dot"></span><span>No Apify key</span></div>
+          <button class="analytics-key-btn" id="analyticsKeyBtn">Apify settings</button>
+        </div>
+      </div>
+
+      <div class="analytics-tabs">
+        <button class="analytics-tab active" data-analytics-mode="keyword">Search by Keyword</button>
+        <button class="analytics-tab" data-analytics-mode="contributor">Search by Contributor ID</button>
+      </div>
+
+      <div class="analytics-search-row">
+        <input class="analytics-input" id="analyticsQuery" placeholder="Search by keyword or phrase…" autocomplete="off" aria-label="Adobe Stock keyword or contributor search">
+        <button class="btn btn-primary" id="analyticsAnalyzeBtn">Analyze</button>
+        <div class="analytics-menu-wrap">
+          <button class="btn btn-ghost" id="analyticsDownloadBtn" type="button">Download <span aria-hidden="true">⌄</span></button>
+          <div class="analytics-download-menu" id="analyticsDownloadMenu">
+            <button type="button" data-export="csv">Download CSV</button>
+            <button type="button" data-export="json">Download JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-filters">
+        <div class="analytics-filter-group">
+          <label class="analytics-filter-label" for="analyticsSort">Sort by</label>
+          <select class="analytics-select" id="analyticsSort" aria-label="Sort by">
+            <option value="relevance">Relevance</option>
+            <option value="newest">Newest</option>
+            <option value="featured">Featured</option>
+            <option value="downloads">Most Downloads</option>
+          </select>
+        </div>
+        <div class="analytics-filter-group">
+          <label class="analytics-filter-label" for="analyticsType">Content type</label>
+          <select class="analytics-select" id="analyticsType" aria-label="Content type">
+            <option value="all">All Asset Types</option>
+            <option value="photo">Photos</option>
+            <option value="illustration">Illustrations</option>
+            <option value="vector">Vectors</option>
+            <option value="video">Videos</option>
+            <option value="3d">3D</option>
+            <option value="template">Templates</option>
+          </select>
+        </div>
+        <div class="analytics-filter-group">
+          <label class="analytics-filter-label" for="analyticsAi">Generative AI</label>
+          <select class="analytics-select" id="analyticsAi" aria-label="Generative AI">
+            <option value="all">All Content (Include AI)</option>
+            <option value="ai">Generative AI Only</option>
+            <option value="nonai">Non-AI Only</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="analytics-toolbar">
+        <button class="analytics-moodboard-btn" id="analyticsMoodboardBtn" type="button">♡ Moodboards</button>
+        <span id="analyticsModeHint">Search mode: Keyword · Enter a keyword, then click Analyze</span>
+      </div>
+
+      <div id="analyticsError"></div>
+      <div class="analytics-stats">
+        <div class="analytics-stat"><div class="label">Assets found</div><div class="value" id="analyticsCount">0</div></div>
+        <div class="analytics-stat"><div class="label">Non-AI</div><div class="value" id="analyticsNonAi">0</div></div>
+        <div class="analytics-stat"><div class="label">AI</div><div class="value" id="analyticsAiCount">0</div></div>
+      </div>
+
+      <div id="analyticsResults" class="analytics-results">
+        <div class="analytics-empty">
+          <h3>Start your Adobe Stock research</h3>
+          <p>Add an Apify token, enter a keyword or contributor ID, then click Analyze.</p>
+        </div>
+      </div>
+    </section>
+
   </main>
+</div>
+
+<!-- APIFY ANALYTICS KEY MODAL -->
+<div class="modal-bg" id="analyticsKeyModalBg">
+  <div class="modal">
+    <h3>Adobe Analytics — Apify</h3>
+    <p class="analytics-key-modal-note">The Adobe Analytics module uses the Apify Adobe Stock Scraper actor to retrieve public asset search data, including previews, titles, creators, keywords and reported download counts where available.</p>
+    <input type="password" id="analyticsApifyKeyInput" placeholder="Paste your Apify API token">
+    <div class="row" style="margin-top:14px;">
+      <button class="btn btn-ghost" id="analyticsKeyCancel">Cancel</button>
+      <button class="btn btn-primary" id="analyticsKeySave">Save token</button>
+    </div>
+  </div>
 </div>
 
 <!-- API KEY MODAL -->
@@ -1136,6 +1353,7 @@
   /* ---------------- TABS ---------------- */
   document.querySelectorAll('.tab').forEach(tabEl=>{
     tabEl.addEventListener('click', ()=>{
+      showGenerator();
       document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
       tabEl.classList.add('active');
       state.activeTab = tabEl.dataset.tab;
@@ -1151,6 +1369,293 @@
       renderResults();
     });
   });
+
+  /* ---------------- ADOBE ANALYTICS ---------------- */
+  const analyticsView = document.getElementById('analyticsView');
+  const generatorView = document.getElementById('generatorView');
+  const metadataNavBtn = document.getElementById('metadataNavBtn');
+  const analyticsNavBtn = document.getElementById('analyticsNavBtn');
+  const metadataModeTabs = document.getElementById('metadataModeTabs');
+  const analyticsKeyModalBg = document.getElementById('analyticsKeyModalBg');
+  const analyticsApifyKeyInput = document.getElementById('analyticsApifyKeyInput');
+  let analyticsMode = 'keyword';
+  let analyticsItems = [];
+
+  function getApifyKey(){
+    try{return localStorage.getItem('strong-meta-apify-token') || '';}catch(e){return '';}
+  }
+  function setAnalyticsKeyStatus(){
+    const el=document.getElementById('analyticsKeyStatus');
+    const has=!!getApifyKey();
+    el.classList.toggle('ok',has);
+    el.innerHTML = has ? '<span class="dot"></span><span>Apify connected</span>' : '<span class="dot"></span><span>No Apify key</span>';
+  }
+  setAnalyticsKeyStatus();
+
+  function showAnalytics(){
+    generatorView.style.display='none';
+    analyticsView.classList.add('active');
+    analyticsView.style.display='block';
+    metadataNavBtn.classList.remove('active');
+    analyticsNavBtn.classList.add('active');
+    if(metadataModeTabs) metadataModeTabs.style.display='none';
+    const sidebar=document.querySelector('.sidebar');
+    if(sidebar) sidebar.classList.add('analytics-mode');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    setAnalyticsKeyStatus();
+    setTimeout(()=>document.getElementById('analyticsQuery')?.focus(),50);
+  }
+  function showGenerator(){
+    generatorView.style.display='block';
+    analyticsView.classList.remove('active');
+    analyticsView.style.display='none';
+    metadataNavBtn.classList.add('active');
+    analyticsNavBtn.classList.remove('active');
+    if(metadataModeTabs) metadataModeTabs.style.display='flex';
+    const sidebar=document.querySelector('.sidebar');
+    if(sidebar) sidebar.classList.remove('analytics-mode');
+    const active=document.querySelector('.tab[data-tab="'+(state.activeTab||'metadata')+'"]');
+    if(active) active.classList.add('active');
+  }
+  metadataNavBtn.addEventListener('click',showGenerator);
+  analyticsNavBtn.addEventListener('click',showAnalytics);
+
+  document.getElementById('analyticsKeyBtn').addEventListener('click',()=>{
+    analyticsApifyKeyInput.value=getApifyKey();
+    analyticsKeyModalBg.classList.add('open');
+  });
+  document.getElementById('analyticsKeyCancel').addEventListener('click',()=>analyticsKeyModalBg.classList.remove('open'));
+  analyticsKeyModalBg.addEventListener('click',e=>{if(e.target===analyticsKeyModalBg) analyticsKeyModalBg.classList.remove('open');});
+  document.getElementById('analyticsKeySave').addEventListener('click',()=>{
+    const key=analyticsApifyKeyInput.value.trim();
+    if(!key){localStorage.removeItem('strong-meta-apify-token');}
+    else{localStorage.setItem('strong-meta-apify-token',key);}
+    analyticsKeyModalBg.classList.remove('open');
+    setAnalyticsKeyStatus();
+    showToast(key?'Apify token saved in this browser':'Apify token removed');
+  });
+
+  document.querySelectorAll('.analytics-tab').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.analytics-tab').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    analyticsMode=btn.dataset.analyticsMode;
+    const input=document.getElementById('analyticsQuery');
+    const hint=document.getElementById('analyticsModeHint');
+    if(analyticsMode==='contributor'){
+      input.placeholder='Enter Adobe Stock contributor ID (numbers only)…';
+      input.inputMode='numeric';
+      input.type='text';
+      if(hint) hint.textContent='Search mode: Contributor ID · Enter the creator ID, then click Analyze';
+    }else{
+      input.placeholder='Search Adobe Stock by keyword or phrase…';
+      input.inputMode='search';
+      input.type='text';
+      if(hint) hint.textContent='Search mode: Keyword · Enter a keyword, then click Analyze';
+    }
+  }));
+
+  function analyticsTypeName(v){
+    const m={photo:'photo',illustration:'illustration',vector:'vector',video:'video',template:'template','3d':'3d',audio:'audio'};
+    return m[v]||'all';
+  }
+  function normalizeAnalyticsItem(x){
+    const creator=x.creator || {};
+    const title=x.assetTitle || x.title || x.name || '';
+    const creatorId=x.creatorId || x.creator_id || creator.id || '';
+    const creatorName=x.creatorName || x.creator_name || creator.name || x.author || '';
+    const rawKeywords=x.keywordList ?? x.keywords ?? x.keyword_list ?? [];
+    const keywords=Array.isArray(rawKeywords)
+      ? rawKeywords.map(k=>typeof k==='string'?k:(k&&k.name)||'').filter(Boolean)
+      : (typeof rawKeywords==='string' ? rawKeywords.split(/[,;|]/).map(s=>s.trim()).filter(Boolean) : []);
+    const downloads=Number(x.downloadCount ?? x.downloads ?? x.nbDownloads ?? x.nb_downloads ?? x.download_count ?? 0) || 0;
+    const ai=!!(x.isGenerativeAi ?? x.isGentech ?? x.generativeAi ?? x.is_gentech ?? x.is_ai ?? x.ai);
+    const previewCandidates=[x.thumb1000Url,x.thumb500Url,x.thumbUrl,x.thumbnailUrl,x.thumbnail_url,x.previewUrl,x.compUrl].filter(Boolean);
+    const extraPreviews=Array.isArray(x.previews) ? x.previews.map(p=>typeof p==='string'?p:(p&& (p.url||p.thumbUrl||p.thumbnailUrl)) || '').filter(Boolean) : [];
+    const previews=[...new Set([...previewCandidates,...extraPreviews])].slice(0,5);
+    const thumb=previews[0] || '';
+    const url=x.detailsUrl || x.details_url || x.assetUrl || x.url || (x.assetId ? 'https://stock.adobe.com/images/'+x.assetId : '');
+    const cat=x.categoryInfo || x.category || {};
+    const category=(typeof cat==='string' ? cat : (cat.name || cat.label || ''));
+    const kind=x.assetKind || x.mediaType || x.assetType || x.contentType || 'Asset';
+    return {
+      assetId:x.assetId || x.stockId || x.stock_id || x.id || '', title, creatorId, creatorName,
+      contentType:kind, category, keywords, downloads, previews, thumb,
+      uploadDate:x.uploadDate || x.creationDate || x.createdAt || x.creation_date || '',
+      ai, url
+    };
+  }
+
+  function fmtNumber(n){return Number(n||0).toLocaleString();}
+  function fmtDate(v){
+    if(!v) return '';
+    const d=new Date(v);
+    if(Number.isNaN(d.getTime())) return String(v);
+    return d.toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});
+  }
+  function renderAnalytics(){
+    const wrap=document.getElementById('analyticsResults');
+    document.getElementById('analyticsCount').textContent=fmtNumber(analyticsItems.length);
+    document.getElementById('analyticsAiCount').textContent=fmtNumber(analyticsItems.filter(x=>x.ai).length);
+    document.getElementById('analyticsNonAi').textContent=fmtNumber(analyticsItems.filter(x=>!x.ai).length);
+    if(!analyticsItems.length){
+      wrap.innerHTML='<div class="analytics-empty"><h3>No results</h3><p>Try another keyword, contributor ID, or filter.</p></div>';
+      return;
+    }
+    wrap.innerHTML=analyticsItems.map((x,i)=>{
+      const previews=(x.previews && x.previews.length ? x.previews : (x.thumb?[x.thumb]:[])).slice(0,5);
+      const gallery=previews.length
+        ? '<div class="analytics-gallery '+(previews.length===1?'single':'')+'">'+previews.map(src=>'<img src="'+escapeHtml(src)+'" alt="" loading="lazy">').join('')+'</div>'
+        : '<span style="color:var(--text-soft);font-size:11px;">No preview</span>';
+      const tags=x.keywords.slice(0,9).map(k=>'<span class="analytics-keyword">'+escapeHtml(k)+'</span>').join('');
+      const more=x.keywords.length>9 ? '<span class="analytics-keyword more">+'+(x.keywords.length-9)+'</span>' : '';
+      const stock=x.url ? '<a class="analytics-action stock" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M19 13v5a1 1 0 01-1 1H6a1 1 0 01-1-1V6a1 1 0 011-1h5"/></svg>Open in Stock</a>' : '';
+      const contentLabel=(x.contentType||'Asset').replace(/^image\//,'').replace(/^application\//,'').replace(/_/g,' ');
+      return '<article class="analytics-card">'+
+        '<div class="analytics-thumb">'+gallery+
+          '<div class="analytics-badges"><span class="analytics-badge type">'+escapeHtml(contentLabel)+'</span><span class="analytics-badge '+(x.ai?'ai':'nonai')+'">'+(x.ai?'AI':'Non-AI')+'</span></div>'+
+        '</div>'+
+        '<div class="analytics-body">'+
+          '<div class="analytics-title" title="'+escapeHtml(x.title||'Untitled asset')+'">'+escapeHtml(x.title||'Untitled asset')+'</div>'+
+          '<div class="analytics-meta">'+
+            '<div class="analytics-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5.5 20a6.5 6.5 0 0113 0"/></svg><span>'+escapeHtml(x.creatorName||x.creatorId||'Unknown contributor')+'</span></div>'+
+            (x.category?'<div class="analytics-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 6.5h6l2 2h9v9a2 2 0 01-2 2h-15a2 2 0 01-2-2v-9a2 2 0 012-2z"/></svg><span>'+escapeHtml(x.category)+'</span></div>':'')+
+          '</div>'+
+          '<div class="analytics-keywords">'+(tags||'<span class="analytics-keyword more">No keywords</span>')+more+'</div>'+
+          '<div class="analytics-stats-row">'+
+            '<div class="analytics-stat-cell"><div class="analytics-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Downloads</div><div class="analytics-stat-value">'+fmtNumber(x.downloads)+'</div></div>'+
+            '<div class="analytics-stat-cell"><div class="analytics-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Upload date</div><div class="analytics-stat-value">'+escapeHtml(fmtDate(x.uploadDate)||'—')+'</div></div>'+
+          '</div>'+
+          '<div class="analytics-footer">'+stock+
+            '<button class="analytics-action analytics-icon-action" type="button" title="Copy details" aria-label="Copy details" data-copy-analytics="'+i+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7a2 2 0 002 2h3"/></svg></button>'+
+            '<button class="analytics-action analytics-icon-action" type="button" title="Copy keywords" aria-label="Copy keywords" data-copy-keywords="'+i+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 13.5a4 4 0 01-5.66 5.66l-1.41-1.41"/><path d="M3.5 10.5a4 4 0 015.66-5.66l1.41 1.41"/><path d="M8 16l8-8"/></svg></button>'+
+          '</div>'+
+        '</div>'+
+      '</article>';
+    }).join('');
+    wrap.querySelectorAll('[data-copy-analytics]').forEach(btn=>btn.addEventListener('click',()=>{
+      const x=analyticsItems[Number(btn.dataset.copyAnalytics)];
+      const text=[x.title,x.creatorName,x.category,x.keywords.join(', '),'Downloads: '+x.downloads].filter(Boolean).join(' | ');
+      navigator.clipboard?.writeText(text); showToast('Asset details copied');
+    }));
+    wrap.querySelectorAll('[data-copy-keywords]').forEach(btn=>btn.addEventListener('click',()=>{
+      const x=analyticsItems[Number(btn.dataset.copyKeywords)];
+      navigator.clipboard?.writeText(x.keywords.join(', ')); showToast('Keywords copied');
+    }));
+  }
+
+  function escapeHtml(v){return String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\\"':'&quot;'}[c]||c));}
+
+  async function runAdobeAnalytics(){
+    const key=getApifyKey();
+    const q=document.getElementById('analyticsQuery').value.trim();
+    const err=document.getElementById('analyticsError');
+    const wrap=document.getElementById('analyticsResults');
+    err.innerHTML='';
+    if(!key){err.innerHTML='<div class="analytics-error">Add your Apify API token first using <b>Apify settings</b>.</div>';return;}
+    if(!q){err.innerHTML='<div class="analytics-error">Enter a keyword or contributor ID.</div>';return;}
+    wrap.innerHTML='<div class="analytics-loading"><span class="analytics-spinner"></span> Running Adobe Stock analysis…</div>';
+    const limit=24;
+    const sort=document.getElementById('analyticsSort').value;
+    const type=document.getElementById('analyticsType').value;
+    const ai=document.getElementById('analyticsAi').value;
+    const input={maxItems:limit,assetType:analyticsTypeName(type),order:sort,aiFilter:ai==='all'?'all':(ai==='ai'?'only':'exclude'),proxyConfiguration:{useApifyProxy:true}};
+    if(analyticsMode==='contributor'){
+      // Creator search must be a creator-only query. The actor documents creatorId
+      // as an integer and its creator-portfolio example leaves query empty.
+      if(!/^\d+$/.test(q)){err.innerHTML='<div class="analytics-error">Contributor ID must contain numbers only.</div>';wrap.innerHTML='';return;}
+      const creatorId=Number(q);
+      if(!Number.isSafeInteger(creatorId) || creatorId<=0){err.innerHTML='<div class="analytics-error">Enter a valid Adobe Stock Contributor ID.</div>';wrap.innerHTML='';return;}
+      // Important: the Apify actor documents creatorId as a creator-only
+      // search when query is omitted. Do not send query:'' here because
+      // some actor versions can treat the presence of query differently.
+      input.creatorId=creatorId;
+      delete input.query;
+    } else {
+      input.query=q;
+      delete input.creatorId;
+    }
+    try{
+      const url='https://api.apify.com/v2/acts/kawsar~adobe-stock-scraper/run-sync-get-dataset-items?token='+encodeURIComponent(key);
+
+      // Run the documented creator-only request first. If an actor run returns an
+      // empty dataset, retry once with an explicit empty query; some actor builds
+      // distinguish an omitted query from query: "" even though both mean
+      // creator portfolio search in the current documentation.
+      async function callApify(payload){
+        const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const text=await resp.text();
+        let data;
+        try{data=JSON.parse(text);}catch(e){throw new Error('Apify returned a non-JSON response ('+resp.status+').');}
+        if(!resp.ok){throw new Error(data?.error?.message || data?.message || ('Apify request failed with HTTP '+resp.status));}
+        return Array.isArray(data)?data:(data?.items||[]);
+      }
+
+      let rawItems=await callApify(input);
+      if(!rawItems.length && analyticsMode==='contributor'){
+        const retryInput={...input,query:''};
+        rawItems=await callApify(retryInput);
+      }
+      // A few actor revisions have behaved differently with the aggregate `all`
+      // asset type for portfolio searches. If still empty, retry the documented
+      // image aggregate without changing the user's visible filters.
+      if(!rawItems.length && analyticsMode==='contributor' && type==='all'){
+        const retryImages={...input,assetType:'images',query:''};
+        rawItems=await callApify(retryImages);
+      }
+
+      analyticsItems=rawItems.map(normalizeAnalyticsItem);
+      renderAnalytics();
+      if(!analyticsItems.length){
+        const modeText=analyticsMode==='contributor'
+          ? 'No public assets were returned for this Contributor ID. The ID may have no searchable assets, may not be a public creator ID, or Adobe Stock may not expose that portfolio to search.'
+          : 'The scraper returned no assets. Check the keyword or try a smaller filter set.';
+        err.innerHTML='<div class="analytics-error">'+modeText+'</div>';
+      }
+    }catch(e){
+      analyticsItems=[]; renderAnalytics();
+      err.innerHTML='<div class="analytics-error"><b>Adobe Analytics error:</b> '+escapeHtml(e.message||String(e))+'<br><span style="opacity:.8">If the token was exposed publicly, revoke/rotate it in Apify and save the new token here.</span></div>';
+    }
+  }
+  document.getElementById('analyticsAnalyzeBtn').addEventListener('click',runAdobeAnalytics);
+  document.getElementById('analyticsQuery').addEventListener('keydown',e=>{if(e.key==='Enter') runAdobeAnalytics();});
+
+  const analyticsDownloadBtn=document.getElementById('analyticsDownloadBtn');
+  const analyticsDownloadMenu=document.getElementById('analyticsDownloadMenu');
+  analyticsDownloadBtn.addEventListener('click',()=>analyticsDownloadMenu.classList.toggle('open'));
+  document.addEventListener('click',e=>{if(!e.target.closest('.analytics-menu-wrap')) analyticsDownloadMenu.classList.remove('open');});
+
+  function downloadAnalyticsFile(name,content,type){
+    const blob=new Blob([content],{type});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+  }
+  function exportAnalytics(format){
+    if(!analyticsItems.length){showToast('Run an analysis first');return;}
+    if(format==='json'){
+      downloadAnalyticsFile('adobe-analytics.json',JSON.stringify(analyticsItems,null,2),'application/json');
+    }else{
+      const cols=['assetId','title','creatorId','creatorName','contentType','category','downloads','ai','uploadDate','keywords','url','thumb'];
+      const csv=[cols.join(','),...analyticsItems.map(x=>cols.map(k=>{
+        const v=k==='keywords'?x.keywords.join(' | '):x[k];
+        return '"'+String(v??'').replace(/"/g,'""')+'"';
+      }).join(','))].join('\n');
+      downloadAnalyticsFile('adobe-analytics.csv',csv,'text/csv;charset=utf-8');
+    }
+    analyticsDownloadMenu.classList.remove('open');
+  }
+  analyticsDownloadMenu.querySelectorAll('[data-export]').forEach(b=>b.addEventListener('click',()=>exportAnalytics(b.dataset.export)));
+
+  document.getElementById('analyticsMoodboardBtn').addEventListener('click',()=>{
+    const saved=JSON.parse(localStorage.getItem('strong-meta-moodboard')||'[]');
+    if(!analyticsItems.length){showToast('Run an analysis first');return;}
+    const merged=[...saved,...analyticsItems].filter((x,i,a)=>x.assetId && a.findIndex(y=>y.assetId===x.assetId)===i);
+    localStorage.setItem('strong-meta-moodboard',JSON.stringify(merged));
+    showToast(merged.length+' asset'+(merged.length===1?'':'s')+' saved to Moodboards');
+  });
+
+  document.querySelectorAll('.analytics-tab').forEach(btn=>btn.addEventListener('click',()=>{
+    document.getElementById('analyticsModeHint').textContent='Search mode: '+(analyticsMode==='contributor'?'Contributor ID':'Keyword');
+  }));
 
   /* ---------------- API KEY MODAL ---------------- */
   const apiModalBg = document.getElementById('apiModalBg');
