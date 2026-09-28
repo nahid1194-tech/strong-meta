@@ -839,7 +839,7 @@
             </button>
           </div>
         </div>
-        <button class="btn btn-ghost" id="embedAllBtn" disabled title="Embed generated metadata into all completed JPG and PNG images">
+        <button class="btn btn-ghost" id="embedAllBtn" disabled title="Embed generated metadata into all completed JPG, PNG and EPS files">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" stroke-linecap="round"/></svg>
           Embed All
         </button>
@@ -1133,8 +1133,8 @@
   const PLATFORM_CONFIG = {
     "Adobe Stock":{
       hasTitle:true, hasDescription:false, hasCategory:true,
-      titleMax:70, titleDefault:70, kwMin:5, kwMax:49, kwDefault:40,
-      hint:'Adobe Stock: title uses the selected character limit and always ends at a complete word; Keywords uses the exact count selected, up to 49.'
+      titleMax:250, titleDefault:70, kwMin:5, kwMax:50, kwDefault:40,
+      hint:'Adobe Stock: title uses the selected character limit and always ends at a complete word; Keywords uses the exact count selected, up to 50. Note: Adobe currently recommends keeping titles around 70 characters.'
     },
     "Shutterstock":{
       hasTitle:false, hasDescription:true, hasCategory:true,
@@ -1616,6 +1616,23 @@
 
   function escapeHtml(v){return String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\\"':'&quot;'}[c]||c));}
 
+  function syncAnalyticsFetchPageOptions(){
+    const pageSizeEl=document.getElementById('analyticsPageSize');
+    const pagesEl=document.getElementById('analyticsPages');
+    if(!pageSizeEl || !pagesEl) return;
+    // The current Apify Adobe Stock Scraper has a hard cap of 1,000 saved
+    // assets per actor run. Keep the UI honest so a selection can never
+    // silently request more data than the actor can return.
+    const pageSize=Math.max(1,Number(pageSizeEl.value)||24);
+    const maxPages=Math.max(1,Math.floor(1000/pageSize));
+    Array.from(pagesEl.options).forEach(opt=>{
+      const n=Number(opt.value);
+      opt.disabled=n>maxPages;
+      opt.textContent=n===1 ? '1 page' : (n+' pages'+(n>maxPages?' — exceeds 1,000 asset run limit':''));
+    });
+    if(Number(pagesEl.value)>maxPages) pagesEl.value=String(maxPages);
+  }
+
   async function runAdobeAnalytics(){
     const key=getApifyKey();
     const q=document.getElementById('analyticsQuery').value.trim();
@@ -1626,6 +1643,7 @@
     if(!q){err.innerHTML='<div class="analytics-error">Enter a keyword or contributor ID.</div>';return;}
     wrap.innerHTML='<div class="analytics-loading"><span class="analytics-spinner"></span> Running Adobe Stock analysis…</div>';
     analyticsPageSize=Number(document.getElementById('analyticsPageSize')?.value||24);
+    syncAnalyticsFetchPageOptions();
     analyticsFetchedPages=Number(document.getElementById('analyticsPages')?.value||1);
     const limit=Math.min(1000,analyticsPageSize*analyticsFetchedPages);
     analyticsCurrentPage=1;
@@ -1694,6 +1712,7 @@
   document.getElementById('analyticsQuery').addEventListener('keydown',e=>{if(e.key==='Enter') runAdobeAnalytics();});
   document.getElementById('analyticsPageSize')?.addEventListener('change',()=>{
     analyticsPageSize=Number(document.getElementById('analyticsPageSize').value)||24;
+    syncAnalyticsFetchPageOptions();
     analyticsCurrentPage=1;
     if(analyticsItems.length) renderAnalytics();
   });
@@ -1701,6 +1720,8 @@
     // Page-count changes affect the next analysis because they change maxItems.
     if(analyticsItems.length){ showToast('Click Analyze to fetch the new number of pages'); }
   });
+
+  syncAnalyticsFetchPageOptions();
 
   const analyticsDownloadBtn=document.getElementById('analyticsDownloadBtn');
   const analyticsDownloadMenu=document.getElementById('analyticsDownloadMenu');
@@ -2737,7 +2758,7 @@
     const isEmbeddable = isMetadataEmbeddableFile(f.file);
     if(!isEmbeddable){
       embedBtn.disabled = true;
-      embedBtn.textContent = 'Embed Metadata — JPG/PNG only';
+      embedBtn.textContent = 'Embed Metadata — JPG/PNG/EPS';
       embedBtn.title = 'Currently supported for JPG/JPEG and PNG files.';
     }else if(f.status!=='done' || !f.result){
       embedBtn.disabled = true;
@@ -2767,7 +2788,7 @@
 
     const embedHint = document.createElement('div');
     embedHint.style.cssText = 'font-size:11px;color:var(--text-soft);line-height:1.45;margin-top:7px;';
-    embedHint.textContent = 'Embeds title, description, keywords and 5-star rating directly into the JPG/PNG. No AI API call is used.';
+    embedHint.textContent = 'Embeds title, description, keywords and 5-star rating into JPG/PNG, or title/description/keywords into EPS XMP metadata. No AI API call is used.';
     embedRow.appendChild(embedHint);
     wrap.appendChild(embedRow);
 
@@ -3665,8 +3686,15 @@
     return type==='image/png' || /\.png$/i.test(name);
   }
 
+  function isEpsFile(file){
+    if(!file) return false;
+    const name=String(file.name||'').toLowerCase();
+    const type=String(file.type||'').toLowerCase();
+    return type==='application/postscript' || type==='application/eps' || /\.eps$/i.test(name);
+  }
+
   function isMetadataEmbeddableFile(file){
-    return isJpegFile(file) || isPngFile(file);
+    return isJpegFile(file) || isPngFile(file) || isEpsFile(file);
   }
 
   function xmpEscape(value){
@@ -3813,9 +3841,61 @@
     setTimeout(()=>URL.revokeObjectURL(url),1500); return name;
   }
 
+  function createEpsXmpBlock(xmpString){
+    // Adobe's documented EPS XMP pattern: a PostScript metadata stream is
+    // created and associated with the EPS document through pdfmark.
+    return `%SM_XMP_BEGIN\n`+
+      `/currentdistillerparams where\n`+
+      `{pop currentdistillerparams /CoreDistVersion get 5000 lt} {true} ifelse\n`+
+      `{ userdict /SM_EPS_PDFMark /cleartomark load put\n`+
+      `  userdict /SM_EPS_ReadMetadata {flushfile cleartomark} bind put}\n`+
+      `{ userdict /SM_EPS_PDFMark /pdfmark load put\n`+
+      `  userdict /SM_EPS_ReadMetadata {/PUT pdfmark} bind put } ifelse\n`+
+      `[/NamespacePush SM_EPS_PDFMark\n`+
+      `[/_objdef {sm_metadata_stream} /type /stream /OBJ SM_EPS_PDFMark\n`+
+      `[{sm_metadata_stream} 2 dict begin /Type /Metadata def /Subtype /XML def currentdict end /PUT SM_EPS_PDFMark\n`+
+      `[{sm_metadata_stream}\n`+
+      `currentfile 0 (%SM_XMP_END)\n`+
+      `/SubFileDecode filter SM_EPS_ReadMetadata\n`+
+      xmpString + `\n`+
+      `%SM_XMP_END\n`+
+      `[/Document\n`+
+      `1 dict begin /Metadata {sm_metadata_stream} def\n`+
+      `currentdict end /BDC SM_EPS_PDFMark\n`+
+      `[/NamespacePop SM_EPS_PDFMark\n`+
+      `%SM_XMP_FINISH\n`;
+  }
+
+  function injectEpsXmp(bytes,xmpString){
+    const decoder=new TextDecoder('utf-8',{fatal:false});
+    const text=decoder.decode(bytes);
+    if(bytes.length>=4 && bytes[0]===0xC5 && bytes[1]===0xD0 && bytes[2]===0xD3 && bytes[3]===0xC6) throw new Error('Binary EPS wrapper detected. Save/export the EPS as ASCII/Text EPS before embedding metadata.');
+    if(!/^%!PS-Adobe/i.test(text.trimStart())) throw new Error('Invalid EPS/PostScript file');
+
+    // Remove a previous Strong Meta block if present.
+    let cleaned=text.replace(/%SM_XMP_BEGIN[\s\S]*?%SM_XMP_FINISH\s*/g,'');
+    const block=createEpsXmpBlock(xmpString);
+    // Adobe XMP for PostScript/EPS uses the DSC marker before %%EndComments.
+    // Keep the actual XMP packet near the beginning (MainFirst) and keep the
+    // marker itself inside the DSC header so metadata-aware applications can
+    // locate it without parsing the entire PostScript program.
+    const marker='%ADO_ContainsXMP: MainFirst\n';
+    const endComments=cleaned.indexOf('%%EndComments');
+    let out;
+    if(endComments>=0){
+      const headerInsertAt=endComments;
+      const withMarker=cleaned.slice(0,headerInsertAt)+marker+cleaned.slice(headerInsertAt);
+      const markerEnd=withMarker.indexOf('%%EndComments')+'%%EndComments'.length;
+      out=withMarker.slice(0,markerEnd)+'\n'+block+withMarker.slice(markerEnd);
+    }else{
+      out=marker+block+cleaned;
+    }
+    return new TextEncoder().encode(out);
+  }
+
   async function embedMetadataForFile(f){
     if(!f || !isMetadataEmbeddableFile(f.file)){
-      showToast('Metadata embedding currently supports JPG/JPEG and PNG only'); return;
+      showToast('Metadata embedding supports JPG/JPEG, PNG and EPS'); return;
     }
     if(f.status!=='done' || !f.result){showToast('Generate metadata first');return;}
     try{
@@ -3823,8 +3903,13 @@
       const bytes=new Uint8Array(await f.file.arrayBuffer());
       const xmp=createXmpPacket({title:f.result.title||'',description:f.result.description||'',keywords:Array.isArray(f.result.keywords)?f.result.keywords:[]});
       let embeddedBytes,mimeType;
-      if(isJpegFile(f.file)){embeddedBytes=insertXmpIntoJpeg(bytes,xmp);mimeType='image/jpeg';}
-      else{embeddedBytes=insertXmpIntoPng(bytes,xmp);mimeType='image/png';}
+      if(isJpegFile(f.file)){
+        embeddedBytes=insertXmpIntoJpeg(bytes,xmp); mimeType='image/jpeg';
+      }else if(isPngFile(f.file)){
+        embeddedBytes=insertXmpIntoPng(bytes,xmp); mimeType='image/png';
+      }else{
+        embeddedBytes=injectEpsXmp(bytes,xmp); mimeType='application/postscript';
+      }
       const outputName=downloadEmbeddedFile(new Blob([embeddedBytes],{type:mimeType}),f.name);
       f.metadataStatus='done'; f.metadataError=''; f.metadataOutputName=outputName;
       renderResults(); updateToolbar(); showToast(`Metadata embedded successfully: ${outputName}`);
@@ -3837,10 +3922,10 @@
 
   async function embedAllMetadata(){
     const targets=state.files.filter(f=>f.status==='done'&&f.result&&isMetadataEmbeddableFile(f.file));
-    if(targets.length===0){showToast('No completed JPG/PNG files available');return;}
-    showToast(`Embedding metadata into ${targets.length} image${targets.length>1?'s':''}…`);
+    if(targets.length===0){showToast('No completed JPG/PNG/EPS files available');return;}
+    showToast(`Embedding metadata into ${targets.length} file${targets.length>1?'s':''}…`);
     for(const f of targets) await embedMetadataForFile(f);
-    showToast(`Finished embedding metadata into ${targets.length} image${targets.length>1?'s':''}`);
+    showToast(`Finished embedding metadata into ${targets.length} file${targets.length>1?'s':''}`);
   }
 
   /* ---------------- EXPORT CSV ---------------- */
@@ -3861,7 +3946,15 @@
       let rows;
       if(platformName === 'Adobe Stock'){
         rows = [['Filename','Title','Keywords','Category']];
-        done.forEach(f=>{ rows.push([f.name, f.result.title, (f.result.keywords||[]).join(', '), f.result.category||'']); });
+        // The generator may intentionally allow up to 250 characters for
+        // drafting/other workflows, but Adobe Stock's CSV title field is
+        // limited to 70 characters. Trim at a complete word only at export
+        // time so the generated metadata itself is not unexpectedly altered.
+        done.forEach(f=>{
+          const exportTitle=fitWholeWords(f.result.title||'',70);
+          const exportKeywords=(f.result.keywords||[]).slice(0,50);
+          rows.push([f.name, exportTitle, exportKeywords.join(', '), f.result.category||'']);
+        });
       }else{
         rows = [['Filename','Description','Keywords','Categories','Illustration']];
         done.forEach(f=>{ rows.push([f.name, f.result.description, (f.result.keywords||[]).join(', '), (f.result.categories||[]).join(', '), f.result.isIllustration ? 'Yes' : 'No']); });
