@@ -530,7 +530,7 @@
   .analytics-search-row{display:grid;grid-template-columns:minmax(260px,1fr) auto auto;gap:9px;margin-bottom:12px;}
   .analytics-input{width:100%;background:var(--card);border:1px solid var(--card-line);color:var(--text);padding:11px 13px;border-radius:10px;font:13px Inter,sans-serif;outline:none;}
   .analytics-input:focus{border-color:var(--accent-soft);}
-  .analytics-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  .analytics-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:18px;}
   .analytics-filter-group{min-width:0;}
   .analytics-filter-label{display:block;margin:0 0 7px;color:var(--ink-soft);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
   .analytics-select{width:100%;background:var(--ink-panel);border:1px solid var(--ink-line);color:#F2F2F2;padding:9px 10px;border-radius:9px;font:12px Inter,sans-serif;outline:none;cursor:pointer;color-scheme:dark;}
@@ -552,14 +552,20 @@
   .analytics-stat{background:var(--card);border:1px solid var(--card-line);border-radius:12px;padding:14px 15px;}
   .analytics-stat .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-soft);font-weight:700;}
   .analytics-stat .value{font:700 20px 'JetBrains Mono',monospace;margin-top:6px;color:var(--text);}
+  .analytics-pagination-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:10px 12px;background:var(--card);border:1px solid var(--card-line);border-radius:10px;}
+  .analytics-page-summary{color:var(--text-soft);font-size:10.5px;font-weight:650;}
+  .analytics-pagination{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+  .analytics-page-btn{min-width:28px;height:28px;padding:0 8px;border:1px solid var(--card-line);border-radius:7px;background:var(--ink-panel);color:var(--text-soft);font:600 10.5px Inter,sans-serif;cursor:pointer;}
+  .analytics-page-btn:hover:not(:disabled){border-color:var(--accent-soft);color:var(--text);}
+  .analytics-page-btn.active{background:var(--accent-grad);border-color:transparent;color:#fff;}
+  .analytics-page-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .analytics-page-ellipsis{padding:0 3px;color:var(--text-soft);font-size:12px;}
   .analytics-results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;}
   .analytics-card{display:flex;flex-direction:column;min-width:0;min-height:100%;background:linear-gradient(180deg,#1b1d23 0%,#17191f 100%);border:1px solid rgba(255,255,255,.08);border-radius:13px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.12);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;}
   .analytics-card:hover{transform:translateY(-2px);border-color:rgba(157,113,255,.38);box-shadow:0 14px 30px rgba(0,0,0,.2);}
   .analytics-thumb{height:164px;background:#0e1015;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.07);}
-  .analytics-gallery{display:flex;gap:6px;width:100%;height:100%;padding:10px 8px;overflow:hidden;align-items:center;}
-  .analytics-gallery.single{padding:0;}
-  .analytics-gallery img{display:block;flex:1 1 0;min-width:0;width:100%;height:100%;object-fit:cover;border-radius:2px;background:#14161b;}
-  .analytics-gallery.single img{border-radius:0;}
+  .analytics-gallery{display:block;width:100%;height:100%;overflow:hidden;}
+  .analytics-gallery img{display:block;width:100%;height:100%;object-fit:contain;background:#14161b;}
   .analytics-badges{position:absolute;top:9px;left:9px;display:flex;gap:5px;flex-wrap:wrap;z-index:2;}
   .analytics-badge{padding:4px 7px;border-radius:6px;background:rgba(12,10,18,.84);border:1px solid rgba(255,255,255,.13);font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.03em;color:#fff;backdrop-filter:blur(5px);}
   .analytics-badge.type{background:rgba(30,24,47,.88);}
@@ -923,6 +929,24 @@
             <option value="nonai">Non-AI Only</option>
           </select>
         </div>
+        <div class="analytics-filter-group">
+          <label class="analytics-filter-label" for="analyticsPageSize">Results per page</label>
+          <select class="analytics-select" id="analyticsPageSize" aria-label="Results per page">
+            <option value="24" selected>24</option>
+            <option value="48">48</option>
+            <option value="96">96</option>
+          </select>
+        </div>
+        <div class="analytics-filter-group">
+          <label class="analytics-filter-label" for="analyticsPages">Pages to fetch</label>
+          <select class="analytics-select" id="analyticsPages" aria-label="Pages to fetch">
+            <option value="1" selected>1 page</option>
+            <option value="2">2 pages</option>
+            <option value="5">5 pages</option>
+            <option value="10">10 pages</option>
+            <option value="20">20 pages</option>
+          </select>
+        </div>
       </div>
 
       <div class="analytics-toolbar">
@@ -935,6 +959,11 @@
         <div class="analytics-stat"><div class="label">Assets found</div><div class="value" id="analyticsCount">0</div></div>
         <div class="analytics-stat"><div class="label">Non-AI</div><div class="value" id="analyticsNonAi">0</div></div>
         <div class="analytics-stat"><div class="label">AI</div><div class="value" id="analyticsAiCount">0</div></div>
+      </div>
+
+      <div class="analytics-pagination-bar" id="analyticsPaginationBar" style="display:none;">
+        <div class="analytics-page-summary" id="analyticsPageSummary">Page 1 of 1</div>
+        <div class="analytics-pagination" id="analyticsPagination"></div>
       </div>
 
       <div id="analyticsResults" class="analytics-results">
@@ -1380,6 +1409,9 @@
   const analyticsApifyKeyInput = document.getElementById('analyticsApifyKeyInput');
   let analyticsMode = 'keyword';
   let analyticsItems = [];
+  let analyticsCurrentPage = 1;
+  let analyticsFetchedPages = 1;
+  let analyticsPageSize = 24;
 
   function getApifyKey(){
     try{return localStorage.getItem('strong-meta-apify-token') || '';}catch(e){return '';}
@@ -1469,10 +1501,11 @@
       : (typeof rawKeywords==='string' ? rawKeywords.split(/[,;|]/).map(s=>s.trim()).filter(Boolean) : []);
     const downloads=Number(x.downloadCount ?? x.downloads ?? x.nbDownloads ?? x.nb_downloads ?? x.download_count ?? 0) || 0;
     const ai=!!(x.isGenerativeAi ?? x.isGentech ?? x.generativeAi ?? x.is_gentech ?? x.is_ai ?? x.ai);
-    const previewCandidates=[x.thumb1000Url,x.thumb500Url,x.thumbUrl,x.thumbnailUrl,x.thumbnail_url,x.previewUrl,x.compUrl].filter(Boolean);
-    const extraPreviews=Array.isArray(x.previews) ? x.previews.map(p=>typeof p==='string'?p:(p&& (p.url||p.thumbUrl||p.thumbnailUrl)) || '').filter(Boolean) : [];
-    const previews=[...new Set([...previewCandidates,...extraPreviews])].slice(0,5);
-    const thumb=previews[0] || '';
+    // One Adobe Stock asset should render as ONE preview. Some scraper/API
+    // responses expose several preview URLs (500px, 1000px, comp, etc.), but
+    // those are alternate sizes of the same asset, not separate images.
+    const thumb=[x.thumb1000Url,x.thumb500Url,x.thumbUrl,x.thumbnailUrl,x.thumbnail_url,x.previewUrl,x.compUrl].find(Boolean) || '';
+    const previews=thumb ? [thumb] : [];
     const url=x.detailsUrl || x.details_url || x.assetUrl || x.url || (x.assetId ? 'https://stock.adobe.com/images/'+x.assetId : '');
     const cat=x.categoryInfo || x.category || {};
     const category=(typeof cat==='string' ? cat : (cat.name || cat.label || ''));
@@ -1494,17 +1527,55 @@
   }
   function renderAnalytics(){
     const wrap=document.getElementById('analyticsResults');
-    document.getElementById('analyticsCount').textContent=fmtNumber(analyticsItems.length);
+    const total=analyticsItems.length;
+    document.getElementById('analyticsCount').textContent=fmtNumber(total);
     document.getElementById('analyticsAiCount').textContent=fmtNumber(analyticsItems.filter(x=>x.ai).length);
     document.getElementById('analyticsNonAi').textContent=fmtNumber(analyticsItems.filter(x=>!x.ai).length);
-    if(!analyticsItems.length){
+    const pageSize=Math.max(1,Number(analyticsPageSize)||24);
+    const totalPages=Math.max(1,Math.ceil(total/pageSize));
+    if(analyticsCurrentPage>totalPages) analyticsCurrentPage=totalPages;
+    const pageStart=(analyticsCurrentPage-1)*pageSize;
+    const pageItems=analyticsItems.slice(pageStart,pageStart+pageSize);
+    const paginationBar=document.getElementById('analyticsPaginationBar');
+    const pagination=document.getElementById('analyticsPagination');
+    const summary=document.getElementById('analyticsPageSummary');
+    if(!total){
+      paginationBar.style.display='none';
       wrap.innerHTML='<div class="analytics-empty"><h3>No results</h3><p>Try another keyword, contributor ID, or filter.</p></div>';
       return;
     }
-    wrap.innerHTML=analyticsItems.map((x,i)=>{
-      const previews=(x.previews && x.previews.length ? x.previews : (x.thumb?[x.thumb]:[])).slice(0,5);
+    paginationBar.style.display='flex';
+    summary.textContent='Page '+analyticsCurrentPage+' of '+totalPages+' · '+fmtNumber(total)+' assets';
+    const buttons=[];
+    const addPage=(n,label=n,disabled=false,active=false)=>buttons.push('<button type="button" class="analytics-page-btn '+(active?'active':'')+'" data-analytics-page="'+n+'" '+(disabled?'disabled':'')+'>'+label+'</button>');
+    addPage(Math.max(1,analyticsCurrentPage-1),'‹',analyticsCurrentPage===1,false);
+    const pages=[];
+    if(totalPages<=7){for(let n=1;n<=totalPages;n++) pages.push(n);}
+    else{
+      pages.push(1);
+      if(analyticsCurrentPage>4) pages.push('…');
+      const a=Math.max(2,analyticsCurrentPage-1), b=Math.min(totalPages-1,analyticsCurrentPage+1);
+      for(let n=a;n<=b;n++) pages.push(n);
+      if(analyticsCurrentPage<totalPages-3) pages.push('…');
+      pages.push(totalPages);
+    }
+    pages.forEach(n=>{
+      if(n==='…') buttons.push('<span class="analytics-page-ellipsis">…</span>');
+      else addPage(n,String(n),false,n===analyticsCurrentPage);
+    });
+    addPage(Math.min(totalPages,analyticsCurrentPage+1),'›',analyticsCurrentPage===totalPages,false);
+    pagination.innerHTML=buttons.join('');
+    pagination.querySelectorAll('[data-analytics-page]').forEach(btn=>btn.addEventListener('click',()=>{
+      analyticsCurrentPage=Number(btn.dataset.analyticsPage)||1;
+      renderAnalytics();
+      document.getElementById('analyticsResults').scrollIntoView({behavior:'smooth',block:'start'});
+    }));
+
+    wrap.innerHTML=pageItems.map((x,i)=>{
+      const absoluteIndex=pageStart+i;
+      const previews=(x.previews && x.previews.length ? [x.previews[0]] : (x.thumb?[x.thumb]:[]));
       const gallery=previews.length
-        ? '<div class="analytics-gallery '+(previews.length===1?'single':'')+'">'+previews.map(src=>'<img src="'+escapeHtml(src)+'" alt="" loading="lazy">').join('')+'</div>'
+        ? '<div class="analytics-gallery"><img src="'+escapeHtml(previews[0])+'" alt="" loading="lazy"></div>'
         : '<span style="color:var(--text-soft);font-size:11px;">No preview</span>';
       const tags=x.keywords.slice(0,9).map(k=>'<span class="analytics-keyword">'+escapeHtml(k)+'</span>').join('');
       const more=x.keywords.length>9 ? '<span class="analytics-keyword more">+'+(x.keywords.length-9)+'</span>' : '';
@@ -1526,8 +1597,8 @@
             '<div class="analytics-stat-cell"><div class="analytics-stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Upload date</div><div class="analytics-stat-value">'+escapeHtml(fmtDate(x.uploadDate)||'—')+'</div></div>'+
           '</div>'+
           '<div class="analytics-footer">'+stock+
-            '<button class="analytics-action analytics-icon-action" type="button" title="Copy details" aria-label="Copy details" data-copy-analytics="'+i+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7a2 2 0 002 2h3"/></svg></button>'+
-            '<button class="analytics-action analytics-icon-action" type="button" title="Copy keywords" aria-label="Copy keywords" data-copy-keywords="'+i+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 13.5a4 4 0 01-5.66 5.66l-1.41-1.41"/><path d="M3.5 10.5a4 4 0 015.66-5.66l1.41 1.41"/><path d="M8 16l8-8"/></svg></button>'+
+            '<button class="analytics-action analytics-icon-action" type="button" title="Copy details" aria-label="Copy details" data-copy-analytics="'+absoluteIndex+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7a2 2 0 002 2h3"/></svg></button>'+
+            '<button class="analytics-action analytics-icon-action" type="button" title="Copy keywords" aria-label="Copy keywords" data-copy-keywords="'+absoluteIndex+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 13.5a4 4 0 01-5.66 5.66l-1.41-1.41"/><path d="M3.5 10.5a4 4 0 015.66-5.66l1.41 1.41"/><path d="M8 16l8-8"/></svg></button>'+
           '</div>'+
         '</div>'+
       '</article>';
@@ -1554,7 +1625,10 @@
     if(!key){err.innerHTML='<div class="analytics-error">Add your Apify API token first using <b>Apify settings</b>.</div>';return;}
     if(!q){err.innerHTML='<div class="analytics-error">Enter a keyword or contributor ID.</div>';return;}
     wrap.innerHTML='<div class="analytics-loading"><span class="analytics-spinner"></span> Running Adobe Stock analysis…</div>';
-    const limit=24;
+    analyticsPageSize=Number(document.getElementById('analyticsPageSize')?.value||24);
+    analyticsFetchedPages=Number(document.getElementById('analyticsPages')?.value||1);
+    const limit=Math.min(1000,analyticsPageSize*analyticsFetchedPages);
+    analyticsCurrentPage=1;
     const sort=document.getElementById('analyticsSort').value;
     const type=document.getElementById('analyticsType').value;
     const ai=document.getElementById('analyticsAi').value;
@@ -1618,6 +1692,15 @@
   }
   document.getElementById('analyticsAnalyzeBtn').addEventListener('click',runAdobeAnalytics);
   document.getElementById('analyticsQuery').addEventListener('keydown',e=>{if(e.key==='Enter') runAdobeAnalytics();});
+  document.getElementById('analyticsPageSize')?.addEventListener('change',()=>{
+    analyticsPageSize=Number(document.getElementById('analyticsPageSize').value)||24;
+    analyticsCurrentPage=1;
+    if(analyticsItems.length) renderAnalytics();
+  });
+  document.getElementById('analyticsPages')?.addEventListener('change',()=>{
+    // Page-count changes affect the next analysis because they change maxItems.
+    if(analyticsItems.length){ showToast('Click Analyze to fetch the new number of pages'); }
+  });
 
   const analyticsDownloadBtn=document.getElementById('analyticsDownloadBtn');
   const analyticsDownloadMenu=document.getElementById('analyticsDownloadMenu');
