@@ -1133,8 +1133,8 @@
   const PLATFORM_CONFIG = {
     "Adobe Stock":{
       hasTitle:true, hasDescription:false, hasCategory:true,
-      titleMax:200, titleDefault:70, kwMin:5, kwMax:49, kwDefault:40,
-      hint:'Per Adobe Stock guidelines: Title (Adobe\'s hard cap is 200 chars; ~70 is the SEO-friendly sweet spot, but icon sets legitimately run longer) + Keywords (≤49) + Category — no separate Description needed.'
+      titleMax:70, titleDefault:70, kwMin:5, kwMax:49, kwDefault:40,
+      hint:'Adobe Stock: title uses the selected character limit and always ends at a complete word; Keywords uses the exact count selected, up to 49.'
     },
     "Shutterstock":{
       hasTitle:false, hasDescription:true, hasCategory:true,
@@ -3244,7 +3244,7 @@
     p += backgroundFact;
     p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes). Don\'t mention any personally identifiable information (PII) — names, addresses, phone numbers, emails.\n';
     p += 'TITLE rules (for Adobe Stock):\n';
-    p += '- Keep it within '+titleLen+' characters max (Adobe Stock\'s hard cap is 200 chars; ~70 is just the SEO-friendly sweet spot for single-subject images). For a single-subject image: simple, clear, descriptive — never a stuffed list of keywords crammed into a sentence. (Icon sets are the one exception — see below.)\n';
+    p += '- TITLE LENGTH CONTROL: The user selected '+titleLen+' characters. The title MUST be no longer than '+titleLen+' characters. It MUST end at a complete word — NEVER cut, split, or hyphenate a word just to reach the character limit. It is correct to use fewer characters than the selected limit if the next word would exceed it.\n';
     p += '- USE A FEATURED-STYLE STOCK TITLE STRUCTURE. Before writing the title, silently classify the asset into: (1) a short subject/set name, (2) asset type such as vector illustration, line icon set, editable stroke icon set, 3D render, photo, template, or background, (3) the visual/style descriptor, (4) the business/use-case concepts supported by the image, and (5) the most important visible elements. Then combine the strongest parts into a natural buyer-facing title.\n';
     p += '- For VECTOR / ILLUSTRATION / ICON-SET assets, prefer this structure: "[Short subject or collection name]. [Asset type + visual/style descriptor]. [5-10 strongest visible subjects, concepts, or use cases], [optional final format word such as Vector or illustration]." Example patterns: "Basic business. Vector illustrations of people in various activities of business, management, marketing, startup, finance." or "Business Project line icon set in editable stroke style. Project management, planning, strategy, workflow, tasks, timeline, teamwork, goals, progress, budget, resources, collection. Vector" — these are structural references only; never copy their wording unless it is independently accurate for the current image.\n';
     p += '- The first phrase should work like a compact collection/subject label (usually 2-5 words), followed by a sentence describing what the asset contains and why it is useful. For icon sets or multi-element vectors, it is useful to enumerate the most important visible icons/elements and related buyer concepts instead of writing a generic sentence. For a single subject, do NOT create a long inventory list.\n';
@@ -3261,7 +3261,7 @@
     p += '- Where relevant, weave in specific lighting, background, focus/depth of field, camera angle, and movement — but don\'t use any links, specific camera/lens model names, or trademarks, and don\'t repeat any word or phrase.\n';
     p += '- Keep it to approximately '+descLen+' characters.\n';
     p += 'KEYWORDS rules (ONE shared list used for both Adobe Stock and Shutterstock):\n';
-    p += '- Give exactly '+kwCount+' keywords (works within both Adobe\'s max-49 and Shutterstock\'s 7-50 limits). No keyword stuffing or spamming irrelevant/trending words just to get more tags — this can get submissions rejected or suspended.\n';
+    p += '- KEYWORD COUNT CONTROL: The user selected exactly '+kwCount+' keywords. Return EXACTLY '+kwCount+' unique, relevant keywords. Count the final array before responding. If there are too many, remove the weakest; if there are too few, add additional relevant single-word keywords supported by the image. Never use filler just to reach the number.\n';
     p += '- Order matters: the first 5-10 keywords must be the single most relevant, primary search terms a buyer would actually type — put those before anything broader.\n';
     p += '- Cover all four of these categories, not just the obvious subject:\n';
     p += '    • Core subject: what it actually is, broken into separate single words (e.g. for a sports car: "car", "sports", "vehicle" — not "sports car" as one keyword).\n';
@@ -3342,13 +3342,54 @@
   // carries everything both platforms need — title AND description AND one
   // shared keyword list AND both category formats. Nothing here requires a
   // second API call; the platform split happens only later, at CSV export.
+  // Enforce the user's controls after the AI response. A title is shortened
+  // only at whitespace boundaries, so a word is never visibly cut in half.
+  function fitWholeWords(text, maxChars){
+    let t = String(text || '').trim();
+    if(!maxChars || t.length <= maxChars) return t;
+    const cut = t.slice(0, maxChars + 1);
+    let idx = cut.lastIndexOf(' ');
+    if(idx < 1) idx = cut.lastIndexOf('\n');
+    if(idx > 0) t = cut.slice(0, idx).trim();
+    else t = cut.slice(0, maxChars).trim();
+    return t.replace(/[,:;\-–—]+$/, '').trim();
+  }
+
+  function enforceKeywordCount(keywords, target, title, description){
+    const out = [];
+    const seen = new Set();
+    const add = (value)=>{
+      const w = String(value || '').trim().replace(/^[,.;:]+|[,.;:]+$/g,'');
+      if(!w || /\s/.test(w) || w.length > 30) return;
+      const key = w.toLowerCase();
+      if(seen.has(key)) return;
+      seen.add(key);
+      out.push(w);
+    };
+    (Array.isArray(keywords) ? keywords : []).forEach(add);
+    // If AI returns fewer than requested, use unused single words already
+    // present in its own title/description instead of inventing new concepts.
+    if(out.length < target){
+      String(title || '').split(/[^A-Za-z0-9]+/).filter(Boolean).forEach(add);
+      String(description || '').split(/[^A-Za-z0-9]+/).filter(Boolean).forEach(add);
+    }
+    return out.slice(0, target);
+  }
+
   function parseMetadataJson(json){
     const clampScore = (v)=> Math.max(0, Math.min(10, Number(v)||0));
     const validCats = Array.isArray(json.categories) ? json.categories.filter(c=>SHUTTERSTOCK_CATEGORIES.includes(c)).slice(0,2) : [];
+    const rawTitle = applyPrefixSuffix(json.title||'');
+    const rawDescription = applyPrefixSuffix(json.description||'');
+    const titleLimit = Number(document.getElementById('titleLen')?.value || PLATFORM_CONFIG['Adobe Stock'].titleDefault);
+    const keywordTarget = Number(document.getElementById('kwCount')?.value || PLATFORM_CONFIG[state.platform].kwDefault);
+    const title = fitWholeWords(rawTitle, titleLimit);
+    const description = rawDescription;
+    const keywords = enforceKeywordCount(json.keywords, keywordTarget, title, description);
     return {
-      title: applyPrefixSuffix(json.title||''),
-      description: applyPrefixSuffix(json.description||''),
-      keywords: Array.isArray(json.keywords) ? json.keywords : [],
+      title,
+      description,
+      keywords,
       category: (function(){ const cid = Number(json.category); return ADOBE_CATEGORIES.some(c=>c.id===cid) ? cid : ''; })(),
       categories: validCats,
       isIllustration: json.isIllustration === true,
