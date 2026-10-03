@@ -736,6 +736,25 @@
             </div>
           </div>
         </div>
+        <div class="side-block collapsible" id="block-promptWrap">
+          <div class="panel-title" data-target="body-promptWrap">
+            <span class="ptitle-left">Prompt Prefix &amp; Suffix</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="collapsible-body" id="body-promptWrap">
+            <div class="toggle-row" style="border-top:none;">
+              <span class="lbl">Prefix</span>
+              <label class="switch"><input type="checkbox" id="toggle-prompt-prefix"><span class="slider-pill"></span></label>
+            </div>
+            <div id="promptPrefixInputWrap" style="display:none;"><input class="txt-input mono" id="promptPrefixInput" placeholder="e.g. Professional stock photography of"></div>
+            <div class="toggle-row">
+              <span class="lbl">Suffix</span>
+              <label class="switch"><input type="checkbox" id="toggle-prompt-suffix"><span class="slider-pill"></span></label>
+            </div>
+            <div id="promptSuffixInputWrap" style="display:none;"><input class="txt-input mono" id="promptSuffixInput" placeholder="e.g. clean composition, high detail"></div>
+            <div style="font-size:10px;color:var(--ink-soft2);line-height:1.45;margin-top:8px;">Prefix is added before the generated prompt and suffix is added after it. Both are included in the Prompt-only CSV.</div>
+          </div>
+        </div>
         <div class="side-block collapsible" id="block-targetModel">
           <div class="panel-title" data-target="body-targetModel">
             <span class="ptitle-left">Target Model <span class="curval" id="targetModelCurVal"></span></span>
@@ -1378,6 +1397,28 @@
   wireToggleReveal('toggle-prefix','prefixInputWrap');
   wireToggleReveal('toggle-suffix','suffixInputWrap');
   wireToggleReveal('toggle-negkw','negkwInputWrap');
+  wireToggleReveal('toggle-prompt-prefix','promptPrefixInputWrap');
+  wireToggleReveal('toggle-prompt-suffix','promptSuffixInputWrap');
+
+  // Persist Prompt prefix/suffix settings locally so they remain available after reload.
+  (function initPromptPrefixSuffix(){
+    const ids=['toggle-prompt-prefix','toggle-prompt-suffix','promptPrefixInput','promptSuffixInput'];
+    ids.forEach(id=>{
+      const el=document.getElementById(id); if(!el) return;
+      const key='strong-meta-'+id;
+      const saved=localStorage.getItem(key);
+      if(saved!==null){
+        if(el.type==='checkbox') el.checked=saved==='1'; else el.value=saved;
+      }
+      const save=()=>localStorage.setItem(key,el.type==='checkbox'?(el.checked?'1':'0'):el.value);
+      el.addEventListener('change',save);
+      el.addEventListener('input',save);
+    });
+    const pre=document.getElementById('toggle-prompt-prefix');
+    const suf=document.getElementById('toggle-prompt-suffix');
+    if(pre) document.getElementById('promptPrefixInputWrap').style.display=pre.checked?'block':'none';
+    if(suf) document.getElementById('promptSuffixInputWrap').style.display=suf.checked?'block':'none';
+  })();
 
   /* ---------------- TABS ---------------- */
   document.querySelectorAll('.tab').forEach(tabEl=>{
@@ -1490,8 +1531,22 @@
     const m={photo:'photo',illustration:'illustration',vector:'vector',video:'video',template:'template','3d':'3d',audio:'audio'};
     return m[v]||'all';
   }
+  function safeAnalyticsUrl(value){
+    if(!value) return '';
+    try{
+      const u=new URL(String(value),window.location.href);
+      return (u.protocol==='https:' || u.protocol==='http:') ? u.href : '';
+    }catch(e){return '';}
+  }
+  function parseAnalyticsBoolean(value){
+    if(typeof value==='boolean') return value;
+    if(typeof value==='number') return value===1;
+    if(typeof value==='string') return ['true','1','yes','y'].includes(value.trim().toLowerCase());
+    return false;
+  }
   function normalizeAnalyticsItem(x){
-    const creator=x.creator || {};
+    x=x && typeof x==='object' ? x : {};
+    const creator=x.creator && typeof x.creator==='object' ? x.creator : {};
     const title=x.assetTitle || x.title || x.name || '';
     const creatorId=x.creatorId || x.creator_id || creator.id || '';
     const creatorName=x.creatorName || x.creator_name || creator.name || x.author || '';
@@ -1499,14 +1554,18 @@
     const keywords=Array.isArray(rawKeywords)
       ? rawKeywords.map(k=>typeof k==='string'?k:(k&&k.name)||'').filter(Boolean)
       : (typeof rawKeywords==='string' ? rawKeywords.split(/[,;|]/).map(s=>s.trim()).filter(Boolean) : []);
-    const downloads=Number(x.downloadCount ?? x.downloads ?? x.nbDownloads ?? x.nb_downloads ?? x.download_count ?? 0) || 0;
-    const ai=!!(x.isGenerativeAi ?? x.isGentech ?? x.generativeAi ?? x.is_gentech ?? x.is_ai ?? x.ai);
+    const rawDownloads=x.downloadCount ?? x.downloads ?? x.nbDownloads ?? x.nb_downloads ?? x.download_count ?? 0;
+    const downloads=Number(String(rawDownloads).replace(/[,\s]/g,'')) || 0;
+    const rawAi=x.isGenerativeAi ?? x.isGentech ?? x.generativeAi ?? x.is_gentech ?? x.is_ai ?? x.ai;
+    const ai=parseAnalyticsBoolean(rawAi);
     // One Adobe Stock asset should render as ONE preview. Some scraper/API
     // responses expose several preview URLs (500px, 1000px, comp, etc.), but
     // those are alternate sizes of the same asset, not separate images.
-    const thumb=[x.thumb1000Url,x.thumb500Url,x.thumbUrl,x.thumbnailUrl,x.thumbnail_url,x.previewUrl,x.compUrl].find(Boolean) || '';
+    const rawThumb=[x.thumb1000Url,x.thumb500Url,x.thumbUrl,x.thumbnailUrl,x.thumbnail_url,x.previewUrl,x.compUrl].find(Boolean) || '';
+    const thumb=safeAnalyticsUrl(rawThumb);
     const previews=thumb ? [thumb] : [];
-    const url=x.detailsUrl || x.details_url || x.assetUrl || x.url || (x.assetId ? 'https://stock.adobe.com/images/'+x.assetId : '');
+    const rawUrl=x.detailsUrl || x.details_url || x.assetUrl || x.url || (x.assetId ? 'https://stock.adobe.com/images/'+encodeURIComponent(String(x.assetId)) : '');
+    const url=safeAnalyticsUrl(rawUrl);
     const cat=x.categoryInfo || x.category || {};
     const category=(typeof cat==='string' ? cat : (cat.name || cat.label || ''));
     const kind=x.assetKind || x.mediaType || x.assetType || x.contentType || 'Asset';
@@ -1750,11 +1809,17 @@
   analyticsDownloadMenu.querySelectorAll('[data-export]').forEach(b=>b.addEventListener('click',()=>exportAnalytics(b.dataset.export)));
 
   document.getElementById('analyticsMoodboardBtn').addEventListener('click',()=>{
-    const saved=JSON.parse(localStorage.getItem('strong-meta-moodboard')||'[]');
     if(!analyticsItems.length){showToast('Run an analysis first');return;}
+    let saved=[];
+    try{
+      const parsed=JSON.parse(localStorage.getItem('strong-meta-moodboard')||'[]');
+      if(Array.isArray(parsed)) saved=parsed;
+    }catch(e){ /* recover from malformed local moodboard data */ }
     const merged=[...saved,...analyticsItems].filter((x,i,a)=>x.assetId && a.findIndex(y=>y.assetId===x.assetId)===i);
-    localStorage.setItem('strong-meta-moodboard',JSON.stringify(merged));
-    showToast(merged.length+' asset'+(merged.length===1?'':'s')+' saved to Moodboards');
+    try{
+      localStorage.setItem('strong-meta-moodboard',JSON.stringify(merged));
+      showToast(merged.length+' asset'+(merged.length===1?'':'s')+' saved to Moodboards');
+    }catch(e){showToast('Could not save Moodboard: browser storage is unavailable or full');}
   });
 
   document.querySelectorAll('.analytics-tab').forEach(btn=>btn.addEventListener('click',()=>{
@@ -3270,11 +3335,11 @@
     p += '- For VECTOR / ILLUSTRATION / ICON-SET assets, prefer this structure: "[Short subject or collection name]. [Asset type + visual/style descriptor]. [5-10 strongest visible subjects, concepts, or use cases], [optional final format word such as Vector or illustration]." Example patterns: "Basic business. Vector illustrations of people in various activities of business, management, marketing, startup, finance." or "Business Project line icon set in editable stroke style. Project management, planning, strategy, workflow, tasks, timeline, teamwork, goals, progress, budget, resources, collection. Vector" — these are structural references only; never copy their wording unless it is independently accurate for the current image.\n';
     p += '- The first phrase should work like a compact collection/subject label (usually 2-5 words), followed by a sentence describing what the asset contains and why it is useful. For icon sets or multi-element vectors, it is useful to enumerate the most important visible icons/elements and related buyer concepts instead of writing a generic sentence. For a single subject, do NOT create a long inventory list.\n';
     p += '- For multi-element sets, inspect the whole image and prioritize the actual visible inventory: subject family, icon themes, actions, business concepts, objects, workflows, industries, or use cases. Mention only elements that are clearly visible or strongly supported by the artwork. Never invent icons or concepts just to make the title longer.\n';
-    p += '- Put the strongest search intent near the beginning: main subject/set name, asset type, style, then the most valuable content/use-case terms. Use natural punctuation (periods and commas) to separate the lead phrase from the descriptive inventory. Do not turn the title into an unnatural keyword dump.\n';
+    p += '- Put the strongest search intent near the beginning: main subject/set name, asset type, style, then the most valuable content/use-case terms. Use commas or natural spacing to separate the lead phrase from the descriptive inventory. Do not use periods (.) anywhere in the title. Do not turn the title into an unnatural keyword dump.\n';
     p += '- If the image is a normal photo or single-object asset, use a natural descriptive title instead of the featured-style inventory pattern.\n';
     p += '- If it is a vector/icon/illustration/3D design asset, explicitly identify the medium/style when visually justified: vector, line icon, editable stroke, flat illustration, 3D render, etc.\n';
     p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
-    p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", "Image showing", or similar. Don\'t use ALL CAPS, exclamation marks, or a trailing period.\n';
+    p += '- Never start with filler like \"A photo of\", \"An image of\", \"This is a picture of\", \"Image showing\", or similar. Don\'t use ALL CAPS, exclamation marks, or periods. The title MUST contain no periods (.) anywhere. The title MUST end as a complete grammatical phrase: never leave a trailing \"and\", \"or\", \"with\", \"of\", \"to\", \"in\", \"on\", \"for\", \"the\", \"a\", or \"an\". If the character limit would cut the sentence, remove the last incomplete clause instead of ending with a dangling connector.\n';
     p += 'DESCRIPTION rules (for Shutterstock — a separate field from the title, not just the title repeated):\n';
     p += '- Write one complete, unique, detailed sentence or phrase — never just a list of keywords, and don\'t just repeat the title verbatim.\n';
     p += '- Never start with filler like "A photo of", "An image of", "This is a picture of", or similar.\n';
@@ -3304,6 +3369,17 @@
     p += 'Respond only in JSON, in this format: {"title":"...", "description":"...", "keywords":["...","..."], "category":<id number>, "categories":["...","..."], "isIllustration": true or false, "imageRelevance":<0-10>, "keywordRelevance":<0-10>}.';
     return p;
   }
+  function applyPromptPrefixSuffix(text){
+    let t = String(text || '').trim();
+    const prefixOn = document.getElementById('toggle-prompt-prefix')?.checked;
+    const suffixOn = document.getElementById('toggle-prompt-suffix')?.checked;
+    const prefix = document.getElementById('promptPrefixInput')?.value.trim() || '';
+    const suffix = document.getElementById('promptSuffixInput')?.value.trim() || '';
+    if(prefixOn && prefix) t = prefix + (t ? ' ' + t : '');
+    if(suffixOn && suffix) t = t ? t + ' ' + suffix : suffix;
+    return t;
+  }
+
   function buildPromptPrompt(){
     const style = state.styleChoice;
     const len = document.getElementById('promptLen').value;
@@ -3365,15 +3441,28 @@
   // second API call; the platform split happens only later, at CSV export.
   // Enforce the user's controls after the AI response. A title is shortened
   // only at whitespace boundaries, so a word is never visibly cut in half.
+  // It also must not end with a dangling connector/preposition or punctuation.
+  function cleanCompleteTitle(text){
+    let t = String(text || '').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();
+    // Strong Meta title rule: periods are never allowed anywhere in generated titles.
+    t = t.replace(/\./g,'').replace(/[!?]+/g,'').replace(/[,:;\-–—]+$/,'').trim();
+    const dangling = /(?:\s+(?:and|or|but|nor|yet|so|for|with|without|of|to|from|in|on|at|by|as|via|the|a|an))$/i;
+    for(let i=0;i<4 && dangling.test(t);i++) t=t.replace(dangling,'').trim();
+    return t.replace(/\s*[,;:–—-]+\s*$/,'').trim();
+  }
+
   function fitWholeWords(text, maxChars){
-    let t = String(text || '').trim();
+    let t = cleanCompleteTitle(text);
     if(!maxChars || t.length <= maxChars) return t;
-    const cut = t.slice(0, maxChars + 1);
-    let idx = cut.lastIndexOf(' ');
-    if(idx < 1) idx = cut.lastIndexOf('\n');
-    if(idx > 0) t = cut.slice(0, idx).trim();
-    else t = cut.slice(0, maxChars).trim();
-    return t.replace(/[,:;\-–—]+$/, '').trim();
+    const cut = t.slice(0, maxChars).trim();
+    // Start at the last complete-word boundary, never at maxChars itself.
+    let end = cut.lastIndexOf(' ');
+    while(end > 0){
+      const candidate = cleanCompleteTitle(cut.slice(0,end));
+      if(candidate && candidate.length <= maxChars && !/(?:\s+(?:and|or|but|nor|yet|so|for|with|without|of|to|from|in|on|at|by|as|via|the|a|an))$/i.test(candidate)) return candidate;
+      end = cut.lastIndexOf(' ', end-1);
+    }
+    return cleanCompleteTitle(cut);
   }
 
   function enforceKeywordCount(keywords, target, title, description){
@@ -3486,7 +3575,7 @@
       }else{
         const promptText = buildPromptPrompt();
         const json = await callAIWithFailover(f.base64, f.mimeType, promptText, PROMPT_SCHEMA);
-        f.result = { prompt: toPromptString(json.prompt) };
+        f.result = { prompt: applyPromptPrefixSuffix(toPromptString(json.prompt)) };
         f.status = 'done';
         state.exportedSinceLastGenerate = false;
       }
@@ -3963,8 +4052,15 @@
     }else{
       const done = state.files.filter(f=>f.status==='done');
       if(done.length===0){ showToast('Nothing has been generated yet'); return; }
-      const rows = [['Filename','Prompt']];
-      done.forEach(f=>{ rows.push([f.name, f.result.prompt]); });
+      // Prompt mode intentionally exports ONLY the generated prompt text.
+      // No filename, image metadata, style, or other fields are included.
+      // Keep a single CSV column so the file is ready for prompt-only workflows.
+      const rows = [['Prompt']];
+      done.forEach(f=>{
+        const prompt = String(f.result?.prompt || '').trim();
+        if(prompt) rows.push([prompt]);
+      });
+      if(rows.length===1){ showToast('No generated prompts available'); return; }
       downloadCsvRows(rows, 'prompts');
     }
   }
