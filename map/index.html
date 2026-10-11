@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vector Map Generator</title>
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="./assets/index-CpEK1ICv.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-a9xVaO17.css">
+</head>
+
+<body>
+  <div id="app">
+    <div class="sidebar">
+      <h1>Map Generator</h1>
+
+      <div class="control-group">
+        <label for="mode-toggle">Map Type</label>
+        <select id="mode-toggle">
+          <option value="country">Country Map</option>
+          <option value="city">City Map (Populated Places)</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>Map Theme & Style</label>
+        <div class="theme-button-group">
+          <button class="theme-tab-btn" data-theme="bnw">B & W</button>
+          <button class="theme-tab-btn" data-theme="colorful">Colorful</button>
+          <button class="theme-tab-btn" data-theme="gray">Gray Color</button>
+          <button class="theme-tab-btn highlight-3d active" data-theme="3d">🧊 3D Style</button>
+        </div>
+        <select id="theme-toggle" style="display: none;">
+          <option value="bnw">Black and White</option>
+          <option value="colorful">Colorful</option>
+          <option value="gray">Gray Color</option>
+          <option value="3d" selected>3D Style</option>
+        </select>
+      </div>
+
+      <!-- 3D Color Palette Picker -->
+      <div class="control-group" id="palette-section">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label style="margin: 0;">3D Color Palette</label>
+          <span id="palette-name-badge" class="badge">Ocean Blue</span>
+        </div>
+        <div class="palette-grid" id="palette-grid">
+          <!-- Populated by UI -->
+        </div>
+
+        <!-- Unlimited Custom & Random Color Palette Generator -->
+        <div class="custom-color-tools">
+          <div class="color-tools-row">
+            <label class="color-picker-btn" title="Pick any color to generate a custom 3D theme">
+              <input type="color" id="custom-color-input" value="#0ea5e9" />
+              <span>🎨 Color Picker</span>
+            </label>
+            <button id="random-palette-btn" class="random-palette-btn" title="Generate unlimited random color themes">
+              🎲 Random Theme
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="search-input">Search Location</label>
+        <input type="text" id="search-input" placeholder="e.g. United States, France, Japan..." />
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="search-btn" style="flex: 1;">Search</button>
+          <button id="reset-btn" style="display: none; background: #444;">Reset</button>
+        </div>
+        <button id="sample-usa-btn" class="quick-chip">🇺🇸 Preview USA 3D (Reference)</button>
+      </div>
+
+      <div style="flex: 1;"></div>
+
+      <div class="control-group" id="export-section" style="display: none;">
+        <label style="color:#888; font-size:0.8rem;">Export Size</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+          <button class="size-btn active" data-ratio="16:9">16:9</button>
+          <button class="size-btn" data-ratio="1:1">1:1</button>
+          <button class="size-btn" data-ratio="9:16">9:16</button>
+          <button class="size-btn" data-ratio="4:3">4:3</button>
+          <button class="size-btn" data-ratio="3:4">3:4</button>
+        </div>
+        <button id="export-btn" class="primary">Download SVG (4K)</button>
+      </div>
+    </div>
+
+    <div id="map-container" class="map-container">
+      <div id="loading-status" class="loading-status">Loading map data…</div>
+      <div id="map-preview-wrapper" class="map-preview-wrapper">
+        <!-- SVG will be injected here -->
+      </div>
+      <div class="map-zoom-controls">
+        <button id="zoom-in-btn" title="Zoom In" aria-label="Zoom In">+</button>
+        <button id="zoom-out-btn" title="Zoom Out" aria-label="Zoom Out">−</button>
+        <button id="zoom-fit-btn" title="Fit to Size" aria-label="Fit to Size">⛶</button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

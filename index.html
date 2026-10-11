@@ -314,6 +314,8 @@
 
   .results{display:flex;flex-direction:column;gap:14px;}
   .card{
+    content-visibility:auto;
+    contain-intrinsic-size:320px 420px;
     background:var(--card);border:1px solid var(--card-line);border-radius:var(--radius);
     overflow:hidden;scroll-margin-top:80px;transition:box-shadow .2s ease,border-color .2s ease;
     backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
@@ -508,6 +510,13 @@
   /* ---------- ADOBE ANALYTICS ---------- */
   .analytics-view{display:none;width:100%;box-sizing:border-box;}
   .analytics-view.active{display:block !important;}
+  .map-section-view{display:none;width:100%;height:calc(100vh - 36px);min-height:600px;box-sizing:border-box;}
+  .map-section-view.active{display:flex;flex-direction:column;gap:12px;}
+  .map-section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0;}
+  .map-section-toolbar h1{margin:0;font-size:24px;}
+  .map-section-toolbar p{margin:5px 0 0;color:var(--text-soft);font-size:13px;}
+  #mapAppFrame{width:100%;flex:1;min-height:0;border:1px solid var(--card-line);border-radius:12px;background:#fff;}
+  @media(max-width:700px){.map-section-view{height:calc(100vh - 20px);min-height:500px}.map-section-toolbar{align-items:flex-start;flex-direction:column}.map-section-toolbar h1{font-size:20px}}
   .sidebar.analytics-mode .side-scroll{display:none;}
   .analytics-nav-btn{
     width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;
@@ -608,6 +617,25 @@
     .analytics-thumb{height:220px;}
   }
 
+
+  .analytics-tabs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.analytics-top100-trigger{white-space:nowrap;}
+.analytics-top-source{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--border);border-radius:999px;color:var(--text-soft);}
+.analytics-top-loading{display:flex;align-items:center;gap:9px;padding:16px 4px;color:var(--text-soft);font-size:12px;}
+.analytics-top-note{padding:10px 4px;color:var(--text-soft);font-size:11px;border-bottom:1px solid var(--border);}
+.analytics-contributor-id{width:110px;color:var(--text-soft);font-size:11px;white-space:nowrap;}
+.analytics-top-contributors{margin:0 0 20px;padding:18px;border:1px solid var(--border);border-radius:14px;background:var(--panel);}
+
+  .analytics-top-contributors-head{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .analytics-top-contributors-head h3{margin:0;font-size:16px;}
+  .analytics-top-contributors-head p{margin:5px 0 0;color:var(--text-soft);font-size:12px;}
+  .analytics-top-contributors-list{margin-top:14px;border-top:1px solid var(--border);}
+  .analytics-contributor-row{display:flex;align-items:center;gap:14px;padding:11px 4px;border-bottom:1px solid var(--border);}
+  .analytics-contributor-rank{width:34px;color:var(--text-soft);font-size:12px;text-align:center;}
+  .analytics-contributor-name{flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .analytics-contributor-link{font-size:12px;color:var(--accent,#7c8cff);text-decoration:none;white-space:nowrap;}
+  .analytics-contributor-link:hover{text-decoration:underline;}
+  @media(max-width:700px){.analytics-top-contributors-head{align-items:flex-start;flex-direction:column;}.analytics-contributor-row{gap:9px;}.analytics-contributor-link{font-size:11px;}}
 </style>
 </head>
 <body>
@@ -635,6 +663,10 @@
       <button class="main-nav-btn" id="analyticsNavBtn" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16" stroke-linecap="round"/><path d="M7 15l3-4 3 2 4-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Adobe Analytics
+      </button>
+      <button class="main-nav-btn" id="mapNavBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6.5 8.5 4l7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20z" stroke-linejoin="round"/><path d="M8.5 4v13.5M15.5 6.5V20" stroke-linejoin="round"/></svg>
+        Map Section
       </button>
     </div>
 
@@ -798,7 +830,7 @@
         <h1 id="mainTitle">Image → Metadata</h1>
         <p id="mainSub">Upload images, generate title, description, and keywords with Gemini.</p>
       </div>
-      <div class="count-badge"><b id="fileCount">0</b> / 100 files</div>
+      <div class="count-badge"><b id="fileCount">0</b> / 500 files</div>
     </div>
 
     <div class="dropzone" id="dropzone">
@@ -815,7 +847,7 @@
       </div>
       <h3>Upload Files</h3>
       <div>Drag &amp; drop, or <span class="browse" id="browseLink">browse</span></div>
-      <div class="sub">Max 100 files · Each image goes directly to the Gemini API (from your browser)</div>
+      <div class="sub">Max 500 files · Drag &amp; drop or select up to 500 images at once</div>
     </div>
 
     <div class="toolbar">
@@ -855,6 +887,10 @@
             <button id="exportMenuMagnific">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Magnific CSV
+            </button>
+            <button id="exportMenuVecteezy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5" stroke-linecap="round"/></svg>
+              Vecteezy CSV
             </button>
           </div>
         </div>
@@ -901,9 +937,23 @@
         </div>
       </div>
 
-      <div class="analytics-tabs">
-        <button class="analytics-tab active" data-analytics-mode="keyword">Search by Keyword</button>
-        <button class="analytics-tab" data-analytics-mode="contributor">Search by Contributor ID</button>
+      <div class="analytics-tabs-row">
+        <div class="analytics-tabs">
+          <button class="analytics-tab active" data-analytics-mode="keyword">Search by Keyword</button>
+          <button class="analytics-tab" data-analytics-mode="contributor">Search by Contributor ID</button>
+        </div>
+        <button class="btn btn-ghost analytics-top100-trigger" id="analyticsTop100Btn" type="button">Top 100 Contributors</button>
+      </div>
+
+      <div class="analytics-top-contributors" id="analyticsTopContributorsSection" style="display:none;">
+        <div class="analytics-top-contributors-head">
+          <div>
+            <h3>Top 100 Contributors</h3>
+            <p>Live contributor discovery using the connected Adobe Stock scraper API.</p>
+          </div>
+          <span class="analytics-top-source">API</span>
+        </div>
+        <div id="analyticsTopContributorsList" class="analytics-top-contributors-list"></div>
       </div>
 
       <div class="analytics-search-row">
@@ -973,6 +1023,7 @@
         <span id="analyticsModeHint">Search mode: Keyword · Enter a keyword, then click Analyze</span>
       </div>
 
+
       <div id="analyticsError"></div>
       <div class="analytics-stats">
         <div class="analytics-stat"><div class="label">Assets found</div><div class="value" id="analyticsCount">0</div></div>
@@ -991,6 +1042,14 @@
           <p>Add an Apify token, enter a keyword or contributor ID, then click Analyze.</p>
         </div>
       </div>
+    </section>
+
+    <section class="map-section-view" id="mapSectionView" aria-label="Map Section">
+      <div class="map-section-toolbar">
+        <div><h1>Map Section</h1><p>Create and export country or city vector maps.</p></div>
+        <button class="btn btn-ghost" id="mapOpenNewTabBtn" type="button">Open map in new tab ↗</button>
+      </div>
+      <iframe id="mapAppFrame" title="Vector Map Generator" src="map/index.html" loading="lazy" referrerpolicy="no-referrer"></iframe>
     </section>
 
   </main>
@@ -1060,6 +1119,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Magnific CSV
       </button>
+      <button class="btn btn-primary" id="doneModalDownloadVecteezy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5" stroke-linecap="round"/></svg>
+        Vecteezy CSV
+      </button>
     </div>
   </div>
 </div>
@@ -1082,6 +1145,12 @@
   "use strict";
 
   /* ---------------- STATE ---------------- */
+  // Maximum number of files allowed in one metadata workspace.
+  // Uploading 500 is supported in one drag/drop or file-picker action;
+  // generation remains throttled by the existing concurrency setting so the
+  // browser does not fire 500 API requests simultaneously.
+  const MAX_FILES = 500;
+
   let state = {
     apiKeys: [], // {id, key, status:'ok'|'exhausted'|'error'}
     activeKeyIndex: 0,
@@ -1102,7 +1171,7 @@
     files: [] // {id, file, name, dataUrl, base64, mimeType, status, result, error, metadataStatus, metadataError, metadataOutputName, epsJpegStatus, epsJpegError, epsJpegOutputName}
   };
 
-  const PLATFORMS = ["Adobe Stock","Shutterstock","Magnific"];
+  const PLATFORMS = ["Adobe Stock","Shutterstock","Magnific","Vecteezy"];
   const STYLES = ["Photographic","Cinematic","Artistic","Minimal","3D Render","Anime"];
 
   const EPS_PLACEHOLDER_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
@@ -1164,6 +1233,11 @@
       hasTitle:true, hasDescription:false, hasCategory:false,
       titleMax:200, titleDefault:70, kwMin:5, kwMax:50, kwDefault:40,
       hint:'Per Magnific\'s contributor CSV guide: just Title + Keywords — no category needed. The CSV export uses semicolon-separated columns, exactly as Magnific\'s format requires.'
+    },
+    "Vecteezy":{
+      hasTitle:true, hasDescription:true, hasCategory:false,
+      titleMax:69, titleDefault:69, descMin:40, descMax:500, descDefault:180, kwMin:10, kwMax:50, kwDefault:30,
+      hint:'Vecteezy CSV: Filename, Title, Description, Keywords in exactly these first four columns. Filename is required; extensions should be omitted for FTP. Titles should stay under 70 characters, and keywords are comma-separated with up to 50 relevant keywords.'
     }
   };
 
@@ -1445,6 +1519,8 @@
   const generatorView = document.getElementById('generatorView');
   const metadataNavBtn = document.getElementById('metadataNavBtn');
   const analyticsNavBtn = document.getElementById('analyticsNavBtn');
+  const mapNavBtn = document.getElementById('mapNavBtn');
+  const mapSectionView = document.getElementById('mapSectionView');
   const metadataModeTabs = document.getElementById('metadataModeTabs');
   const analyticsKeyModalBg = document.getElementById('analyticsKeyModalBg');
   const analyticsApifyKeyInput = document.getElementById('analyticsApifyKeyInput');
@@ -1453,6 +1529,73 @@
   let analyticsCurrentPage = 1;
   let analyticsFetchedPages = 1;
   let analyticsPageSize = 24;
+
+  function contributorProfileUrl(id){
+    const clean=String(id||'').trim();
+    return clean ? 'https://stock.adobe.com/contributor/'+encodeURIComponent(clean) : '';
+  }
+
+  async function loadTop100Contributors(){
+    const key=getApifyKey();
+    const section=document.getElementById('analyticsTopContributorsSection');
+    const list=document.getElementById('analyticsTopContributorsList');
+    const btn=document.getElementById('analyticsTop100Btn');
+    if(!section || !list || !btn) return;
+    section.style.display='block';
+    list.innerHTML='<div class="analytics-top-loading"><span class="analytics-spinner"></span> Fetching contributor data from the API…</div>';
+    btn.disabled=true;
+    const oldText=btn.textContent;
+    btn.textContent='Loading…';
+    if(!key){
+      list.innerHTML='<div class="analytics-error">Add your Apify API token first using <b>Apify settings</b>.</div>';
+      btn.disabled=false; btn.textContent=oldText; return;
+    }
+    try{
+      const url='https://api.apify.com/v2/acts/kawsar~adobe-stock-scraper/run-sync-get-dataset-items?token='+encodeURIComponent(key);
+      const payload={
+        maxItems:1000,
+        query:'',
+        assetType:'all',
+        order:'downloads',
+        aiFilter:'all',
+        proxyConfiguration:{useApifyProxy:true}
+      };
+      const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const body=await resp.text();
+      let data;
+      try{data=JSON.parse(body);}catch(e){throw new Error('Apify returned a non-JSON response ('+resp.status+').');}
+      if(!resp.ok) throw new Error(data?.error?.message || data?.message || ('Apify request failed with HTTP '+resp.status));
+      const raw=Array.isArray(data)?data:(data?.items||[]);
+      const map=new Map();
+      raw.forEach(x=>{
+        const id=String(x.creatorId??x.creator_id??x.creator?.id??'').trim();
+        const name=String(x.creatorName??x.creator_name??x.creator?.name??x.author??'').trim();
+        if(!id && !name) return;
+        const keyId=id||name.toLowerCase();
+        const row=map.get(keyId)||{id,name,assets:0,totalDownloads:0,maxAssetDownloads:0};
+        row.id=row.id||id; row.name=row.name||name||id; row.assets++;
+        const d=Number(x.downloadCount??x.downloads??x.nbDownloads??x.download_count??0)||0;
+        row.totalDownloads+=d; row.maxAssetDownloads=Math.max(row.maxAssetDownloads,d);
+        map.set(keyId,row);
+      });
+      const contributors=[...map.values()]
+        .sort((a,b)=>b.totalDownloads-a.totalDownloads || b.maxAssetDownloads-a.maxAssetDownloads || a.name.localeCompare(b.name))
+        .slice(0,100);
+      if(!contributors.length){
+        list.innerHTML='<div class="analytics-error">The API returned no contributor records. Try again or check the Apify connection.</div>';
+      }else{
+        list.innerHTML='<div class="analytics-top-note">Ranked from the contributor records returned by the API. Adobe does not publish an official global Top 100 Contributors API.</div>'+contributors.map((c,i)=>{
+          const profile=c.id ? 'https://stock.adobe.com/contributor/'+encodeURIComponent(c.id) : '';
+          return '<div class="analytics-contributor-row"><span class="analytics-contributor-rank">#'+(i+1)+'</span><span class="analytics-contributor-name">'+escapeHtml(c.name||'Unknown contributor')+'</span><span class="analytics-contributor-id">ID '+escapeHtml(c.id||'—')+'</span>'+(profile?'<a class="analytics-contributor-link" href="'+escapeHtml(profile)+'" target="_blank" rel="noopener noreferrer">Public profile ↗</a>':'')+'</div>';
+        }).join('');
+      }
+    }catch(e){
+      list.innerHTML='<div class="analytics-error"><b>Top 100 API error:</b> '+escapeHtml(e.message||String(e))+'</div>';
+    }finally{
+      btn.disabled=false; btn.textContent=oldText;
+    }
+  }
+  document.getElementById('analyticsTop100Btn')?.addEventListener('click',loadTop100Contributors);
 
   function getApifyKey(){
     try{return localStorage.getItem('strong-meta-apify-token') || '';}catch(e){return '';}
@@ -1467,10 +1610,13 @@
 
   function showAnalytics(){
     generatorView.style.display='none';
+    mapSectionView.classList.remove('active');
+    mapSectionView.style.display='none';
     analyticsView.classList.add('active');
     analyticsView.style.display='block';
     metadataNavBtn.classList.remove('active');
     analyticsNavBtn.classList.add('active');
+    mapNavBtn.classList.remove('active');
     if(metadataModeTabs) metadataModeTabs.style.display='none';
     const sidebar=document.querySelector('.sidebar');
     if(sidebar) sidebar.classList.add('analytics-mode');
@@ -1478,12 +1624,29 @@
     setAnalyticsKeyStatus();
     setTimeout(()=>document.getElementById('analyticsQuery')?.focus(),50);
   }
+  function showMapSection(){
+    generatorView.style.display='none';
+    analyticsView.classList.remove('active');
+    analyticsView.style.display='none';
+    mapSectionView.classList.add('active');
+    mapSectionView.style.display='flex';
+    metadataNavBtn.classList.remove('active');
+    analyticsNavBtn.classList.remove('active');
+    mapNavBtn.classList.add('active');
+    if(metadataModeTabs) metadataModeTabs.style.display='none';
+    const sidebar=document.querySelector('.sidebar');
+    if(sidebar) sidebar.classList.add('analytics-mode');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  }
   function showGenerator(){
     generatorView.style.display='block';
     analyticsView.classList.remove('active');
     analyticsView.style.display='none';
+    mapSectionView.classList.remove('active');
+    mapSectionView.style.display='none';
     metadataNavBtn.classList.add('active');
     analyticsNavBtn.classList.remove('active');
+    mapNavBtn.classList.remove('active');
     if(metadataModeTabs) metadataModeTabs.style.display='flex';
     const sidebar=document.querySelector('.sidebar');
     if(sidebar) sidebar.classList.remove('analytics-mode');
@@ -1492,6 +1655,8 @@
   }
   metadataNavBtn.addEventListener('click',showGenerator);
   analyticsNavBtn.addEventListener('click',showAnalytics);
+  mapNavBtn.addEventListener('click',showMapSection);
+  document.getElementById('mapOpenNewTabBtn').addEventListener('click',()=>window.open(new URL('map/index.html',window.location.href).href,'_blank','noopener,noreferrer'));
 
   document.getElementById('analyticsKeyBtn').addEventListener('click',()=>{
     analyticsApifyKeyInput.value=getApifyKey();
@@ -1531,22 +1696,16 @@
     const m={photo:'photo',illustration:'illustration',vector:'vector',video:'video',template:'template','3d':'3d',audio:'audio'};
     return m[v]||'all';
   }
-  function safeAnalyticsUrl(value){
+  function safeHttpUrl(value){
     if(!value) return '';
     try{
-      const u=new URL(String(value),window.location.href);
-      return (u.protocol==='https:' || u.protocol==='http:') ? u.href : '';
-    }catch(e){return '';}
+      const url=new URL(String(value), window.location.href);
+      return (url.protocol==='https:' || url.protocol==='http:') ? url.href : '';
+    }catch(e){ return ''; }
   }
-  function parseAnalyticsBoolean(value){
-    if(typeof value==='boolean') return value;
-    if(typeof value==='number') return value===1;
-    if(typeof value==='string') return ['true','1','yes','y'].includes(value.trim().toLowerCase());
-    return false;
-  }
+
   function normalizeAnalyticsItem(x){
-    x=x && typeof x==='object' ? x : {};
-    const creator=x.creator && typeof x.creator==='object' ? x.creator : {};
+    const creator=x.creator || {};
     const title=x.assetTitle || x.title || x.name || '';
     const creatorId=x.creatorId || x.creator_id || creator.id || '';
     const creatorName=x.creatorName || x.creator_name || creator.name || x.author || '';
@@ -1554,18 +1713,18 @@
     const keywords=Array.isArray(rawKeywords)
       ? rawKeywords.map(k=>typeof k==='string'?k:(k&&k.name)||'').filter(Boolean)
       : (typeof rawKeywords==='string' ? rawKeywords.split(/[,;|]/).map(s=>s.trim()).filter(Boolean) : []);
-    const rawDownloads=x.downloadCount ?? x.downloads ?? x.nbDownloads ?? x.nb_downloads ?? x.download_count ?? 0;
-    const downloads=Number(String(rawDownloads).replace(/[,\s]/g,'')) || 0;
+    const downloads=Number(x.downloadCount ?? x.downloads ?? x.nbDownloads ?? x.nb_downloads ?? x.download_count ?? 0) || 0;
     const rawAi=x.isGenerativeAi ?? x.isGentech ?? x.generativeAi ?? x.is_gentech ?? x.is_ai ?? x.ai;
-    const ai=parseAnalyticsBoolean(rawAi);
+    const ai=typeof rawAi==='string'
+      ? ['true','1','yes','y'].includes(rawAi.trim().toLowerCase())
+      : rawAi===true || rawAi===1;
     // One Adobe Stock asset should render as ONE preview. Some scraper/API
     // responses expose several preview URLs (500px, 1000px, comp, etc.), but
     // those are alternate sizes of the same asset, not separate images.
-    const rawThumb=[x.thumb1000Url,x.thumb500Url,x.thumbUrl,x.thumbnailUrl,x.thumbnail_url,x.previewUrl,x.compUrl].find(Boolean) || '';
-    const thumb=safeAnalyticsUrl(rawThumb);
+    const thumb=safeHttpUrl([x.thumb1000Url,x.thumb500Url,x.thumbUrl,x.thumbnailUrl,x.thumbnail_url,x.previewUrl,x.compUrl].find(Boolean) || '');
     const previews=thumb ? [thumb] : [];
-    const rawUrl=x.detailsUrl || x.details_url || x.assetUrl || x.url || (x.assetId ? 'https://stock.adobe.com/images/'+encodeURIComponent(String(x.assetId)) : '');
-    const url=safeAnalyticsUrl(rawUrl);
+    const rawUrl=x.detailsUrl || x.details_url || x.assetUrl || x.url || (x.assetId ? 'https://stock.adobe.com/images/'+encodeURIComponent(x.assetId) : '');
+    const url=safeHttpUrl(rawUrl);
     const cat=x.categoryInfo || x.category || {};
     const category=(typeof cat==='string' ? cat : (cat.name || cat.label || ''));
     const kind=x.assetKind || x.mediaType || x.assetType || x.contentType || 'Asset';
@@ -1672,8 +1831,6 @@
       navigator.clipboard?.writeText(x.keywords.join(', ')); showToast('Keywords copied');
     }));
   }
-
-  function escapeHtml(v){return String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\\"':'&quot;'}[c]||c));}
 
   function syncAnalyticsFetchPageOptions(){
     const pageSizeEl=document.getElementById('analyticsPageSize');
@@ -1809,22 +1966,12 @@
   analyticsDownloadMenu.querySelectorAll('[data-export]').forEach(b=>b.addEventListener('click',()=>exportAnalytics(b.dataset.export)));
 
   document.getElementById('analyticsMoodboardBtn').addEventListener('click',()=>{
+    const saved=JSON.parse(localStorage.getItem('strong-meta-moodboard')||'[]');
     if(!analyticsItems.length){showToast('Run an analysis first');return;}
-    let saved=[];
-    try{
-      const parsed=JSON.parse(localStorage.getItem('strong-meta-moodboard')||'[]');
-      if(Array.isArray(parsed)) saved=parsed;
-    }catch(e){ /* recover from malformed local moodboard data */ }
     const merged=[...saved,...analyticsItems].filter((x,i,a)=>x.assetId && a.findIndex(y=>y.assetId===x.assetId)===i);
-    try{
-      localStorage.setItem('strong-meta-moodboard',JSON.stringify(merged));
-      showToast(merged.length+' asset'+(merged.length===1?'':'s')+' saved to Moodboards');
-    }catch(e){showToast('Could not save Moodboard: browser storage is unavailable or full');}
+    localStorage.setItem('strong-meta-moodboard',JSON.stringify(merged));
+    showToast(merged.length+' asset'+(merged.length===1?'':'s')+' saved to Moodboards');
   });
-
-  document.querySelectorAll('.analytics-tab').forEach(btn=>btn.addEventListener('click',()=>{
-    document.getElementById('analyticsModeHint').textContent='Search mode: '+(analyticsMode==='contributor'?'Contributor ID':'Keyword');
-  }));
 
   /* ---------------- API KEY MODAL ---------------- */
   const apiModalBg = document.getElementById('apiModalBg');
@@ -1880,10 +2027,6 @@
   ['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); }));
   dropzone.addEventListener('drop', e=>{ handleFiles(e.dataTransfer.files); });
   fileInput.addEventListener('change', e=>{ handleFiles(e.target.files); fileInput.value=""; });
-
-  function isEpsFile(file){
-    return /\.eps$/i.test(file.name) || file.type==='application/postscript' || file.type==='application/eps';
-  }
 
   function isTiffFile(file){
     return /\.tiff?$/i.test(file.name) || file.type==='image/tiff';
@@ -2313,15 +2456,15 @@
   async function handleFiles(fileList){
     const incoming = Array.from(fileList).filter(f=> f.type.startsWith('image/') || isEpsFile(f) || isTiffFile(f));
     if(incoming.length===0) return;
-    const room = Math.max(0, 100 - state.files.length);
+    const room = Math.max(0, MAX_FILES - state.files.length);
     const arr = incoming.slice(0, room);
-    if(arr.length===0){ showToast('Maximum 100 files can be uploaded'); return; }
-    if(incoming.length > arr.length) showToast('100 file limit exceeded — the first '+arr.length+' were added');
+    if(arr.length===0){ showToast('Maximum '+MAX_FILES+' files can be uploaded'); return; }
+    if(incoming.length > arr.length) showToast(MAX_FILES+' file limit exceeded — the first '+arr.length+' were added');
 
     // Most formats (PNG/JPG/WEBP/GIF/BMP...) can be shown instantly with
     // URL.createObjectURL() — the browser already decodes it natively to
     // paint the thumbnail, no canvas/resize/base64 work needed at all. So
-    // upload itself is now near-instant even for 100 files: we only do the
+    // upload itself is now near-instant even for large batches: we only do the
     // heavy resize+encode (needed for the API, not for viewing) lazily,
     // right before that specific image is actually generated.
     //
@@ -2879,7 +3022,7 @@
   }
 
   function escapeHtml(s){
-    return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    return String(s ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
   /* ---------------- AI PROVIDER CALLS ---------------- */
@@ -3323,7 +3466,7 @@
     // named categories + illustration flag) — one API call per image instead
     // of two, since the two platforms' keyword rules are close enough to
     // share a single well-built list.
-    p += 'You are a metadata specialist preparing ONE image for submission to Adobe Stock, Shutterstock, AND Magnific.com at once. Generate a title (used for Adobe Stock and for Magnific, which both just need a clean title + keyword list), a description (for Shutterstock), and ONE shared keyword list that works for all three platforms\' official contributor guidelines.\n';
+    p += 'You are a metadata specialist preparing ONE image for Adobe Stock, Shutterstock, Magnific, and Vecteezy. Generate one clean title, one separate description when needed, and one shared keyword list that can be exported to each platform while respecting each platform\'s limits. Vecteezy CSV specifically uses Filename, Title, Description, Keywords in that order.\n';
     p += accuracyInstruction;
     p += duplicateAvoidance;
     p += ipWarning;
@@ -3346,7 +3489,7 @@
     p += '- Where possible, cover Who, What, When, Where, Why, and convey the image\'s mood/emotion.\n';
     p += '- Where relevant, weave in specific lighting, background, focus/depth of field, camera angle, and movement — but don\'t use any links, specific camera/lens model names, or trademarks, and don\'t repeat any word or phrase.\n';
     p += '- Keep it to approximately '+descLen+' characters.\n';
-    p += 'KEYWORDS rules (ONE shared list used for both Adobe Stock and Shutterstock):\n';
+    p += 'KEYWORDS rules (ONE shared list used across Adobe Stock, Shutterstock, Magnific, and Vecteezy):\n';
     p += '- KEYWORD COUNT CONTROL: The user selected exactly '+kwCount+' keywords. Return EXACTLY '+kwCount+' unique, relevant keywords. Count the final array before responding. If there are too many, remove the weakest; if there are too few, add additional relevant single-word keywords supported by the image. Never use filler just to reach the number.\n';
     p += '- Order matters: the first 5-10 keywords must be the single most relevant, primary search terms a buyer would actually type — put those before anything broader.\n';
     p += '- Cover all four of these categories, not just the obvious subject:\n';
@@ -3360,6 +3503,11 @@
     p += '- Only give keywords directly relevant to the image. Use each keyword only once, never repeat a keyword, and don\'t include any trademark/brand/personal info.\n';
     p += '- Write everything in a single language (English) — don\'t mix multiple languages.\n';
     if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
+    p += 'VECTEEZY CSV RULES:\n';
+    p += '- Vecteezy requires a unique title for each resource; keep it clear, descriptive, directly tied to the image, and under 70 characters.\n';
+    p += '- Vecteezy Description is optional; when provided, write a natural, useful description rather than repeating the title.\n';
+    p += '- Vecteezy Keywords are comma-separated and should contain no more than 50 relevant English keywords; prioritize the five most important keywords first.\n';
+    p += '- Do not add category fields to the Vecteezy CSV because its CSV guide specifies only Filename, Title, Description, Keywords as the first four columns.\n';
     p += 'CATEGORY rules:\n';
     p += '- "category" (for Adobe Stock): pick exactly one category from this list that best matches the image, and give only its id (number): '+ADOBE_CATEGORIES.map(c=>c.id+' = '+c.name).join(', ')+'\n';
     p += '- "categories" (for Shutterstock): pick the 1 (and up to 2, if relevant) best-matching category NAME(s) from this list — don\'t give any name outside this list: '+SHUTTERSTOCK_CATEGORIES.join(', ')+'\n';
@@ -3625,8 +3773,9 @@
     const scored = state.files.filter(f=>f.status==='done' && typeof f.quality==='number');
     const lowCount = scored.filter(f=>f.quality<60).length;
     const midCount = scored.filter(f=>f.quality>=60 && f.quality<85).length;
-    document.getElementById('doneModalTitle').textContent = 'Metadata generated successfully';
-    document.getElementById('doneModalText').textContent = 'CSV ready · '+doneCount+' result'+(doneCount!==1?'s':'')+(failedCount>0 ? ' · '+failedCount+' failed' : '');
+    const isPromptRun = state.activeTab === 'prompt';
+    document.getElementById('doneModalTitle').textContent = isPromptRun ? 'Prompts generated successfully' : 'Metadata generated successfully';
+    document.getElementById('doneModalText').textContent = 'CSV ready · '+doneCount+' '+(isPromptRun?'prompt':'result')+(doneCount!==1?'s':'')+(failedCount>0 ? ' · '+failedCount+' failed' : '');
     const warnEl = document.getElementById('doneModalWarning');
     if(lowCount>0){
       warnEl.textContent = '⚠️ '+lowCount+' result'+(lowCount>1?'s':'')+' scored below 60/100 — check the Quality Dashboard, these likely need regenerating.';
@@ -3647,6 +3796,9 @@
   };
   document.getElementById('doneModalDownloadMagnific').onclick = ()=>{
     exportCsv('Magnific');
+  };
+  document.getElementById('doneModalDownloadVecteezy').onclick = ()=>{
+    exportCsv('Vecteezy');
   };
   document.getElementById('doneModalX').onclick = ()=> document.getElementById('doneModalBg').classList.remove('open');
   document.getElementById('doneModalBg').addEventListener('click', (e)=>{ if(e.target===document.getElementById('doneModalBg')) e.currentTarget.classList.remove('open'); });
@@ -4032,6 +4184,10 @@
         exportMagnificCsv(done);
         return;
       }
+      if(platformName === 'Vecteezy'){
+        exportVecteezyCsv(done);
+        return;
+      }
       let rows;
       if(platformName === 'Adobe Stock'){
         rows = [['Filename','Title','Keywords','Category']];
@@ -4050,18 +4206,23 @@
       }
       downloadCsvRows(rows, platformName+'_metadata');
     }else{
-      const done = state.files.filter(f=>f.status==='done');
-      if(done.length===0){ showToast('Nothing has been generated yet'); return; }
-      // Prompt mode intentionally exports ONLY the generated prompt text.
-      // No filename, image metadata, style, or other fields are included.
-      // Keep a single CSV column so the file is ready for prompt-only workflows.
+      // PROMPT EXPORT: never use a fixed page/preview limit here. Export every
+      // completed prompt currently stored in state.files, whether there are
+      // 10, 100, 500, or any other number of uploaded files. The CSV contains
+      // exactly one row per completed/generated prompt (plus the header).
+      const completedPrompts = state.files.filter(f =>
+        f.status === 'done' && f.result && String(f.result.prompt || '').trim()
+      );
+      if(completedPrompts.length===0){
+        showToast('No generated prompts available');
+        return;
+      }
       const rows = [['Prompt']];
-      done.forEach(f=>{
-        const prompt = String(f.result?.prompt || '').trim();
-        if(prompt) rows.push([prompt]);
+      completedPrompts.forEach(f=>{
+        rows.push([String(f.result.prompt).trim()]);
       });
-      if(rows.length===1){ showToast('No generated prompts available'); return; }
       downloadCsvRows(rows, 'prompts');
+      showToast(completedPrompts.length+' prompts exported to CSV');
     }
   }
   // Magnific's own CSV guide uses a different format from Adobe/Shutterstock:
@@ -4085,6 +4246,20 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     state.exportedSinceLastGenerate = true;
+  }
+  // Vecteezy CSV format from its contributor guide: first four columns must be
+  // Filename, Title, Description, Keywords. Filename extensions are omitted for
+  // FTP compatibility; Vecteezy's Add Data workflow also accepts extensions.
+  function exportVecteezyCsv(done){
+    const rows = [['Filename','Title','Description','Keywords']];
+    done.forEach(f=>{
+      const baseName = String(f.name||'').replace(/\.[^.]+$/, '').replace(/\s+/g, '_');
+      const title = fitWholeWords(f.result.title||'', 69);
+      const description = String(f.result.description||'').trim();
+      const keywords = (f.result.keywords||[]).slice(0,50).join(',');
+      rows.push([baseName,title,description,keywords]);
+    });
+    downloadCsvRows(rows, 'Vecteezy_metadata');
   }
   function downloadCsvRows(rows, filenameBase){
     const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
@@ -4113,6 +4288,10 @@
   };
   document.getElementById('exportMenuMagnific').onclick = ()=>{
     exportCsv('Magnific');
+    document.getElementById('exportMenu').classList.remove('open');
+  };
+  document.getElementById('exportMenuVecteezy').onclick = ()=>{
+    exportCsv('Vecteezy');
     document.getElementById('exportMenu').classList.remove('open');
   };
   document.addEventListener('click', (e)=>{
