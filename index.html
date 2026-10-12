@@ -510,13 +510,6 @@
   /* ---------- ADOBE ANALYTICS ---------- */
   .analytics-view{display:none;width:100%;box-sizing:border-box;}
   .analytics-view.active{display:block !important;}
-  .map-section-view{display:none;width:100%;height:calc(100vh - 36px);min-height:600px;box-sizing:border-box;}
-  .map-section-view.active{display:flex;flex-direction:column;gap:12px;}
-  .map-section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0;}
-  .map-section-toolbar h1{margin:0;font-size:24px;}
-  .map-section-toolbar p{margin:5px 0 0;color:var(--text-soft);font-size:13px;}
-  #mapAppFrame{width:100%;flex:1;min-height:0;border:1px solid var(--card-line);border-radius:12px;background:#fff;}
-  @media(max-width:700px){.map-section-view{height:calc(100vh - 20px);min-height:500px}.map-section-toolbar{align-items:flex-start;flex-direction:column}.map-section-toolbar h1{font-size:20px}}
   .sidebar.analytics-mode .side-scroll{display:none;}
   .analytics-nav-btn{
     width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;
@@ -663,10 +656,6 @@
       <button class="main-nav-btn" id="analyticsNavBtn" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16" stroke-linecap="round"/><path d="M7 15l3-4 3 2 4-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Adobe Analytics
-      </button>
-      <button class="main-nav-btn" id="mapNavBtn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6.5 8.5 4l7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20z" stroke-linejoin="round"/><path d="M8.5 4v13.5M15.5 6.5V20" stroke-linejoin="round"/></svg>
-        Map Section
       </button>
     </div>
 
@@ -828,7 +817,7 @@
     <div class="topbar">
       <div>
         <h1 id="mainTitle">Image → Metadata</h1>
-        <p id="mainSub">Upload images, generate title, description, and keywords with Gemini.</p>
+        <p id="mainSub">Upload images and generate accurate, subject-first stock titles and relevant keywords with Gemini.</p>
       </div>
       <div class="count-badge"><b id="fileCount">0</b> / 500 files</div>
     </div>
@@ -1042,14 +1031,6 @@
           <p>Add an Apify token, enter a keyword or contributor ID, then click Analyze.</p>
         </div>
       </div>
-    </section>
-
-    <section class="map-section-view" id="mapSectionView" aria-label="Map Section">
-      <div class="map-section-toolbar">
-        <div><h1>Map Section</h1><p>Create and export country or city vector maps.</p></div>
-        <button class="btn btn-ghost" id="mapOpenNewTabBtn" type="button">Open map in new tab ↗</button>
-      </div>
-      <iframe id="mapAppFrame" title="Vector Map Generator" src="map/index.html" loading="lazy" referrerpolicy="no-referrer"></iframe>
     </section>
 
   </main>
@@ -1519,8 +1500,6 @@
   const generatorView = document.getElementById('generatorView');
   const metadataNavBtn = document.getElementById('metadataNavBtn');
   const analyticsNavBtn = document.getElementById('analyticsNavBtn');
-  const mapNavBtn = document.getElementById('mapNavBtn');
-  const mapSectionView = document.getElementById('mapSectionView');
   const metadataModeTabs = document.getElementById('metadataModeTabs');
   const analyticsKeyModalBg = document.getElementById('analyticsKeyModalBg');
   const analyticsApifyKeyInput = document.getElementById('analyticsApifyKeyInput');
@@ -1610,13 +1589,10 @@
 
   function showAnalytics(){
     generatorView.style.display='none';
-    mapSectionView.classList.remove('active');
-    mapSectionView.style.display='none';
     analyticsView.classList.add('active');
     analyticsView.style.display='block';
     metadataNavBtn.classList.remove('active');
     analyticsNavBtn.classList.add('active');
-    mapNavBtn.classList.remove('active');
     if(metadataModeTabs) metadataModeTabs.style.display='none';
     const sidebar=document.querySelector('.sidebar');
     if(sidebar) sidebar.classList.add('analytics-mode');
@@ -1624,29 +1600,12 @@
     setAnalyticsKeyStatus();
     setTimeout(()=>document.getElementById('analyticsQuery')?.focus(),50);
   }
-  function showMapSection(){
-    generatorView.style.display='none';
-    analyticsView.classList.remove('active');
-    analyticsView.style.display='none';
-    mapSectionView.classList.add('active');
-    mapSectionView.style.display='flex';
-    metadataNavBtn.classList.remove('active');
-    analyticsNavBtn.classList.remove('active');
-    mapNavBtn.classList.add('active');
-    if(metadataModeTabs) metadataModeTabs.style.display='none';
-    const sidebar=document.querySelector('.sidebar');
-    if(sidebar) sidebar.classList.add('analytics-mode');
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  }
   function showGenerator(){
     generatorView.style.display='block';
     analyticsView.classList.remove('active');
     analyticsView.style.display='none';
-    mapSectionView.classList.remove('active');
-    mapSectionView.style.display='none';
     metadataNavBtn.classList.add('active');
     analyticsNavBtn.classList.remove('active');
-    mapNavBtn.classList.remove('active');
     if(metadataModeTabs) metadataModeTabs.style.display='flex';
     const sidebar=document.querySelector('.sidebar');
     if(sidebar) sidebar.classList.remove('analytics-mode');
@@ -1655,8 +1614,6 @@
   }
   metadataNavBtn.addEventListener('click',showGenerator);
   analyticsNavBtn.addEventListener('click',showAnalytics);
-  mapNavBtn.addEventListener('click',showMapSection);
-  document.getElementById('mapOpenNewTabBtn').addEventListener('click',()=>window.open(new URL('map/index.html',window.location.href).href,'_blank','noopener,noreferrer'));
 
   document.getElementById('analyticsKeyBtn').addEventListener('click',()=>{
     analyticsApifyKeyInput.value=getApifyKey();
@@ -3474,13 +3431,12 @@
     p += '- Always represent people\'s identity respectfully and accurately (don\'t describe race, gender, age, etc. incorrectly or with stereotypes). Don\'t mention any personally identifiable information (PII) — names, addresses, phone numbers, emails.\n';
     p += 'TITLE rules (for Adobe Stock):\n';
     p += '- TITLE LENGTH CONTROL: The user selected '+titleLen+' characters. The title MUST be no longer than '+titleLen+' characters. It MUST end at a complete word — NEVER cut, split, or hyphenate a word just to reach the character limit. It is correct to use fewer characters than the selected limit if the next word would exceed it.\n';
-    p += '- USE A FEATURED-STYLE STOCK TITLE STRUCTURE. Before writing the title, silently classify the asset into: (1) a short subject/set name, (2) asset type such as vector illustration, line icon set, editable stroke icon set, 3D render, photo, template, or background, (3) the visual/style descriptor, (4) the business/use-case concepts supported by the image, and (5) the most important visible elements. Then combine the strongest parts into a natural buyer-facing title.\n';
-    p += '- For VECTOR / ILLUSTRATION / ICON-SET assets, prefer this structure: "[Short subject or collection name]. [Asset type + visual/style descriptor]. [5-10 strongest visible subjects, concepts, or use cases], [optional final format word such as Vector or illustration]." Example patterns: "Basic business. Vector illustrations of people in various activities of business, management, marketing, startup, finance." or "Business Project line icon set in editable stroke style. Project management, planning, strategy, workflow, tasks, timeline, teamwork, goals, progress, budget, resources, collection. Vector" — these are structural references only; never copy their wording unless it is independently accurate for the current image.\n';
-    p += '- The first phrase should work like a compact collection/subject label (usually 2-5 words), followed by a sentence describing what the asset contains and why it is useful. For icon sets or multi-element vectors, it is useful to enumerate the most important visible icons/elements and related buyer concepts instead of writing a generic sentence. For a single subject, do NOT create a long inventory list.\n';
-    p += '- For multi-element sets, inspect the whole image and prioritize the actual visible inventory: subject family, icon themes, actions, business concepts, objects, workflows, industries, or use cases. Mention only elements that are clearly visible or strongly supported by the artwork. Never invent icons or concepts just to make the title longer.\n';
-    p += '- Put the strongest search intent near the beginning: main subject/set name, asset type, style, then the most valuable content/use-case terms. Use commas or natural spacing to separate the lead phrase from the descriptive inventory. Do not use periods (.) anywhere in the title. Do not turn the title into an unnatural keyword dump.\n';
-    p += '- If the image is a normal photo or single-object asset, use a natural descriptive title instead of the featured-style inventory pattern.\n';
-    p += '- If it is a vector/icon/illustration/3D design asset, explicitly identify the medium/style when visually justified: vector, line icon, editable stroke, flat illustration, 3D render, etc.\n';
+    p += '- SUBJECT-FIRST, BUYER-FACING TITLE: silently identify (1) the most important subject or action, (2) exact visible objects/people, (3) scene or setting, and (4) a clearly supported concept or use case. Build a natural stock-library title from the most valuable details; avoid generic templates that could fit hundreds of unrelated images.\n';
+    p += '- For PHOTOGRAPHS, lead with the main subject/action and add useful context: what is happening, the most relevant visible objects or setting, and a supported concept when helpful. Example structures only: "Woman preparing pumpkin soup with fresh vegetables in kitchen" or "Online chat communication with messages on smartphone". Never copy these examples unless accurate for the uploaded image.\n';
+    p += '- For VECTOR / ILLUSTRATION / ICON-SET / 3D assets, identify the medium or visual style when genuinely apparent, then describe the main theme and strongest visible elements. For a multi-element set, summarize the actual collection and key elements/use cases; for a single subject, do not create a long inventory list.\n';
+    p += '- Put the primary subject and action first. Add supporting objects, environment, composition, or conceptual context only when they improve identification and are clearly supported. Do not assume a season, health benefit, emotion, occupation, location, or intended use without visual evidence.\n';
+    p += '- Avoid generic marketing filler such as "amazing", "beautiful", "best", or "high quality". Do not stuff the title with every detected object or a list of search terms. Use natural stock phrasing that helps a buyer understand the image at a glance.\n';
+    p += '- The title must not contain periods (.) and must end at a complete word and phrase. Do not leave trailing connectors such as "and", "or", "with", "of", "to", "in", "on", or "for".\n';
     p += '- Don\'t use overly technical/gear-heavy terms, and don\'t mention any trademark/brand/IP, artist name, or real person\'s name.\n';
     p += '- Never start with filler like \"A photo of\", \"An image of\", \"This is a picture of\", \"Image showing\", or similar. Don\'t use ALL CAPS, exclamation marks, or periods. The title MUST contain no periods (.) anywhere. The title MUST end as a complete grammatical phrase: never leave a trailing \"and\", \"or\", \"with\", \"of\", \"to\", \"in\", \"on\", \"for\", \"the\", \"a\", or \"an\". If the character limit would cut the sentence, remove the last incomplete clause instead of ending with a dangling connector.\n';
     p += 'DESCRIPTION rules (for Shutterstock — a separate field from the title, not just the title repeated):\n';
@@ -3492,14 +3448,11 @@
     p += 'KEYWORDS rules (ONE shared list used across Adobe Stock, Shutterstock, Magnific, and Vecteezy):\n';
     p += '- KEYWORD COUNT CONTROL: The user selected exactly '+kwCount+' keywords. Return EXACTLY '+kwCount+' unique, relevant keywords. Count the final array before responding. If there are too many, remove the weakest; if there are too few, add additional relevant single-word keywords supported by the image. Never use filler just to reach the number.\n';
     p += '- Order matters: the first 5-10 keywords must be the single most relevant, primary search terms a buyer would actually type — put those before anything broader.\n';
-    p += '- Cover all four of these categories, not just the obvious subject:\n';
-    p += '    • Core subject: what it actually is, broken into separate single words (e.g. for a sports car: "car", "sports", "vehicle" — not "sports car" as one keyword).\n';
-    p += '    • Style/medium: vector, flat, line-art, 3D, mockup, realistic, illustration, minimalist, etc. — whichever genuinely applies, each as one word.\n';
-    p += '    • Concept/emotion: premium, luxury, business, eco-friendly, modern, creative, playful, professional, etc. — only ones truly supported by the image, each as one word.\n';
-    p += '    • Color & composition: isolated, white, transparent, background, vertical, horizontal, plus dominant colors, vibrant/muted, and the lighting/background/focus/angle/movement details from your analysis above — each as its own single word.\n';
-    p += '- Think like a buyer — choose keywords based on exactly what a customer would search to find this image.\n';
-    p += '- SINGLE WORDS ONLY: every keyword must be exactly one word — no multi-word phrases, no compound phrases strung together as a single keyword (e.g. write "vintage", "sports", "car", "studio", "background" as five separate keywords, never "vintage sports car studio background" as one keyword).\n';
-    p += '- Make every single word count: pick the strongest, most precise, highest-search-value individual words — core subject, style/medium, setting, color, mood/concept, lighting, background type, focus, angle, movement — each as its own separate single-word keyword rather than bundled into phrases.\n';
+    p += '- Build a balanced keyword list from: (1) exact main subject and action, (2) important visible objects/people, (3) setting and environment, (4) visual medium/style where relevant, and (5) accurate concepts or use cases supported by the image.\n';
+    p += '- Put the strongest buyer search terms first. The first 10 should closely match the main subject, action, and defining details; include important title concepts near the beginning.\n';
+    p += '- Prefer concise single-word keywords, but use a short multi-word phrase when it is a genuine, commonly searched concept that loses meaning if split (for example: "pumpkin soup", "healthy eating", "online chat", "social media", "message bubble"). Do not combine many unrelated terms into one phrase.\n';
+    p += '- Include relevant visual details such as dominant color, material, composition, lighting, background, camera angle, or focus only when useful for search and genuinely visible. For photos, include accurate scene/action/concept terms; for illustrations and vectors, include the correct medium and visual style.\n';
+    p += '- Think like a buyer — choose words and short phrases someone would actually search for to find this exact asset. Do not add broad concepts just to fill the count.\n';
     p += '- Only give keywords directly relevant to the image. Use each keyword only once, never repeat a keyword, and don\'t include any trademark/brand/personal info.\n';
     p += '- Write everything in a single language (English) — don\'t mix multiple languages.\n';
     if(negOn && negWords.trim()) p += '- Don\'t use these words anywhere: '+negWords+'\n';
