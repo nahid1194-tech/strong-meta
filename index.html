@@ -3991,7 +3991,8 @@
 
   function createPngXmpChunk(xmpString){
     const keywordBytes=utf8Bytes('XML:com.adobe.xmp'), xmpBytes=utf8Bytes(xmpString);
-    const payload=concatUint8Arrays([keywordBytes,new Uint8Array([0,0,0,0]),xmpBytes]);
+    // PNG iTXt layout requires five NUL bytes after the keyword: keyword terminator, compression flag, compression method, language-tag terminator, and translated-keyword terminator.
+    const payload=concatUint8Arrays([keywordBytes,new Uint8Array([0,0,0,0,0]),xmpBytes]);
     const typeBytes=utf8Bytes('iTXt');
     const crcBytes=writeUint32BE(crc32(concatUint8Arrays([typeBytes,payload])));
     return concatUint8Arrays([writeUint32BE(payload.length),typeBytes,payload,crcBytes]);
@@ -4003,7 +4004,7 @@
     let offset=8, found=false;
     while(offset<bytes.length){
       if(offset+12>bytes.length) throw new Error('Corrupt PNG chunk');
-      const len=((bytes[offset]<<24)>>>0)|(bytes[offset+1]<<16)|(bytes[offset+2]<<8)|bytes[offset+3];
+      const len=bytes[offset]*0x1000000+bytes[offset+1]*0x10000+bytes[offset+2]*0x100+bytes[offset+3];
       const end=offset+12+len;
       if(end>bytes.length) throw new Error('Corrupt PNG chunk length');
       const type=String.fromCharCode(bytes[offset+4],bytes[offset+5],bytes[offset+6],bytes[offset+7]);
