@@ -4024,9 +4024,9 @@
   }
 
   function getEmbeddedOutputName(originalName){
-    const name=String(originalName||'image.jpg');
-    const m=name.match(/^(.*?)(\.[^.]+)?$/);
-    return `${m?m[1]:name}_embedded${m&&m[2]?m[2]:'.jpg'}`;
+    // Keep the original filename when downloading the metadata-embedded copy.
+    // The browser may add its own duplicate suffix if a file with that name exists.
+    return String(originalName||'image.jpg');
   }
 
   function downloadEmbeddedFile(blob,originalName){
