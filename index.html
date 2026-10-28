@@ -810,6 +810,20 @@
             </div>
           </div>
         </div>
+        <div class="side-block collapsible" id="block-promptMatch">
+          <div class="panel-title" data-target="body-promptMatch">
+            <span class="ptitle-left">Image Match <span class="curval" id="promptMatchCurVal"></span></span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="collapsible-body" id="body-promptMatch">
+            <div class="field" style="margin-bottom:0;">
+              <div class="field-label">Prompt vs image match <span class="val" id="promptMatchVal">30%</span></div>
+              <input type="range" id="promptMatch" min="0" max="100" step="5" value="30">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-soft2);margin-top:4px;"><span>0% · very different</span><span>100% · near-exact</span></div>
+              <div id="promptMatchDesc" style="font-size:10.5px;color:var(--ink-soft2);line-height:1.45;margin-top:8px;"></div>
+            </div>
+          </div>
+        </div>
         <div class="side-block collapsible" id="block-promptWrap">
           <div class="panel-title" data-target="body-promptWrap">
             <span class="ptitle-left">Prompt Prefix &amp; Suffix</span>
@@ -858,7 +872,7 @@
         </div>
         <div class="hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5" stroke-linecap="round"/></svg>
-          <span>Gemini will analyze the subject, object placement, background, lighting and colors, then create a detailed, distinctly re-composed original prompt—not a near-copy of the uploaded image.</span>
+          <span>Gemini will analyze the subject, object placement, background, lighting and colors, then write a detailed prompt that matches the image as closely or as loosely as your Image Match slider is set.</span>
         </div>
       </div>
     </div>
@@ -1305,7 +1319,7 @@
     activeProvider: 'all', // 'all' | 'gemini' | 'mistral' | 'openai' — restricts which provider\'s keys are actually used
     activeTab: "metadata",
     platform: "Adobe Stock",
-    styleChoice: "Photographic",
+    styleChoice: (function(){ try{ const v=localStorage.getItem('strong-meta-prompt-style'); return ["Photographic","Cinematic","Artistic","Minimal","3D Render","Anime"].indexOf(v)>-1 ? v : "Photographic"; }catch(e){ return "Photographic"; } })(),
     files: [] // {id, file, name, dataUrl, base64, mimeType, status, result, error, metadataStatus, metadataError, metadataOutputName, epsJpegStatus, epsJpegError, epsJpegOutputName}
   };
 
@@ -1520,6 +1534,7 @@
   function renderStyleGrid(){
     renderPresetGrid(document.getElementById('styleGrid'), STYLES, state.styleChoice, (s)=>{
       state.styleChoice = s;
+      try{ localStorage.setItem('strong-meta-prompt-style', s); }catch(e){}
       renderStyleGrid();
     });
     const cv = document.getElementById('styleCurVal');
@@ -1567,6 +1582,13 @@
     const pl = document.getElementById('promptLen');
     const plVal = document.getElementById('promptLenVal');
     if(pl && plVal) plVal.textContent = '~ ' + pl.value + ' words';
+    const pm = document.getElementById('promptMatch');
+    if(pm){
+      const pv = document.getElementById('promptMatchVal'), pc = document.getElementById('promptMatchCurVal'), pd = document.getElementById('promptMatchDesc');
+      if(pv) pv.textContent = pm.value + '%';
+      if(pc) pc.textContent = pm.value + '%';
+      if(pd) pd.textContent = promptMatchLevel(Number(pm.value)).desc;
+    }
     const plCur = document.getElementById('promptLenCurVal');
     if(pl && plCur) plCur.textContent = '~ ' + pl.value + ' words';
     const cc = document.getElementById('concurrencySlider');
@@ -1593,6 +1615,47 @@
   });
   renderThinkingFilter();
   document.getElementById('promptLen').addEventListener('input', syncSliderLabels);
+  document.getElementById('promptMatch').addEventListener('input', syncSliderLabels);
+
+  // Describes how closely the generated prompt should follow the image, per slider position.
+  function promptMatchLevel(pct){
+    const change = 100 - pct;
+    if(pct <= 20) return {
+      desc:'Very different: keeps only the core subject, everything else is re-imagined.',
+      target:'Aim for no more than roughly '+pct+'% overall visual resemblance (about '+change+'% change); this is a creative target, not a mathematically guaranteed similarity score.',
+      goal:'a stronger, commercially useful, clearly original image that retains only the reference\'s actual core subject, but re-imagines the visual execution almost completely',
+      balance:'Keep only the actual main subject(s) that are genuinely visible in the uploaded image so the prompt stays relevant. Do not omit or replace the core subject. Change nearly everything else: use a very different composition, reposition and resize the objects, change the viewpoint and crop, redesign the background and negative space, alter the lighting direction and mood, and use a clearly different but harmonious color palette and surface treatment. Target roughly '+change+'% or more change in overall visual execution and no more than about '+pct+'% resemblance to the source, as a creative guideline only; do not claim an exact measurable percentage.',
+      check:'substantially changes the composition/background/style toward the approximate '+pct+'%-resemblance target'
+    };
+    if(pct <= 40) return {
+      desc:'Original take: same subject, clearly different composition and style.',
+      target:'Aim for no more than roughly '+pct+'% overall visual resemblance; this is a creative target, not a mathematically guaranteed similarity score.',
+      goal:'a stronger, commercially useful, clearly original image that retains the reference\'s actual core subject and essential main objects, but changes the visual execution substantially',
+      balance:'Keep the actual main subject(s) and essential recognizable objects that are genuinely visible in the uploaded image, because the new prompt must remain relevant to it. Do not omit or replace the core subject. However, change most of the visual treatment: use a substantially different composition, reposition and resize the objects, change the viewpoint or crop, redesign the background and negative space, alter the lighting direction and mood, and use a different but harmonious color palette and surface treatment. Target roughly '+change+'% or more change in overall visual execution and no more than about '+pct+'% resemblance to the source, as a creative guideline only; do not claim an exact measurable percentage.',
+      check:'changes the composition/background/style substantially toward the approximate '+pct+'%-resemblance target'
+    };
+    if(pct <= 60) return {
+      desc:'Balanced: same subject and general layout, different style details.',
+      target:'Aim for roughly '+pct+'% overall visual resemblance; this is a creative target, not a mathematically guaranteed similarity score.',
+      goal:'a polished, commercially useful image that keeps the reference\'s core subject, main objects and general scene layout, while giving it a fresh and distinct visual treatment',
+      balance:'Keep the main subject(s), essential objects and the general scene idea and layout that are genuinely visible in the uploaded image. Moderate changes are expected: adjust the viewpoint or crop somewhat, vary object placement and scale, refresh the background details, shift the lighting mood and refine the color palette and surface treatment. Aim for roughly '+pct+'% resemblance to the source and about '+change+'% change in visual execution, as a creative guideline only; do not claim an exact measurable percentage.',
+      check:'keeps the core subject and general layout while changing details toward the approximate '+pct+'%-resemblance target'
+    };
+    if(pct <= 80) return {
+      desc:'Close: same composition, placement, lighting and palette, with small variations.',
+      target:'Aim for roughly '+pct+'% overall visual resemblance, staying close to the reference; this is a target, not a mathematically guaranteed similarity score.',
+      goal:'a polished image prompt that stays close to the reference\'s subject, composition, object placement, viewpoint, lighting and color palette, with only modest variations in secondary details',
+      balance:'Follow the uploaded image closely. Keep the same main subject(s), the same overall composition and framing, the same viewpoint, the same approximate object placement and scale, and the same general lighting and color palette. Only make modest, tasteful variations in secondary details, background elements, textures or small decorative choices. Aim for roughly '+pct+'% resemblance to the source and only about '+change+'% change in visual execution, as a guideline only; do not claim an exact measurable percentage.',
+      check:'stays close to the reference composition, placement, lighting and palette toward the approximate '+pct+'%-resemblance target'
+    };
+    return {
+      desc:'Near-exact: faithfully describes what is in the image, with minimal changes.',
+      target:'Aim for roughly '+pct+'% overall visual resemblance, reproducing the reference as faithfully as possible; this is a target, not a mathematically guaranteed similarity score.',
+      goal:'an accurate, highly faithful image prompt that reproduces the reference\'s subject(s), composition, object placement and scale, viewpoint, lighting, colors, materials and style as closely as possible',
+      balance:'Describe the uploaded image as faithfully and precisely as possible so that an image generator would recreate it very closely. Keep every visible main subject, secondary object, the exact composition and framing, viewpoint, object placement and relative scale, background, lighting direction and softness, shadows, color palette, materials, textures and overall style. Do not invent new elements or change the scene; only reword what is visible into clear generation instructions. Aim for roughly '+pct+'% resemblance to the source and at most about '+change+'% change, as a guideline only; do not claim an exact measurable percentage.',
+      check:'reproduces the visible subject, composition, placement, lighting, palette and style faithfully toward the approximate '+pct+'%-resemblance target'
+    };
+  }
   const targetModelEl = document.getElementById('targetModel');
   const targetModelCurValEl = document.getElementById('targetModelCurVal');
   function syncTargetModelLabel(){ if(targetModelCurValEl) targetModelCurValEl.textContent = targetModelEl.value; }
@@ -1630,6 +1693,26 @@
     const suf=document.getElementById('toggle-prompt-suffix');
     if(pre) document.getElementById('promptPrefixInputWrap').style.display=pre.checked?'block':'none';
     if(suf) document.getElementById('promptSuffixInputWrap').style.display=suf.checked?'block':'none';
+  })();
+
+  // Persist the remaining Prompt-panel settings (length, image match, target model, toggles) so they survive reloads.
+  (function initPromptSettingsPersistence(){
+    ['promptLen','promptMatch','targetModel','toggle-camera','toggle-negprompt'].forEach(id=>{
+      const el=document.getElementById(id); if(!el) return;
+      const key='strong-meta-'+id;
+      try{
+        const saved=localStorage.getItem(key);
+        if(saved!==null){
+          if(el.type==='checkbox') el.checked=saved==='1';
+          else if(el.tagName!=='SELECT' || [...el.options].some(o=>o.value===saved)) el.value=saved;
+        }
+      }catch(e){}
+      const save=()=>{ try{ localStorage.setItem(key, el.type==='checkbox' ? (el.checked?'1':'0') : el.value); }catch(e){} };
+      el.addEventListener('change',save);
+      el.addEventListener('input',save);
+    });
+    syncSliderLabels();
+    syncTargetModelLabel();
   })();
 
   /* ---------------- TABS ---------------- */
@@ -4197,17 +4280,19 @@
   function buildPromptPrompt(){
     const style = state.styleChoice;
     const len = document.getElementById('promptLen').value;
+    const matchPct = Math.max(0, Math.min(100, Number(document.getElementById('promptMatch').value)));
+    const ml = promptMatchLevel(isNaN(matchPct) ? 30 : matchPct);
     const model = document.getElementById('targetModel').value;
     const camera = document.getElementById('toggle-camera').checked;
     const negative = document.getElementById('toggle-negprompt').checked;
-    let p = 'You are a senior visual analyst and original text-to-image art director. Inspect the uploaded reference image carefully before writing anything. Identify its actual primary subject(s), secondary objects, count and relative scale of important elements, foreground/midground/background, setting, spatial relationships, orientation, composition, viewpoint, lighting direction and softness, shadows, color palette, materials/textures, atmosphere, and visible style. Use these observations as source material, then create a NEW, original '+style+'-style image prompt for '+model+' in approximately '+len+' words. The goal is to create a stronger, commercially useful, clearly original image that retains the reference\'s actual core subject and essential main objects, but changes the visual execution substantially. Aim for no more than roughly 30% overall visual resemblance; this is a creative target, not a mathematically guaranteed similarity score.\n';
+    let p = 'You are a senior visual analyst and original text-to-image art director. Inspect the uploaded reference image carefully before writing anything. Identify its actual primary subject(s), secondary objects, count and relative scale of important elements, foreground/midground/background, setting, spatial relationships, orientation, composition, viewpoint, lighting direction and softness, shadows, color palette, materials/textures, atmosphere, and visible style. Use these observations as source material, then create a NEW, original '+style+'-style image prompt for '+model+' in approximately '+len+' words. The goal is to create '+ml.goal+'. '+ml.target+'\n';
     p += 'ANALYSIS AND COMPOSITION: Silently inventory the important visible elements and distinguish the main subject from background/supporting details. Explain what each important element should be, where it belongs in the new composition (left/right/center/foreground/background/near/far), its approximate scale and orientation, how elements relate to one another, and how the scene should be arranged. Describe the background as carefully as the subject; do not leave it vague or generic. Include meaningful lighting, shadow, depth, texture, negative space, color harmony, and framing details.\n';
-    p += 'BALANCE SUBJECT FIDELITY WITH ORIGINALITY: Keep the actual main subject(s) and essential recognizable objects that are genuinely visible in the uploaded image, because the new prompt must remain relevant to it. Do not omit or replace the core subject. However, change most of the visual treatment: use a substantially different composition, reposition and resize the objects, change the viewpoint or crop, redesign the background and negative space, alter the lighting direction and mood, and use a different but harmonious color palette and surface treatment. Target roughly 70% or more change in overall visual execution and no more than about 30% resemblance to the source, as a creative guideline only; do not claim an exact measurable percentage.\n';
+    p += 'SUBJECT FIDELITY VS ORIGINALITY (match level '+matchPct+'%): '+ml.balance+'\n';
     p += 'VISUAL QUALITY: Make deliberate, specific choices rather than stacking vague adjectives. Specify subject placement, background architecture/environment, foreground framing, depth, light direction, tonal contrast, materials, texture, and visual hierarchy where appropriate. Keep all details internally consistent and suitable for '+style+' style. Make the final result polished, distinctive, and visually compelling without relying on generic filler.\n';
-    p += 'STRICT CONTENT RELEVANCE: Every main object named in the prompt must be supported by the uploaded image or be a direct, sensible variation of that same subject. Do not add unrelated objects, random scenery, extra characters, decorative props, or background elements that have no clear conceptual connection to the visible subject. New details are allowed only when they plausibly belong in the same scene and help create originality. Preserve the subject category and its essential identity, but do not copy distinctive small details or exact arrangement. Do not claim unseen details as facts. Do not include visible text, lettering, logos, watermarks, brand names, signatures, or UI overlays unless explicitly required. Never mention the uploaded/reference image in the final prompt.\n';
+    p += 'STRICT CONTENT RELEVANCE: Every main object named in the prompt must be supported by the uploaded image or be a direct, sensible variation of that same subject. Do not add unrelated objects, random scenery, extra characters, decorative props, or background elements that have no clear conceptual connection to the visible subject. New details are allowed only when they plausibly belong in the same scene and help create originality. '+(matchPct>=61 ? 'Preserve the subject, arrangement and visible details of the image closely, but do not copy any text, logos, brand names or trademarked designs.' : 'Preserve the subject category and its essential identity, but do not copy distinctive small details or exact arrangement.')+' Do not claim unseen details as facts. Do not include visible text, lettering, logos, watermarks, brand names, signatures, or UI overlays unless explicitly required. Never mention the uploaded/reference image in the final prompt.\n';
     if(camera) p += 'CAMERA / RENDERING: Where appropriate to the subject and style, specify a deliberate viewpoint, framing, perspective, depth of field, focal-length character, and lighting setup; for illustration or 3D artwork, use equivalent perspective and rendering details rather than forcing photographic camera jargon.\n';
     if(negative) p += 'NEGATIVE CONSTRAINTS: Add a concise negative-prompt clause inside the same prompt string, introduced by "Avoid:", covering unwanted near-duplicate composition, copied layout, clutter, accidental cropping, awkward object placement, inconsistent perspective, unwanted text, logos, watermarks, artifacts, and low-detail rendering as relevant. Do not return a separate field.\n';
-    p += 'FINAL CHECK: Before responding, verify that the prompt (1) names the main subject clearly, (2) describes the background and important secondary elements, (3) gives explicit placement and scale for key objects, (4) includes lighting, palette, texture, and framing, (5) keeps the true main subject and essential objects, (6) avoids unrelated invented content, (7) changes the composition/background/style substantially toward the approximate 30%-resemblance target, and (8) reads as one self-contained image-generation instruction.\n';
+    p += 'FINAL CHECK: Before responding, verify that the prompt (1) names the main subject clearly, (2) describes the background and important secondary elements, (3) gives explicit placement and scale for key objects, (4) includes lighting, palette, texture, and framing, (5) keeps the true main subject and essential objects, (6) avoids unrelated invented content, (7) '+ml.check+', and (8) reads as one self-contained image-generation instruction.\n';
     p += 'Respond only in JSON, in this format: {"prompt": "..."}. The prompt value must be one complete plain-text string, not a nested object or array. Escape JSON quotation marks correctly.';
     return p;
   }
