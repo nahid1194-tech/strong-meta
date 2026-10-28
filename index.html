@@ -5,29 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Strong Meta — AI Metadata Studio</title>
 <meta name="description" content="Strong Meta: AI metadata studio for Adobe Stock and Shutterstock, with analytics, route planning and City Map Studio.">
-<meta name="theme-color" content="#0C0917">
+<meta name="theme-color" content="#0a1226">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#120B22;
-    --ink-panel:#1E1432;
-    --ink-line:#352548;
-    --ink-soft:#AA9CC9;
-    --ink-soft2:#7C6E99;
-    --paper:#0C0917;
-    --card:rgba(255,255,255,.045);
-    --card-line:rgba(255,255,255,.11);
-    --accent:#7C3AED;
-    --accent2:#C026D3;
-    --accent-grad:linear-gradient(135deg,#8B5CF6,#C026D3);
-    --accent-soft:#9061F9;
-    --accent-wash:rgba(139,92,246,.16);
+    --ink:#0a1226;
+    --ink-panel:#0f1a33;
+    --ink-line:#1d2b4a;
+    --ink-soft:#8fa3c7;
+    --ink-soft2:#6b7fa3;
+    --paper:#0a1226;
+    --card:rgba(120,160,255,.055);
+    --card-line:rgba(120,160,255,.15);
+    --accent:#2563eb;
+    --accent2:#3b82f6;
+    --accent-grad:linear-gradient(135deg,#3b82f6,#2563eb);
+    --accent-soft:#5b9bff;
+    --accent-wash:rgba(59,130,246,.16);
     --ok:#34D399;
     --err:#F87171;
-    --text:#F2EFFA;
-    --text-soft:#B0A7CB;
+    --text:#eaf0ff;
+    --text-soft:#93a4c3;
     --radius:14px;
   }
   *{box-sizing:border-box;}
@@ -35,10 +35,10 @@
   body{
     margin:0;
     background:
-      radial-gradient(ellipse 1000px 750px at 8% -8%, rgba(168,85,247,.30), transparent 60%),
-      radial-gradient(ellipse 900px 700px at 100% 8%, rgba(192,38,211,.24), transparent 55%),
-      radial-gradient(ellipse 800px 650px at 45% 105%, rgba(99,102,241,.18), transparent 60%),
-      #08060F;
+      radial-gradient(ellipse 1000px 750px at 8% -8%, rgba(59,130,246,.17), transparent 60%),
+      radial-gradient(ellipse 900px 700px at 100% 8%, rgba(37,99,235,.13), transparent 55%),
+      radial-gradient(ellipse 800px 650px at 45% 105%, rgba(37,99,235,.11), transparent 60%),
+      #070d1c;
     background-attachment:fixed;
     color:var(--text);
     font-family:'Inter',sans-serif;
@@ -61,7 +61,7 @@
     background: var(--ink);
     color:#F2F2F2;
     padding:22px 20px 28px;
-    border-right:1px solid #1F1330;
+    border-right:1px solid #0f1a33;
     display:flex;
     flex-direction:column;
     gap:22px;
@@ -293,7 +293,7 @@
   .export-menu-wrap{position:relative;display:inline-block;}
   .export-menu{
     display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:190px;
-    background:#16101F;border:1px solid var(--card-line);border-radius:12px;padding:6px;
+    background:#0d1730;border:1px solid var(--card-line);border-radius:12px;padding:6px;
     box-shadow:0 12px 32px rgba(0,0,0,.45);
   }
   .export-menu.open{display:block;}
@@ -419,12 +419,12 @@
 
   /* modal */
   .modal-bg{
-    position:fixed;inset:0;background:rgba(3,2,8,.65);display:none;align-items:center;justify-content:center;
+    position:fixed;inset:0;background:rgba(2,6,18,.65);display:none;align-items:center;justify-content:center;
     z-index:50;padding:20px;
   }
   .modal-bg.open{display:flex;}
   .modal{
-    background:#16101F;border:1px solid var(--card-line);border-radius:16px;padding:26px;width:100%;max-width:420px;
+    background:#0d1730;border:1px solid var(--card-line);border-radius:16px;padding:26px;width:100%;max-width:420px;
     box-shadow:0 20px 60px rgba(0,0,0,.5);
   }
   .modal.modal-wide{max-width:600px;max-height:85vh;overflow-y:auto;}
@@ -444,7 +444,7 @@
   .modal-done h3{font-size:19px;margin:0 0 8px;}
   .modal-done p{margin:0;font-size:13px;}
   .modal-done #doneModalWarning{color:#FBBF24;margin-top:8px;font-size:12.5px;line-height:1.5;}
-  .modal-done .btn-primary{border-radius:999px;background:var(--ink);color:#F2EFFA;}
+  .modal-done .btn-primary{border-radius:999px;background:var(--ink);color:#eaf0ff;}
   .modal-done .btn-primary:hover{filter:brightness(1.15);}
   .modal h3{margin:0 0 6px;font-size:16.5px;}
   .modal p{margin:0 0 16px;font-size:13px;color:var(--text-soft);line-height:1.55;}
@@ -542,10 +542,10 @@
   .analytics-filter-label{display:block;margin:0 0 7px;color:var(--ink-soft);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
   .analytics-select{width:100%;background:var(--ink-panel);border:1px solid var(--ink-line);color:#F2F2F2;padding:9px 10px;border-radius:9px;font:12px Inter,sans-serif;outline:none;cursor:pointer;color-scheme:dark;}
   .analytics-select:hover{border-color:var(--accent-soft);}
-  .analytics-select:focus{border-color:var(--accent-soft);box-shadow:0 0 0 2px rgba(144,97,249,.14);}
-  .analytics-select option{background:#1E1432;color:#F2F2F2;}
-  .analytics-select option:checked{background:#352548;color:#FFFFFF;}
-  .analytics-select option:hover{background:#352548;color:#FFFFFF;}
+  .analytics-select:focus{border-color:var(--accent-soft);box-shadow:0 0 0 2px rgba(59,130,246,.14);}
+  .analytics-select option{background:#0f1a33;color:#F2F2F2;}
+  .analytics-select option:checked{background:#1d2b4a;color:#FFFFFF;}
+  .analytics-select option:hover{background:#1d2b4a;color:#FFFFFF;}
   .analytics-moodboard{margin-left:auto;}
   .analytics-menu-wrap{position:relative;}
   .analytics-download-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:165px;padding:5px;background:var(--card);border:1px solid var(--card-line);border-radius:10px;box-shadow:0 16px 36px rgba(0,0,0,.28);z-index:20;}
@@ -569,13 +569,13 @@
   .analytics-page-ellipsis{padding:0 3px;color:var(--text-soft);font-size:12px;}
   .analytics-results{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch;}
   .analytics-card{display:flex;flex-direction:column;min-width:0;min-height:100%;background:linear-gradient(180deg,#1b1d23 0%,#17191f 100%);border:1px solid rgba(255,255,255,.08);border-radius:13px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.12);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;}
-  .analytics-card:hover{transform:translateY(-2px);border-color:rgba(157,113,255,.38);box-shadow:0 14px 30px rgba(0,0,0,.2);}
+  .analytics-card:hover{transform:translateY(-2px);border-color:rgba(59,130,246,.38);box-shadow:0 14px 30px rgba(0,0,0,.2);}
   .analytics-thumb{height:164px;background:#0e1015;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.07);}
   .analytics-gallery{display:block;width:100%;height:100%;overflow:hidden;}
   .analytics-gallery img{display:block;width:100%;height:100%;object-fit:contain;background:#14161b;}
   .analytics-badges{position:absolute;top:9px;left:9px;display:flex;gap:5px;flex-wrap:wrap;z-index:2;}
-  .analytics-badge{padding:4px 7px;border-radius:6px;background:rgba(12,10,18,.84);border:1px solid rgba(255,255,255,.13);font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.03em;color:#fff;backdrop-filter:blur(5px);}
-  .analytics-badge.type{background:rgba(30,24,47,.88);}
+  .analytics-badge{padding:4px 7px;border-radius:6px;background:rgba(8,16,34,.84);border:1px solid rgba(255,255,255,.13);font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.03em;color:#fff;backdrop-filter:blur(5px);}
+  .analytics-badge.type{background:rgba(23,40,78,.88);}
   .analytics-badge.ai{background:rgba(25,112,78,.9);border-color:rgba(93,236,173,.22);}
   .analytics-badge.nonai{background:rgba(31,38,48,.9);}
   .analytics-body{display:flex;flex-direction:column;padding:12px 12px 0;min-width:0;flex:1;}
@@ -585,17 +585,17 @@
   .analytics-meta-item span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .analytics-meta-item svg{width:13px;height:13px;flex:0 0 auto;opacity:.78;}
   .analytics-keywords{display:flex;gap:5px;flex-wrap:wrap;align-content:flex-start;min-height:45px;max-height:58px;overflow:hidden;margin:0 0 10px;}
-  .analytics-keyword{padding:4px 7px;border-radius:999px;background:#25212f;border:1px solid rgba(255,255,255,.07);color:#b9aecb;font-size:9px;line-height:1;white-space:nowrap;}
-  .analytics-keyword.more{background:transparent;color:#8f7eb0;border-color:rgba(143,126,176,.18);}
-  .analytics-stats-row{display:grid;grid-template-columns:1fr 1fr;margin:0 -12px;border-top:1px solid rgba(255,255,255,.07);background:#211f29;}
+  .analytics-keyword{padding:4px 7px;border-radius:999px;background:#13213f;border:1px solid rgba(255,255,255,.07);color:#9fb4da;font-size:9px;line-height:1;white-space:nowrap;}
+  .analytics-keyword.more{background:transparent;color:#7089b6;border-color:rgba(112,137,182,.18);}
+  .analytics-stats-row{display:grid;grid-template-columns:1fr 1fr;margin:0 -12px;border-top:1px solid rgba(255,255,255,.07);background:#13213f;}
   .analytics-stat-cell{padding:9px 11px;min-width:0;}
   .analytics-stat-cell+ .analytics-stat-cell{border-left:1px solid rgba(255,255,255,.07);}
   .analytics-stat-label{display:flex;align-items:center;gap:5px;color:#8e8a99;font-size:8px;text-transform:uppercase;letter-spacing:.04em;font-weight:750;margin-bottom:3px;}
   .analytics-stat-label svg{width:11px;height:11px;}
-  .analytics-stat-value{font:700 11px 'JetBrains Mono',monospace;color:#f2eef8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .analytics-stat-value{font:700 11px 'JetBrains Mono',monospace;color:#eaf0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .analytics-footer{display:flex;align-items:center;gap:6px;padding:8px 0 10px;min-height:32px;}
-  .analytics-action{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border-radius:7px;border:1px solid rgba(255,255,255,.08);background:#211f29;color:#b9b2c5;font:600 9px Inter,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;}
-  .analytics-action:hover{color:#fff;border-color:rgba(157,113,255,.42);background:#282334;}
+  .analytics-action{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border-radius:7px;border:1px solid rgba(255,255,255,.08);background:#13213f;color:#a9bbdd;font:600 9px Inter,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;}
+  .analytics-action:hover{color:#fff;border-color:rgba(59,130,246,.42);background:#1a2d57;}
   .analytics-action.stock{margin-right:auto;}
   .analytics-icon-action{width:26px;height:26px;padding:0;justify-content:center;}
   .analytics-empty{text-align:center;padding:65px 20px;color:var(--text-soft);background:var(--card);border:1px solid var(--card-line);border-radius:13px;grid-column:1/-1;}
@@ -659,7 +659,7 @@
   .route-palette-btn{display:flex;align-items:center;gap:7px;min-width:0;padding:7px 8px;border:1px solid #d7dce2;border-radius:7px;background:#fff;color:#333;font-size:11px;font-weight:700;cursor:pointer;text-align:left}
   .route-palette-btn.active{border-color:#2859a7;box-shadow:0 0 0 1px #2859a7;background:#eef4ff}
   .route-palette-swatches{display:flex;flex-shrink:0;gap:2px}.route-palette-swatches i{display:block;width:10px;height:10px;border-radius:50%}
-  .route-palette-bottom{display:flex;gap:6px;align-items:center}.route-random-palette{flex:1;padding:8px 10px;border:1px solid #a78bfa;border-radius:7px;background:#f5f3ff;color:#5b21b6;font-size:11px;font-weight:700;cursor:pointer}.route-custom-color{width:38px;height:34px;padding:2px;border:1px solid #d7dce2;border-radius:7px;background:#fff;cursor:pointer}
+  .route-palette-bottom{display:flex;gap:6px;align-items:center}.route-random-palette{flex:1;padding:8px 10px;border:1px solid #6aa6ff;border-radius:7px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;cursor:pointer}.route-custom-color{width:38px;height:34px;padding:2px;border:1px solid #d7dce2;border-radius:7px;background:#fff;cursor:pointer}
   .route-map-stage{display:flex;align-items:flex-start;justify-content:center;min-width:0;min-height:0;overflow:hidden;background:linear-gradient(145deg,#eaf6ff,#d7efff);border:1px solid #d3e3f1;border-radius:14px;padding:12px;box-sizing:border-box;box-shadow:0 6px 22px rgba(27,65,100,.07);}
   #routeMap{flex:none;min-height:0;border:1px solid rgba(160,190,210,.6);border-radius:8px;overflow:hidden;background:#bce8ff;position:relative;margin:0;box-sizing:border-box;box-shadow:0 2px 8px rgba(20,55,80,.05);}
   #routeMap .route-art-map{display:block;width:100%;height:100%;min-height:0;}
@@ -1003,10 +1003,10 @@
 
       <div class="analytics-tabs-row">
         <div class="analytics-tabs">
-          <button class="analytics-tab active" data-analytics-mode="keyword">Search by Keyword</button>
-          <button class="analytics-tab" data-analytics-mode="contributor">Search by Contributor ID</button>
+          <button class="analytics-tab active" data-analytics-mode="keyword">All (URLs &amp; Product ID)</button>
+          <button class="analytics-tab" data-analytics-mode="contributor">Contributor ID</button>
         </div>
-        <button class="btn btn-ghost analytics-top100-trigger" id="analyticsTop100Btn" type="button">Top 100 Contributors</button>
+        <button class="btn btn-ghost analytics-top100-trigger" id="analyticsTop100Btn" type="button" hidden style="display:none">Top 100 Contributors</button>
       </div>
 
       <div class="analytics-top-contributors" id="analyticsTopContributorsSection" style="display:none;">
@@ -1021,7 +1021,7 @@
       </div>
 
       <div class="analytics-search-row">
-        <input class="analytics-input" id="analyticsQuery" placeholder="Search by keyword or phrase…" autocomplete="off" aria-label="Adobe Stock keyword or contributor search">
+        <input class="analytics-input" id="analyticsQuery" placeholder="Keyword, Adobe Stock URL or Product ID…" autocomplete="off" aria-label="Adobe Stock keyword or contributor search">
         <button class="btn btn-primary" id="analyticsAnalyzeBtn">Analyze</button>
         <div class="analytics-menu-wrap">
           <button class="btn btn-ghost" id="analyticsDownloadBtn" type="button">Download <span aria-hidden="true">⌄</span></button>
@@ -1032,16 +1032,7 @@
         </div>
       </div>
 
-      <div class="analytics-filters">
-        <div class="analytics-filter-group">
-          <label class="analytics-filter-label" for="analyticsSort">Sort by</label>
-          <select class="analytics-select" id="analyticsSort" aria-label="Sort by">
-            <option value="relevance">Relevance</option>
-            <option value="newest">Newest</option>
-            <option value="featured">Featured</option>
-            <option value="downloads">Most Downloads</option>
-          </select>
-        </div>
+      <div class="analytics-filters" hidden style="display:none">
         <div class="analytics-filter-group">
           <label class="analytics-filter-label" for="analyticsType">Content type</label>
           <select class="analytics-select" id="analyticsType" aria-label="Content type">
@@ -1073,26 +1064,74 @@
         <div class="analytics-filter-group">
           <label class="analytics-filter-label" for="analyticsPages">Pages to fetch</label>
           <select class="analytics-select" id="analyticsPages" aria-label="Pages to fetch">
-            <option value="1" selected>1 page</option>
+            <option value="1">1 page</option>
             <option value="2">2 pages</option>
-            <option value="5">5 pages</option>
+            <option value="5" selected>5 pages</option>
             <option value="10">10 pages</option>
             <option value="20">20 pages</option>
           </select>
         </div>
       </div>
 
+      <div class="analytics-adv" id="analyticsAdv">
+        <div class="analytics-adv-head">
+          <div><strong>Result filters</strong><span>Pick a type, upload period and sort to narrow down exact results</span></div>
+          <button type="button" class="analytics-adv-reset" id="aFilterReset">↺ Reset filters</button>
+        </div>
+        <div class="analytics-type-chips" id="analyticsTypeChips" role="group" aria-label="Asset type">
+          <button type="button" data-type="all" class="active">All Types</button>
+          <button type="button" data-type="vector">Vectors</button>
+          <button type="button" data-type="illustration">Illustrations</button>
+          <button type="button" data-type="photo">Photos</button>
+          <button type="button" data-type="video">Videos</button>
+        </div>
+        <div class="analytics-adv-grid">
+          <div class="analytics-filter-group a-period-wrap">
+            <label class="analytics-filter-label">Upload period</label>
+            <button type="button" class="analytics-select a-period-btn" id="aPeriodBtn" aria-haspopup="true" aria-expanded="false"><span id="aPeriodLabel">All Time</span><span aria-hidden="true">⌄</span></button>
+            <div class="a-period-panel" id="aPeriodPanel" role="dialog" aria-label="Upload period">
+              <div class="a-period-head"><strong>Upload Period</strong><span><button type="button" id="aPeriodReset">↺ Reset</button><button type="button" id="aPeriodClose" aria-label="Close">✕</button></span></div>
+              <button type="button" class="a-period-all" data-period="all">All Time</button>
+              <div class="a-period-title">Last</div>
+              <div class="a-period-row" id="aPeriodLast">
+                <button type="button" data-period="last" data-days="7">7d</button><button type="button" data-period="last" data-days="30">30d</button><button type="button" data-period="last" data-days="90">90d</button><button type="button" data-period="last" data-days="365">1y</button>
+              </div>
+              <div class="a-period-title">Year</div>
+              <div class="a-period-row a-period-years" id="aPeriodYears"></div>
+              <div class="a-period-title">Custom date range</div>
+              <div class="a-period-custom">
+                <label>From<input type="date" id="aDateFrom"></label>
+                <label>To<input type="date" id="aDateTo"></label>
+                <button type="button" id="aDateApply">Apply range</button>
+              </div>
+            </div>
+          </div>
+          <div class="analytics-filter-group a-sort-wrap"><label class="analytics-filter-label" for="analyticsSort">Sort by</label>
+            <select class="analytics-select" id="analyticsSort" aria-label="Sort by">
+              <option value="downloads" selected>🏆 Most Downloads</option>
+              <option value="relevance">Relevance</option>
+              <option value="newest">Newest</option>
+              <option value="featured">Featured</option>
+            </select>
+          </div>
+        </div>
+        <div class="analytics-adv-summary" id="aSummary"></div>
+      </div>
+
       <div class="analytics-toolbar">
-        <button class="analytics-moodboard-btn" id="analyticsMoodboardBtn" type="button">♡ Moodboards</button>
-        <span id="analyticsModeHint">Search mode: Keyword · Enter a keyword, then click Analyze</span>
+        <button class="analytics-moodboard-btn" id="analyticsMoodboardBtn" type="button">♡ Favorites</button>
+        <span id="analyticsModeHint">Mode: All · Enter a keyword, Adobe Stock URL or Product ID, then click Analyze</span>
       </div>
 
 
       <div id="analyticsError"></div>
       <div class="analytics-stats">
         <div class="analytics-stat"><div class="label">Assets found</div><div class="value" id="analyticsCount">0</div></div>
-        <div class="analytics-stat"><div class="label">Non-AI</div><div class="value" id="analyticsNonAi">0</div></div>
-        <div class="analytics-stat"><div class="label">AI</div><div class="value" id="analyticsAiCount">0</div></div>
+        <div class="analytics-stat" hidden style="display:none"><div class="label">Non-AI</div><div class="value" id="analyticsNonAi">0</div></div>
+        <div class="analytics-stat" hidden style="display:none"><div class="label">AI</div><div class="value" id="analyticsAiCount">0</div></div>
+        <div class="analytics-stat"><div class="label">Total downloads</div><div class="value" id="analyticsTotalDl">0</div></div>
+        <div class="analytics-stat"><div class="label">Top asset downloads</div><div class="value" id="analyticsTopDl">0</div></div>
+        <div class="analytics-stat"><div class="label">Avg downloads / asset</div><div class="value" id="analyticsAvgDl">0</div></div>
       </div>
 
       <div class="analytics-pagination-bar" id="analyticsPaginationBar" style="display:none;">
@@ -1109,6 +1148,84 @@
     </section>
 
 
+<style>
+/* Adobe Analytics: navy/blue theme + result filters */
+#analyticsView{--card:#0f1a33;--card-line:#1d2b4a;--ink-panel:#0f1a33;--ink-line:#1d2b4a;--ink-soft:#8fa3c7;--ink-soft2:#6b7fa3;--text:#eaf0ff;--text-soft:#93a4c3;--accent-soft:#3b82f6;--paper:#0a1226;--accent-grad:linear-gradient(135deg,#3b82f6,#2563eb);
+  background:transparent;border:0;border-radius:0;padding:4px 0}
+#analyticsView .analytics-head h1{font-size:26px}
+#analyticsView .analytics-tab.active{background:rgba(59,130,246,.16);color:#6aa6ff;box-shadow:inset 0 0 0 1px rgba(59,130,246,.35)}
+#analyticsView .analytics-tabs{background:#0d1730}
+#analyticsView .analytics-input{background:#0d1730;border-color:#1d2b4a}
+#analyticsView .analytics-input:focus,#analyticsView .analytics-select:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.18)}
+#analyticsView .analytics-select{background:#0d1730;border-color:#1d2b4a}
+#analyticsView .analytics-select option{background:#0d1730;color:#eaf0ff}
+#analyticsView .analytics-select option:checked,#analyticsView .analytics-select option:hover{background:#1d3566;color:#fff}
+#analyticsView .btn-primary{background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 6px 16px rgba(37,99,235,.28)}
+#analyticsView .analytics-key-status.ok .dot{background:#34d399}
+#analyticsView .analytics-stat{background:#0f1a33;border-color:#1d2b4a}
+#analyticsView .analytics-stat .value{color:#6aa6ff}
+#analyticsView .analytics-stats{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+#analyticsView .analytics-pagination-bar{background:#0f1a33;border-color:#1d2b4a}
+#analyticsView .analytics-page-btn{background:#0d1730;border-color:#1d2b4a}
+#analyticsView .analytics-page-btn.active{background:#2563eb}
+#analyticsView .analytics-card{background:linear-gradient(180deg,#101c36 0%,#0d1730 100%);border-color:#1d2b4a}
+#analyticsView .analytics-card:hover{border-color:rgba(59,130,246,.55);box-shadow:0 14px 30px rgba(3,10,30,.45)}
+#analyticsView .analytics-thumb{background:#0a1226;border-bottom-color:#1d2b4a}
+#analyticsView .analytics-gallery img{background:#0f1a33}
+#analyticsView .analytics-badge{background:rgba(10,18,38,.86);border-color:#264070}
+#analyticsView .analytics-badge.type{background:rgba(23,40,78,.9)}
+#analyticsView .analytics-keyword{background:#13213f;border-color:#1d2b4a;color:#9fb4da}
+#analyticsView .analytics-keyword.more{color:#7089b6;border-color:rgba(112,137,182,.25)}
+#analyticsView .analytics-stats-row{background:#0f1a33;border-top-color:#1d2b4a}
+#analyticsView .analytics-stat-cell+.analytics-stat-cell{border-left-color:#1d2b4a}
+#analyticsView .analytics-stat-label{color:#7089b6}
+#analyticsView .analytics-stat-value{color:#eaf0ff}
+#analyticsView .analytics-action{background:#13213f;border-color:#1d2b4a;color:#a9bbdd}
+#analyticsView .analytics-action:hover{background:#1a2d57;border-color:#3b82f6;color:#fff}
+#analyticsView .analytics-moodboard-btn,#analyticsView .analytics-key-btn{background:#0f1a33;border-color:#1d2b4a}
+#analyticsView .analytics-moodboard-btn.active{background:rgba(59,130,246,.18);color:#6aa6ff}
+#analyticsView .analytics-empty{background:#0f1a33;border-color:#1d2b4a}
+#analyticsView .analytics-download-menu{background:#0f1a33;border-color:#1d2b4a}
+#analyticsView .analytics-download-menu button:hover{background:#1a2d57}
+.analytics-adv{background:#0f1a33;border:1px solid #1d2b4a;border-radius:14px;padding:14px 16px;margin:0 0 18px}
+.analytics-adv-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.analytics-adv-head strong{display:block;font-size:13px;color:#eaf0ff}
+.analytics-adv-head span{font-size:11px;color:#7089b6}
+.analytics-adv-reset,.a-period-panel button{font:600 11.5px Inter,sans-serif;cursor:pointer}
+.analytics-adv-reset{padding:7px 11px;border-radius:9px;border:1px solid #1d2b4a;background:#0d1730;color:#f87171}
+.analytics-adv-reset:hover{border-color:#f87171}
+.analytics-type-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.analytics-type-chips button{padding:8px 14px;border-radius:9px;border:1px solid transparent;background:transparent;color:#93a4c3;font:600 12.5px Inter,sans-serif;cursor:pointer}
+.analytics-type-chips button:hover{color:#eaf0ff}
+.analytics-type-chips button.active{background:rgba(59,130,246,.16);color:#6aa6ff;border-color:rgba(59,130,246,.35)}
+.analytics-adv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,260px));gap:12px}
+.a-num{padding:9px 10px;font-size:12px;border-radius:9px}
+.a-period-wrap{position:relative}
+.a-period-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left}
+.a-period-btn.active{color:#6aa6ff;border-color:#3b82f6;background:rgba(59,130,246,.12)}
+.a-period-panel{display:none;position:absolute;z-index:30;left:0;top:calc(100% + 6px);width:290px;max-width:calc(100vw - 60px);padding:14px;background:#0f1a33;border:1px solid #264070;border-radius:14px;box-shadow:0 18px 40px rgba(2,8,24,.65)}
+.a-period-panel.open{display:block}
+.a-period-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:#eaf0ff;font-size:13px}
+.a-period-head span{display:flex;gap:10px}
+.a-period-head button{border:0;background:transparent;color:#f87171;padding:0}
+.a-period-head button#aPeriodClose{color:#93a4c3}
+.a-period-title{margin:12px 0 7px;color:#7089b6;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.a-period-all,.a-period-row button{padding:9px 6px;border-radius:9px;border:1px solid #1d2b4a;background:#0d1730;color:#cfdcf5}
+.a-period-all{width:100%;text-align:left;padding:10px 12px}
+.a-period-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.a-period-years{grid-template-columns:repeat(3,1fr)}
+.a-period-panel button:hover{border-color:#3b82f6}
+.a-period-panel button.active{background:#2563eb;border-color:#3b82f6;color:#fff}
+.a-period-custom{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.a-period-custom label{display:flex;flex-direction:column;gap:4px;color:#93a4c3;font-size:10.5px;font-weight:700}
+.a-period-custom input{background:#0d1730;border:1px solid #1d2b4a;border-radius:8px;color:#eaf0ff;padding:7px;font:12px Inter,sans-serif;color-scheme:dark}
+.a-period-custom button{grid-column:1/-1;padding:9px;border-radius:9px;border:0;background:#2563eb;color:#fff}
+.analytics-adv-summary{margin-top:12px;color:#93a4c3;font-size:11.5px;line-height:1.5}
+.analytics-adv-summary b{color:#6aa6ff}
+@media(max-width:1000px){.analytics-adv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.analytics-adv-grid{grid-template-columns:1fr}#analyticsView{padding:14px}}
+</style>
+
     <style>
 .route-country-inputs{display:flex;flex-direction:column;gap:9px;width:100%;margin:0 0 8px}
 .route-country-inputs .route-field,.route-toolbar > .route-field{display:flex;flex-direction:column;gap:6px;width:100%;font-size:13px;font-weight:750;line-height:1.35;color:#26354b!important;letter-spacing:.1px}
@@ -1121,6 +1238,28 @@
 .route-country-inputs .route-field:focus-within{color:#174ea6!important}
 @media(prefers-color-scheme:dark){.route-country-inputs .route-field,.route-toolbar > .route-field{color:#26354b!important}.route-country-inputs input,#routeCountryCount,#routeConnectionStyle{background:#fff!important;color:#172235!important}.route-country-inputs input::placeholder{color:#68778b!important}}
 .route-version-toggle{display:grid;grid-template-columns:1fr 1fr;gap:7px}.route-version-toggle .route-action{margin:0}.route-version-toggle .route-action.active{background:#2563eb;color:#fff;border-color:#1d4ed8;box-shadow:0 3px 10px #2563eb35}
+</style>
+
+<style>
+/* Route planning: navy theme to match the rest of the site */
+#routeSectionView{color:#eaf0ff}
+#routeSectionView .route-toolbar,#routeSectionView .route-size-tools,#routeSectionView .route-palette-tools{background:#0f1a33;border-color:#1d2b4a;box-shadow:0 8px 24px rgba(2,8,24,.35)}
+#routeSectionView .route-toolbar h1{color:#eaf0ff}
+#routeSectionView .route-country-inputs .route-field,#routeSectionView .route-toolbar > .route-field,#routeSectionView .route-field{color:#a9bbdd!important}
+#routeSectionView .route-country-inputs .route-field:focus-within{color:#6aa6ff!important}
+#routeSectionView .route-country-inputs input,#routeSectionView #routeCountryCount,#routeSectionView #routeConnectionStyle,#routeSectionView .route-toolbar select,#routeSectionView .route-field input{background:#0d1730!important;color:#eaf0ff!important;border-color:#1d2b4a!important;color-scheme:dark;box-shadow:none}
+#routeSectionView .route-country-inputs input::placeholder{color:#6b7fa3!important}
+#routeSectionView .route-toolbar select option,#routeSectionView #routeCountryCount option,#routeSectionView #routeConnectionStyle option{background:#0d1730!important;color:#eaf0ff!important}
+#routeSectionView .route-size-label,#routeSectionView .route-drag-hint,#routeSectionView .route-note{color:#8fa3c7}
+#routeSectionView .route-size-btn{background:#0d1730;border-color:#1d2b4a;color:#cfdcf5}
+#routeSectionView .route-size-btn:hover{border-color:#3b82f6}
+#routeSectionView .route-size-btn.active{background:#2563eb;border-color:#3b82f6;color:#fff}
+#routeSectionView .route-action{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+#routeSectionView .route-palette-btn{background:#0d1730;border-color:#1d2b4a;color:#cfdcf5}
+#routeSectionView .route-palette-btn.active{background:rgba(59,130,246,.16);border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f6}
+#routeSectionView .route-random-palette{background:rgba(59,130,246,.14);border-color:#3b82f6;color:#6aa6ff}
+#routeSectionView .route-custom-color{background:#0d1730;border-color:#1d2b4a}
+#routeSectionView .route-map-stage{background:linear-gradient(145deg,#0d1730,#0a1226);border-color:#1d2b4a;box-shadow:0 8px 26px rgba(2,8,24,.4)}
 </style>
 
 <style>
@@ -1189,7 +1328,7 @@
               <button type="button" class="route-palette-btn" data-route-palette="cool"><span class="route-palette-swatches"><i style="background:#d8f3f0"></i><i style="background:#b9d7e8"></i><i style="background:#087e8b"></i></span>Cool</button>
               <button type="button" class="route-palette-btn" data-route-palette="trending"><span class="route-palette-swatches"><i style="background:#f4e8d0"></i><i style="background:#d8c7b2"></i><i style="background:#a64b2a"></i></span>Trending</button>
               <button type="button" class="route-palette-btn" data-route-palette="winter"><span class="route-palette-swatches"><i style="background:#eaf4ff"></i><i style="background:#cbd8e8"></i><i style="background:#315b96"></i></span>Winter</button>
-              <button type="button" class="route-palette-btn" data-route-palette="pastel"><span class="route-palette-swatches"><i style="background:#f7dff0"></i><i style="background:#d8e7f5"></i><i style="background:#8c75b8"></i></span>Pastel</button>
+              <button type="button" class="route-palette-btn" data-route-palette="pastel"><span class="route-palette-swatches"><i style="background:#dbeafe"></i><i style="background:#d8e7f5"></i><i style="background:#6b7fa3"></i></span>Pastel</button>
               <button type="button" class="route-palette-btn" data-route-palette="sunset"><span class="route-palette-swatches"><i style="background:#ffe2b8"></i><i style="background:#efb0a0"></i><i style="background:#a94e70"></i></span>Sunset</button>
             </div>
             <div class="route-palette-bottom"><button type="button" class="route-random-palette" id="routeRandomPalette">🎲 Random palette</button><input class="route-custom-color" id="routeCustomPaletteColor" type="color" value="#cfe2ef" title="Choose a custom map color" aria-label="Choose a custom map color"></div>
@@ -1336,9 +1475,9 @@
 
   const EPS_PLACEHOLDER_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">'+
-    '<rect width="150" height="150" fill="#1A1428"/>'+
-    '<text x="75" y="70" font-family="monospace" font-size="20" font-weight="700" fill="#F2EFFA" text-anchor="middle">EPS</text>'+
-    '<text x="75" y="92" font-family="monospace" font-size="10" fill="#B0A7CB" text-anchor="middle">no preview</text>'+
+    '<rect width="150" height="150" fill="#0d1730"/>'+
+    '<text x="75" y="70" font-family="monospace" font-size="20" font-weight="700" fill="#eaf0ff" text-anchor="middle">EPS</text>'+
+    '<text x="75" y="92" font-family="monospace" font-size="10" fill="#93a4c3" text-anchor="middle">no preview</text>'+
     '</svg>'
   );
 
@@ -1781,6 +1920,7 @@
   const analyticsApifyKeyInput = document.getElementById('analyticsApifyKeyInput');
   let analyticsMode = 'keyword';
   let analyticsItems = [];
+  let analyticsAllItems = [];
   let analyticsCurrentPage = 1;
   let analyticsFetchedPages = 1;
   let analyticsPageSize = 24;
@@ -2474,10 +2614,10 @@
       input.type='text';
       if(hint) hint.textContent='Search mode: Contributor ID · Enter the creator ID, then click Analyze';
     }else{
-      input.placeholder='Search Adobe Stock by keyword or phrase…';
+      input.placeholder='Keyword, Adobe Stock URL or Product ID…';
       input.inputMode='search';
       input.type='text';
-      if(hint) hint.textContent='Search mode: Keyword · Enter a keyword, then click Analyze';
+      if(hint) hint.textContent='Mode: All · Enter a keyword, Adobe Stock URL or Product ID, then click Analyze';
     }
   }));
 
@@ -2538,6 +2678,9 @@
     document.getElementById('analyticsCount').textContent=fmtNumber(total);
     document.getElementById('analyticsAiCount').textContent=fmtNumber(analyticsItems.filter(x=>x.ai).length);
     document.getElementById('analyticsNonAi').textContent=fmtNumber(analyticsItems.filter(x=>!x.ai).length);
+    const dlSum=analyticsItems.reduce((a,x)=>a+x.downloads,0), dlTop=analyticsItems.reduce((a,x)=>Math.max(a,x.downloads),0);
+    const setTxt=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
+    setTxt('analyticsTotalDl',fmtNumber(dlSum)); setTxt('analyticsTopDl',fmtNumber(dlTop)); setTxt('analyticsAvgDl',total?fmtNumber(Math.round(dlSum/total)):'0');
     const pageSize=Math.max(1,Number(analyticsPageSize)||24);
     const totalPages=Math.max(1,Math.ceil(total/pageSize));
     if(analyticsCurrentPage>totalPages) analyticsCurrentPage=totalPages;
@@ -2640,7 +2783,17 @@
 
   async function runAdobeAnalytics(){
     const key=getApifyKey();
-    const q=document.getElementById('analyticsQuery').value.trim();
+    let q=document.getElementById('analyticsQuery').value.trim();
+    // Pasted Adobe Stock links: contributor links switch to Contributor mode, asset links search that asset ID.
+    const contribLink=q.match(/stock\.adobe\.com\/(?:[a-z]{2}\/)?contributor\/(\d+)/i);
+    const assetLink=q.match(/stock\.adobe\.com\/[^?#\s]*?\/(\d{6,})(?:[?#/]|$)/i);
+    if(contribLink){
+      document.querySelector('.analytics-tab[data-analytics-mode="contributor"]')?.click();
+      q=contribLink[1]; document.getElementById('analyticsQuery').value=q;
+    }else if(assetLink){
+      document.querySelector('.analytics-tab[data-analytics-mode="keyword"]')?.click();
+      q=assetLink[1]; document.getElementById('analyticsQuery').value=q;
+    }
     const err=document.getElementById('analyticsError');
     const wrap=document.getElementById('analyticsResults');
     err.innerHTML='';
@@ -2700,16 +2853,16 @@
         rawItems=await callApify(retryImages);
       }
 
-      analyticsItems=rawItems.map(normalizeAnalyticsItem);
-      renderAnalytics();
-      if(!analyticsItems.length){
+      analyticsAllItems=rawItems.map(normalizeAnalyticsItem);
+      applyAnalyticsFilters();
+      if(!analyticsAllItems.length){
         const modeText=analyticsMode==='contributor'
           ? 'No public assets were returned for this Contributor ID. The ID may have no searchable assets, may not be a public creator ID, or Adobe Stock may not expose that portfolio to search.'
           : 'The scraper returned no assets. Check the keyword or try a smaller filter set.';
         err.innerHTML='<div class="analytics-error">'+modeText+'</div>';
       }
     }catch(e){
-      analyticsItems=[]; renderAnalytics();
+      analyticsAllItems=[]; analyticsItems=[]; applyAnalyticsFilters();
       err.innerHTML='<div class="analytics-error"><b>Adobe Analytics error:</b> '+escapeHtml(e.message||String(e))+'<br><span style="opacity:.8">If the token was exposed publicly, revoke/rotate it in Apify and save the new token here.</span></div>';
     }
   }
@@ -2725,6 +2878,144 @@
     // Page-count changes affect the next analysis because they change maxItems.
     if(analyticsItems.length){ showToast('Click Analyze to fetch the new number of pages'); }
   });
+
+
+  /* ---------------- ADOBE ANALYTICS: RESULT FILTERS ---------------- */
+  const A_FILTER_KEY='strong-meta-analytics-filters';
+  const aFilters={period:{type:'all'},minDl:'',maxDl:'',text:'',category:'',order:'fetched',ai:'all'};
+  function aSaveFilters(){ try{localStorage.setItem(A_FILTER_KEY,JSON.stringify(aFilters));}catch(e){} }
+  function aLoadFilters(){
+    try{
+      const j=JSON.parse(localStorage.getItem(A_FILTER_KEY)||'null');
+      if(j&&typeof j==='object'){
+        if(j.period&&typeof j.period==='object') aFilters.period=j.period;
+      }
+    }catch(e){}
+  }
+  function aPeriodRange(p){
+    const now=new Date();
+    if(!p||p.type==='all') return null;
+    if(p.type==='last'){ const d=Number(p.days)||30; return {from:new Date(now.getTime()-d*864e5),to:now}; }
+    if(p.type==='year'){ const y=Number(p.year); return {from:new Date(y,0,1),to:new Date(y,11,31,23,59,59,999)}; }
+    if(p.type==='custom'){
+      const f=p.from?new Date(p.from+'T00:00:00'):null, t=p.to?new Date(p.to+'T23:59:59.999'):null;
+      return {from:f&&!isNaN(f)?f:null,to:t&&!isNaN(t)?t:null};
+    }
+    return null;
+  }
+  function aPeriodLabel(p){
+    if(!p||p.type==='all') return 'All Time';
+    if(p.type==='last') return ({7:'Last 7 days',30:'Last 30 days',90:'Last 90 days',365:'Last 1 year'})[Number(p.days)]||('Last '+p.days+' days');
+    if(p.type==='year') return 'Year '+p.year;
+    if(p.type==='custom') return (p.from||'…')+' → '+(p.to||'…');
+    return 'All Time';
+  }
+  function applyAnalyticsFilters(skipRender){
+    const f=aFilters, range=aPeriodRange(f.period);
+    const minD=f.minDl!==''?Number(f.minDl):null, maxD=f.maxDl!==''?Number(f.maxDl):null;
+    const text=f.text.trim().toLowerCase(), cat=f.category.trim().toLowerCase();
+    let noDate=0;
+    let list=analyticsAllItems.filter(x=>{
+      if(range){
+        const t=x.uploadDate?new Date(x.uploadDate).getTime():NaN;
+        if(isNaN(t)){ noDate++; return false; }
+        if(range.from && t<range.from.getTime()) return false;
+        if(range.to && t>range.to.getTime()) return false;
+      }
+      if(minD!==null && !isNaN(minD) && x.downloads<minD) return false;
+      if(maxD!==null && !isNaN(maxD) && x.downloads>maxD) return false;
+      if(f.ai==='ai' && !x.ai) return false;
+      if(f.ai==='nonai' && x.ai) return false;
+      if(cat && !String(x.category||'').toLowerCase().includes(cat)) return false;
+      if(text){
+        const hay=(x.title+' '+x.keywords.join(' ')).toLowerCase();
+        if(!text.split(/[\s,]+/).filter(Boolean).every(w=>hay.includes(w))) return false;
+      }
+      return true;
+    });
+    const ts=x=>{const t=x.uploadDate?new Date(x.uploadDate).getTime():NaN; return isNaN(t)?0:t;};
+    if(f.order==='dl_desc') list=list.slice().sort((a,b)=>b.downloads-a.downloads);
+    else if(f.order==='dl_asc') list=list.slice().sort((a,b)=>a.downloads-b.downloads);
+    else if(f.order==='date_desc') list=list.slice().sort((a,b)=>ts(b)-ts(a));
+    else if(f.order==='date_asc') list=list.slice().sort((a,b)=>ts(a)-ts(b));
+    else if(f.order==='title_asc') list=list.slice().sort((a,b)=>String(a.title).localeCompare(String(b.title)));
+    analyticsItems=list;
+    analyticsCurrentPage=1;
+    if(!(skipRender && !analyticsAllItems.length)) renderAnalytics();
+    // summary line
+    const active=[];
+    if(range) active.push('Period: <b>'+escapeHtml(aPeriodLabel(f.period))+'</b>');
+    if(minD!==null&&!isNaN(minD)) active.push('Downloads ≥ <b>'+fmtNumber(minD)+'</b>');
+    if(maxD!==null&&!isNaN(maxD)) active.push('Downloads ≤ <b>'+fmtNumber(maxD)+'</b>');
+    if(f.ai!=='all') active.push(f.ai==='ai'?'<b>AI only</b>':'<b>Non-AI only</b>');
+    if(text) active.push('Contains <b>'+escapeHtml(f.text.trim())+'</b>');
+    if(cat) active.push('Category <b>'+escapeHtml(f.category.trim())+'</b>');
+    const sum=document.getElementById('aSummary');
+    if(sum){
+      if(!analyticsAllItems.length) sum.innerHTML='Run <b>Analyze</b> first, then use these filters to narrow the results.';
+      else{
+        let h='Showing <b>'+fmtNumber(list.length)+'</b> of <b>'+fmtNumber(analyticsAllItems.length)+'</b> fetched assets'+(active.length?' · '+active.join(' · '):'');
+        if(range && noDate) h+='<br>'+fmtNumber(noDate)+' asset(s) were hidden because the source returned no upload date.';
+        if(range && !analyticsAllItems.some(x=>x.uploadDate)) h+='<br>The scraper did not return upload dates for these assets, so the period filter cannot be applied.';
+        sum.innerHTML=h;
+      }
+    }
+    const pb=document.getElementById('aPeriodBtn'); if(pb){ pb.classList.toggle('active',!!range); }
+    const pl=document.getElementById('aPeriodLabel'); if(pl) pl.textContent=aPeriodLabel(f.period);
+  }
+  (function initAnalyticsFilters(){
+    aLoadFilters();
+    const $=id=>document.getElementById(id);
+    // fill year buttons
+    const yWrap=$('aPeriodYears'), thisYear=new Date().getFullYear();
+    if(yWrap) for(let y=thisYear;y>thisYear-6;y--){ const b=document.createElement('button'); b.type='button'; b.dataset.period='year'; b.dataset.year=String(y); b.textContent=String(y); yWrap.appendChild(b); }
+    function syncPeriodUI(){
+      const p=aFilters.period;
+      document.querySelectorAll('#aPeriodPanel [data-period]').forEach(b=>{
+        const on = p.type===b.dataset.period && (p.type==='all' || (p.type==='last'&&String(p.days)===b.dataset.days) || (p.type==='year'&&String(p.year)===b.dataset.year));
+        b.classList.toggle('active',on);
+      });
+      if($('aDateFrom')) $('aDateFrom').value=p.type==='custom'?(p.from||''):'';
+      if($('aDateTo')) $('aDateTo').value=p.type==='custom'?(p.to||''):'';
+    }
+    function commit(){ aSaveFilters(); syncPeriodUI(); applyAnalyticsFilters(); }
+    const panel=$('aPeriodPanel');
+    $('aPeriodBtn')?.addEventListener('click',e=>{ e.stopPropagation(); const o=panel.classList.toggle('open'); $('aPeriodBtn').setAttribute('aria-expanded',o?'true':'false'); });
+    $('aPeriodClose')?.addEventListener('click',()=>panel.classList.remove('open'));
+    document.addEventListener('click',e=>{ if(panel && !e.target.closest('.a-period-wrap')) panel.classList.remove('open'); });
+    $('aPeriodReset')?.addEventListener('click',()=>{ aFilters.period={type:'all'}; commit(); });
+    panel?.addEventListener('click',e=>{
+      const b=e.target.closest('[data-period]'); if(!b) return;
+      const t=b.dataset.period;
+      aFilters.period = t==='all'?{type:'all'} : t==='last'?{type:'last',days:Number(b.dataset.days)} : {type:'year',year:Number(b.dataset.year)};
+      commit(); panel.classList.remove('open');
+    });
+    $('aDateApply')?.addEventListener('click',()=>{
+      const from=$('aDateFrom').value, to=$('aDateTo').value;
+      if(!from && !to){ showToast('Pick a start or end date'); return; }
+      if(from && to && from>to){ showToast('Start date must be before end date'); return; }
+      aFilters.period={type:'custom',from,to}; commit(); panel.classList.remove('open');
+    });
+    // simple inputs
+    const bind=(id,key,evt)=>{ const el=$(id); if(!el) return; el.value=aFilters[key]; let t; el.addEventListener(evt,()=>{ clearTimeout(t); t=setTimeout(()=>{ aFilters[key]=el.value; aSaveFilters(); applyAnalyticsFilters(); },180); }); };
+    bind('aMinDl','minDl','input'); bind('aMaxDl','maxDl','input'); bind('aText','text','input'); bind('aCategory','category','input');
+    bind('aOrder','order','change'); bind('aAiFilter','ai','change');
+    $('aFilterReset')?.addEventListener('click',()=>{
+      Object.assign(aFilters,{period:{type:'all'},minDl:'',maxDl:'',text:'',category:'',order:'fetched',ai:'all'});
+      ['aMinDl','aMaxDl','aText','aCategory'].forEach(i=>{ if($(i)) $(i).value=''; });
+      if($('aOrder')) $('aOrder').value='fetched'; if($('aAiFilter')) $('aAiFilter').value='all';
+      commit(); showToast('Filters reset');
+    });
+    // type chips <-> existing server-side content type select
+    const typeSel=$('analyticsType');
+    function syncChips(){ document.querySelectorAll('#analyticsTypeChips button').forEach(b=>b.classList.toggle('active',b.dataset.type===typeSel.value)); }
+    document.querySelectorAll('#analyticsTypeChips button').forEach(b=>b.addEventListener('click',()=>{
+      typeSel.value=b.dataset.type; syncChips();
+      if(analyticsAllItems.length) showToast('Click Analyze to fetch '+b.textContent+' only');
+    }));
+    typeSel?.addEventListener('change',syncChips); syncChips();
+    syncPeriodUI(); applyAnalyticsFilters(true);
+  })();
 
   syncAnalyticsFetchPageOptions();
 
