@@ -87,6 +87,9 @@
   .brand-text .name{font-weight:700;font-size:16.5px;letter-spacing:-0.01em;}
   .brand-text .sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
 
+  .settings-backup{display:flex;gap:6px;margin:8px 0 0}
+  .settings-backup button{flex:1;padding:7px 8px;border:1px solid var(--card-line);border-radius:9px;background:transparent;color:var(--ink-soft);font:600 11px Inter,sans-serif;cursor:pointer}
+  .settings-backup button:hover{color:var(--text);border-color:var(--ink-soft2)}
   .apikey-btn{
     width:100%;
     display:flex;align-items:center;justify-content:center;gap:8px;
@@ -688,6 +691,11 @@
     </div>
 
     <button class="apikey-btn" id="apiKeyBtn"><span class="dot" id="apiDot"></span><span id="apiKeyLabel">Add API Key</span></button>
+    <div class="settings-backup" aria-label="Settings backup">
+      <button type="button" id="settingsExportBtn" title="Download all your saved settings and API keys as a JSON file">⬇ Backup settings</button>
+      <button type="button" id="settingsImportBtn" title="Restore settings from a backup file">⬆ Restore</button>
+      <input type="file" id="settingsImportInput" accept="application/json,.json" style="display:none">
+    </div>
 
     <div class="main-nav" aria-label="Main menu">
       <button class="main-nav-btn active" id="metadataNavBtn" type="button">
@@ -1713,6 +1721,34 @@
     });
     syncSliderLabels();
     syncTargetModelLabel();
+  })();
+
+  /* ---------------- SETTINGS BACKUP / RESTORE ---------------- */
+  (function initSettingsBackup(){
+    const KEY_OK = k => /^(strong-meta-|ai-|gen-|thinking-level)/.test(k) && k!=='strong-meta-moodboard-cache';
+    document.getElementById('settingsExportBtn')?.addEventListener('click',()=>{
+      try{
+        const data={};
+        for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i); if(KEY_OK(k)) data[k]=localStorage.getItem(k);}
+        if(!Object.keys(data).length){showToast('No saved settings to back up yet.');return;}
+        const blob=new Blob([JSON.stringify({app:'strong-meta',version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:'application/json'});
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='strong-meta-settings-'+new Date().toISOString().slice(0,10)+'.json';
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+        showToast('Settings backup downloaded. It contains your API keys, so keep it private.');
+      }catch(e){console.error(e);showToast('Could not create the backup.');}
+    });
+    const inp=document.getElementById('settingsImportInput');
+    document.getElementById('settingsImportBtn')?.addEventListener('click',()=>inp&&inp.click());
+    inp?.addEventListener('change',async()=>{
+      const f=inp.files&&inp.files[0]; inp.value=''; if(!f) return;
+      try{
+        const j=JSON.parse(await f.text());
+        if(!j||j.app!=='strong-meta'||!j.data||typeof j.data!=='object') throw new Error('bad file');
+        let n=0; Object.keys(j.data).forEach(k=>{ if(KEY_OK(k)&&typeof j.data[k]==='string'){localStorage.setItem(k,j.data[k]);n++;} });
+        showToast('Restored '+n+' settings. Reloading...');
+        setTimeout(()=>location.reload(),900);
+      }catch(e){showToast('This is not a valid Strong Meta settings backup.');}
+    });
   })();
 
   /* ---------------- TABS ---------------- */
