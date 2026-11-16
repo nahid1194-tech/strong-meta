@@ -5139,22 +5139,14 @@
   // Magnific contributor CSV format:
   // File name; Title; Keywords; Prompt (for AI-generated assets); Model.
   // Fields use semicolon delimiters; keywords remain comma-separated.
+  // Magnific CSV export. Header names must match the importer's expected
+  // lowercase field identifiers exactly (not display labels such as "File name").
   function exportMagnificCsv(done){
-    const savedModel = localStorage.getItem('magnificContributorModel') || '';
-    const modelInput = window.prompt(
-      'Enter the AI model name exactly as it appears in the Magnific Contributor dropdown. Leave blank if not applicable:',
-      savedModel
-    );
-    if(modelInput === null) return; // User cancelled export.
-    const modelName = String(modelInput).trim();
-    if(modelName) localStorage.setItem('magnificContributorModel', modelName);
-
     const q = (value)=>{
       const text = String(value == null ? '' : value);
-      // Magnific's examples wrap each field in single quotes.
-      return "'" + text.replace(/'/g, "\\'").replace(/\r?\n/g, ' ') + "'";
+      return '"' + text.replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
     };
-    const lines = ["'File name';'Title';'Keywords';'Prompt';'Model'"];
+    const lines = ['filename;title;keywords;prompt;model'];
     done.forEach(file=>{
       const result = file.result || {};
       const filename = String(file.name || '').trim();
@@ -5164,6 +5156,7 @@
         .map(keyword => String(keyword || '').trim())
         .filter(Boolean))].slice(0, 50);
       const promptText = String(result.prompt || '').trim();
+      const modelName = String(result.model || result.modelName || '').trim();
       lines.push([
         q(filename),
         q(title),
