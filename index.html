@@ -3899,7 +3899,9 @@
     return state.thinkingLevel === 'high' ? GEMINI_MODELS_QUALITY : GEMINI_MODELS_SPEED;
   }
 
-  async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema, model){
+  const activeGenerationControllers = new Set();
+
+  async function callGeminiRaw(apiKey, base64, mimeType, promptText, schema, model, signal){
     model = model || currentGeminiModels()[0];
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(apiKey);
     // Let the model actually "think" through the image before answering,
@@ -3920,7 +3922,7 @@
       // making titles/keywords drift away from what\'s actually visible.
       generationConfig:{ responseMimeType:'application/json', responseSchema:schema, temperature:0.2, thinkingConfig:thinkingConfig }
     };
-    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), signal });
     if(!resp.ok){
       const errText = await resp.text();
       let msg = 'Gemini API error ('+resp.status+')';
@@ -3936,7 +3938,7 @@
     return safeParseJson(txt);
   }
 
-  async function callOpenAiRaw(apiKey, base64, mimeType, promptText, schema){
+  async function callOpenAiRaw(apiKey, base64, mimeType, promptText, schema, signal){
     const model = 'gpt-5.6';
     const url = 'https://api.openai.com/v1/chat/completions';
     const body = {
@@ -3948,7 +3950,7 @@
       response_format:{ type:'json_object' },
       temperature:0.2
     };
-    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body) });
+    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body), signal });
     if(!resp.ok){
       const errText = await resp.text();
       let msg = 'OpenAI API error ('+resp.status+')';
@@ -3961,7 +3963,7 @@
     return safeParseJson(content);
   }
 
-  async function callMistralRaw(apiKey, base64, mimeType, promptText, schema){
+  async function callMistralRaw(apiKey, base64, mimeType, promptText, schema, signal){
     // ministral-14b-latest is Mistral\'s small edge/efficient model — its vision
     // encoder is only ~0.4B parameters, which is fine for basic "what\'s in this
     // image" but too weak to ground detailed, accurate stock-photo-style
@@ -3981,7 +3983,7 @@
       max_tokens: 1000,
       temperature:0.2
     };
-    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body) });
+    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey}, body:JSON.stringify(body), signal });
     if(!resp.ok){
       const errText = await resp.text();
       let msg = 'Mistral API error ('+resp.status+')';
@@ -3994,10 +3996,10 @@
     return safeParseJson(content);
   }
 
-  async function callProviderRaw(keyObj, base64, mimeType, promptText, schema, model){
-    if(keyObj.provider === 'openai') return callOpenAiRaw(keyObj.key, base64, mimeType, promptText, schema);
-    if(keyObj.provider === 'mistral') return callMistralRaw(keyObj.key, base64, mimeType, promptText, schema);
-    return callGeminiRaw(keyObj.key, base64, mimeType, promptText, schema, model);
+  async function callProviderRaw(keyObj, base64, mimeType, promptText, schema, model, signal){
+    if(keyObj.provider === 'openai') return callOpenAiRaw(keyObj.key, base64, mimeType, promptText, schema, signal);
+    if(keyObj.provider === 'mistral') return callMistralRaw(keyObj.key, base64, mimeType, promptText, schema, signal);
+    return callGeminiRaw(keyObj.key, base64, mimeType, promptText, schema, model, signal);
   }
 
   // Builds the full list of things we can try, in priority order: for each Gemini
@@ -4093,14 +4095,19 @@
       }
       const keyObj = readySlot.key;
       state.activeKeyIndex = orderedKeys().indexOf(keyObj);
+      const requestController = new AbortController();
+      activeGenerationControllers.add(requestController);
       try{
-        const result = await callProviderRaw(keyObj, base64, mimeType, promptText, schema, readySlot.model);
+        if(state.stopRequested) throw new DOMException('Generation stopped', 'AbortError');
+        const result = await callProviderRaw(keyObj, base64, mimeType, promptText, schema, readySlot.model, requestController.signal);
+        if(state.stopRequested) throw new DOMException('Generation stopped', 'AbortError');
         setSlotCooldown(readySlot, 0);
         keyObj.lastError = null;
         refreshKeyStatus(keyObj, 'ok');
         renderApiKeyList();
         return result;
       }catch(e){
+        if(state.stopRequested || e.name === 'AbortError') throw new Error('Generation stopped');
         lastErr = e;
         const rateLimited = isRateLimitError(e);
         setSlotCooldown(readySlot, Date.now() + (rateLimited ? parseRetryAfterMs(e) : 8000));
@@ -4108,6 +4115,8 @@
         renderApiKeyList();
         // loop continues — next iteration picks another ready slot (different
         // model on the same key, or the next key), or waits if none are ready
+      }finally{
+        activeGenerationControllers.delete(requestController);
       }
     }
     throw lastErr;
@@ -4537,7 +4546,7 @@
       }
     }catch(e){
       f.status = 'error';
-      f.error = e.message || 'Unknown error';
+      f.error = state.stopRequested ? 'Generation stopped by user' : (e.message || 'Unknown error');
     }
     renderResults();
     updateToolbar();
@@ -4658,7 +4667,13 @@
     await runGeneration(targets);
   }
   document.getElementById('retryFailedBtn').onclick = retryFailed;
-  document.getElementById('stopAllBtn').onclick = ()=>{ state.stopRequested = true; };
+  document.getElementById('stopAllBtn').onclick = ()=>{
+    state.stopRequested = true;
+    activeGenerationControllers.forEach(controller=>{
+      try{ controller.abort(); }catch(e){}
+    });
+    showToast('Stopping generation…');
+  };
   document.getElementById('embedAllBtn').onclick = embedAllMetadata;
 
   /* ---------------- EPS → JPEG EXPORT ---------------- */
