@@ -700,10 +700,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H12a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3" stroke-linecap="round"/></svg>
         Route planning
       </button>
-      <button class="main-nav-btn" id="googleStyleNavBtn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6.5 8.5 4l7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20z" stroke-linejoin="round"/><path d="M8.5 4v13.5M15.5 6.5V20M5 10h2m5 2h2m3-4h2" stroke-linecap="round"/></svg>
-        Google style map
-      </button>
       <button class="main-nav-btn" id="mapNavBtn" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6.5 8.5 4l7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20z" stroke-linejoin="round"/><path d="M8.5 4v13.5M15.5 6.5V20" stroke-linejoin="round"/></svg>
         Map Section
@@ -1099,46 +1095,6 @@
 .route-version-toggle{display:grid;grid-template-columns:1fr 1fr;gap:7px}.route-version-toggle .route-action{margin:0}.route-version-toggle .route-action.active{background:#2563eb;color:#fff;border-color:#1d4ed8;box-shadow:0 3px 10px #2563eb35}
 </style>
 
-<style>
-#googleMapSection{display:none;width:100%;height:calc(100vh - 24px);min-height:600px;padding:12px;box-sizing:border-box;color:var(--text,#222)}
-#googleMapSection.active{display:flex;flex-direction:column;gap:12px}
-.google-map-workspace{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;flex:1;min-height:0}
-.google-map-controls{display:flex;flex-direction:column;gap:12px;overflow:auto;min-width:0}
-.google-map-card{padding:16px;background:var(--card-bg,#fff);border:1px solid var(--card-line,#ddd);border-radius:14px;box-shadow:0 5px 20px #192d4b0b;display:flex;flex-direction:column;gap:11px}
-.google-map-card h1{font-size:21px;margin:0}.google-map-card p{font-size:12px;line-height:1.5;color:#697586;margin:0}
-.google-map-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.google-map-actions button{border:0;border-radius:8px;padding:10px 8px;background:#245bb5;color:white;font-weight:700;cursor:pointer}.google-map-actions button.secondary{background:#eef2f7;color:#26354b;border:1px solid #d5dce5}
-.google-map-ratios{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.google-map-ratios button{padding:8px 4px;border:1px solid #d7dce2;background:#f7f8fa;color:#344054;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer}.google-map-ratios button.active{background:#2859a7;color:white;border-color:#2859a7}
-.google-map-stage{display:flex;align-items:center;justify-content:center;min-width:0;min-height:0;overflow:hidden;background:#dcecf5;border:1px solid #cbdce6;border-radius:14px;padding:12px;box-sizing:border-box}
-#googleStreetMap{flex:none;overflow:hidden;background:#e8f0f6;border-radius:5px;box-shadow:0 2px 12px #17334b20}#googleStreetMap svg{display:block;width:100%;height:100%}
-@media(max-width:900px){.google-map-workspace{grid-template-columns:230px minmax(0,1fr);gap:10px}}@media(max-width:700px){#googleMapSection{height:auto;min-height:0;padding:6px}.google-map-workspace{grid-template-columns:1fr}.google-map-stage{height:60vh;min-height:420px}.google-map-controls{overflow:visible}}
-</style>
-<section id="googleMapSection" aria-label="Standalone Google style street map">
- <div class="google-map-workspace">
-  <aside class="google-map-controls">
-   <div class="google-map-card"><h1>Google style map</h1><p>Independent, unlabeled vector city-map artwork. No countries, country boundaries, place names, labels, flags, or route-planning controls.</p>
-    <label style="display:block;margin:12px 0 8px;font-size:12px;font-weight:700;color:#344054">Illustration style
-     <select id="googleStreetStyle" style="display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #d7dce2;border-radius:8px;background:#fff;color:#344054">
-      <option value="classic">Classic location pins</option><option value="pastel">Pastel city map</option><option value="river">River &amp; park map</option><option value="minimal">Minimal road map</option><option value="warm">Warm urban map</option><option value="night">Dark contrast map</option><option value="coastal">Coastal city</option><option value="mint">Mint green</option><option value="sunset">Sunset pastel</option><option value="ice">Icy blue</option><option value="sage">Sage garden</option><option value="sand">Sandstone</option><option value="lavender">Lavender city</option><option value="coral">Coral accent</option><option value="monochrome">Monochrome</option><option value="retro">Retro atlas</option><option value="highway">Highway network</option><option value="parkland">Parkland</option><option value="harbor">Harbor district</option><option value="softgray">Soft gray streets</option><option value="cleanpins">Clean location pins</option><option value="simpleurban">Simple urban blocks</option><option value="quietroads">Quiet roads</option><option value="blueprint">Blue &amp; white minimal</option><option value="softpark">Clean parks &amp; river</option>
-     </select>
-    </label><div class="google-map-actions"><button id="googleStreetGenerate" type="button">Generate map</button><button id="googleStreetRandom" class="secondary" type="button">Random style</button></div>
-   </div>
-   <div class="google-map-card"><strong>Map elements · control clutter</strong>
-    <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input id="gsAutoRandom" type="checkbox" checked> Randomize details on Generate</label>
-    <label style="font-size:12px;font-weight:650">Overall detail density <span id="gsDensityValue">35%</span><input id="gsDensity" type="range" min="10" max="80" value="35" style="width:100%"></label>
-    <label style="font-size:12px;font-weight:650">Road amount <span id="gsRoadValue">30%</span><input id="gsRoads" type="range" min="0" max="100" value="30" style="width:100%"></label>
-    <label style="font-size:12px;font-weight:650">Extra curved lines <span id="gsLineValue">15%</span><input id="gsLines" type="range" min="0" max="100" value="15" style="width:100%"></label>
-    <label style="font-size:12px;font-weight:650">Location pins <span id="gsPinValue">3</span><input id="gsPins" type="range" min="0" max="10" value="3" style="width:100%"></label>
-    <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input id="gsWater" type="checkbox" checked> Water / river</label>
-    <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input id="gsParks" type="checkbox" checked> Parks / green areas</label>
-    <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input id="gsBlocks" type="checkbox" checked> Highlighted blocks / areas</label>
-    <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input id="gsArterials" type="checkbox" checked> Main highlighted roads</label>
-    <button id="gsApplyControls" type="button" style="padding:9px;border:1px solid #d5dce5;border-radius:8px;background:#eef2f7;color:#26354b;font-weight:700;cursor:pointer">Apply controls</button>
-   </div>
-   <div class="google-map-card"><strong>Map size</strong><div class="google-map-ratios"><button data-gstreet-ratio="1:1">1:1</button><button class="active" data-gstreet-ratio="16:9">16:9</button><button data-gstreet-ratio="9:16">9:16</button><button data-gstreet-ratio="3:4">3:4</button><button data-gstreet-ratio="4:3">4:3</button></div><button id="googleStreetExport" type="button">Export SVG · Vector</button><p>Exported SVG stays editable in Adobe Illustrator. Each Generate creates a new street layout.</p></div>
-  </aside>
-  <div class="google-map-stage"><div id="googleStreetMap" aria-label="Generated vector street map"></div></div>
- </div>
-</section>
 
 <section class="route-section-view" id="routeSectionView" aria-label="Route planning">
       <div class="route-workspace">
@@ -1774,10 +1730,7 @@
   function showAnalytics(){
     routeSectionView.classList.remove('active');
     routeSectionView.style.display='none';
-    document.getElementById('googleMapSection')?.classList.remove('active');
-    if(document.getElementById('googleMapSection')) document.getElementById('googleMapSection').style.display='none';
     routeNavBtn.classList.remove('active');
-    document.getElementById('googleStyleNavBtn')?.classList.remove('active');
     mapSectionView.classList.remove('active');
     mapSectionView.style.display='none';
     mapNavBtn.classList.remove('active');
@@ -1796,10 +1749,7 @@
   function showGenerator(){
     routeSectionView.classList.remove('active');
     routeSectionView.style.display='none';
-    document.getElementById('googleMapSection')?.classList.remove('active');
-    if(document.getElementById('googleMapSection')) document.getElementById('googleMapSection').style.display='none';
     routeNavBtn.classList.remove('active');
-    document.getElementById('googleStyleNavBtn')?.classList.remove('active');
     mapSectionView.classList.remove('active');
     mapSectionView.style.display='none';
     mapNavBtn.classList.remove('active');
@@ -1825,10 +1775,7 @@
   function showMapSection(){
     routeSectionView.classList.remove('active');
     routeSectionView.style.display='none';
-    document.getElementById('googleMapSection')?.classList.remove('active');
-    if(document.getElementById('googleMapSection')) document.getElementById('googleMapSection').style.display='none';
     routeNavBtn.classList.remove('active');
-    document.getElementById('googleStyleNavBtn')?.classList.remove('active');
     generatorView.style.display='none';
     analyticsView.classList.remove('active');
     analyticsView.style.display='none';
@@ -1868,7 +1815,6 @@
   let routeGeoReady=false, routeWorldFeatures=null, routeCountryIndex=new Map(), routeD3=null, routeTopo=null, routeBuildToken=0;
   function showRouteSection(version='flag'){
     generatorView.style.display='none'; analyticsView.classList.remove('active'); analyticsView.style.display='none';
-    const standaloneGoogle=document.getElementById('googleMapSection'); if(standaloneGoogle){standaloneGoogle.classList.remove('active');standaloneGoogle.style.display='none';}
     mapSectionView.classList.remove('active'); mapSectionView.style.display='none';
     routeSectionView.classList.add('active'); routeSectionView.style.display='flex';
     metadataNavBtn.classList.remove('active'); analyticsNavBtn.classList.remove('active'); mapNavBtn.classList.remove('active');
@@ -1878,131 +1824,6 @@
     initRouteMap(); requestAnimationFrame(()=>{resizeRoutePreview();buildRoute();}); setTimeout(()=>{try{routeMapInstance&&routeMapInstance.invalidateSize()}catch(e){}resizeRoutePreview();},150);
   }
   routeNavBtn.addEventListener('click',()=>showRouteSection('flag'));
-  document.getElementById('googleStyleNavBtn')?.addEventListener('click',showGoogleStreetSection);
-  let googleStreetRatio='16:9';
-  let googleStreetPreset='classic';
-  function showGoogleStreetSection(){
-    generatorView.style.display='none'; analyticsView.classList.remove('active'); analyticsView.style.display='none';
-    routeSectionView.classList.remove('active'); routeSectionView.style.display='none';
-    mapSectionView.classList.remove('active'); mapSectionView.style.display='none';
-    const sec=document.getElementById('googleMapSection'); sec.classList.add('active'); sec.style.display='flex';
-    metadataNavBtn.classList.remove('active'); analyticsNavBtn.classList.remove('active'); routeNavBtn.classList.remove('active'); mapNavBtn.classList.remove('active');
-    document.getElementById('googleStyleNavBtn')?.classList.add('active');
-    if(metadataModeTabs) metadataModeTabs.style.display='none';
-    const sidebar=document.querySelector('.sidebar'); if(sidebar) sidebar.classList.add('analytics-mode');
-    resizeGoogleStreetPreview(); if(!document.querySelector('#googleStreetMap svg')) generateGoogleStreetMap();
-  }
-  function resizeGoogleStreetPreview(){
-    const map=document.getElementById('googleStreetMap'); if(!map)return;
-    const ratioMap={'1:1':1,'16:9':16/9,'9:16':9/16,'3:4':3/4,'4:3':4/3},ratio=ratioMap[googleStreetRatio]||16/9;
-    const parent=map.parentElement,aw=Math.max(200,(parent.clientWidth||900)-26),ah=Math.max(220,(parent.clientHeight||600)-26);
-    let w=Math.min(aw,ah*ratio),h=w/ratio;if(h>ah){h=ah;w=h*ratio}map.style.width=Math.floor(w)+'px';map.style.height=Math.floor(h)+'px';
-  }
-  function generateGoogleStreetMap(){
-    const root=document.getElementById('googleStreetMap');if(!root)return;
-    googleStreetPreset=document.getElementById('googleStreetStyle')?.value||googleStreetPreset;
-    const ratioMap={'1:1':[1000,1000],'16:9':[1600,900],'9:16':[900,1600],'3:4':[900,1200],'4:3':[1200,900]},[W,H]=ratioMap[googleStreetRatio]||ratioMap['16:9'];
-    const spacing=Math.min(W,H)/25; // Used to size street blocks and road details.
-    const rnd=()=>Math.random(), pick=a=>a[Math.floor(rnd()*a.length)], clamp=(v,min,max)=>Math.max(min,Math.min(max,v)), mx=W*.045, my=H*.045;
-    const presets={
-      classic:{water:'#b9dff3',land:'#e7e7e7',park:['#b4d982','#a8d274','#c0df91'],road:'#ffffff',minor:'#d4d4d4',arterial:'#fffdf8',casing:'#e8cfa0',pin:'#ed3342'},
-      pastel:{water:'#c9e7f5',land:'#f4f2ed',park:['#c6e4a6','#b7dc95','#d2e9b9'],road:'#ffffff',minor:'#dedbd4',arterial:'#fffefa',casing:'#efdcae',pin:'#f04452'},
-      river:{water:'#a9d6f0',land:'#f0f0eb',park:['#a9d57d','#9bcf73','#c0df8b'],road:'#ffffff',minor:'#d6d6d0',arterial:'#fffdf5',casing:'#e5c78e',pin:'#e93642'},
-      minimal:{water:'#d8eaf3',land:'#faf9f5',park:['#d7e8ce','#cfe4c4','#e1eed9'],road:'#ffffff',minor:'#e2e0da',arterial:'#ffffff',casing:'#f2e5c9',pin:'#e7464f'},
-      warm:{water:'#c4e0ee',land:'#f3eee5',park:['#c8d99b','#b8d08a','#d5e2ae'],road:'#fffdf7',minor:'#d9d0c4',arterial:'#fffaf0',casing:'#e4bd80',pin:'#e83c43'},
-      night:{water:'#7d9faf',land:'#48545a',park:['#789b78','#6d8e70','#83a583'],road:'#e8eceb',minor:'#78868a',arterial:'#f7f5e8',casing:'#c4a56d',pin:'#ff4956'},
-      coastal:{water:'#9ed8ec',land:'#f3f0e7',park:['#b5d98b','#a4ce7c','#d1e5a8'],road:'#fffefa',minor:'#d8d5ca',arterial:'#fffdf6',casing:'#e7c88c',pin:'#e94349'},
-      mint:{water:'#c7e7e4',land:'#eff4ed',park:['#a8d7b5','#97cda5','#c0e2bd'],road:'#ffffff',minor:'#d3dfd7',arterial:'#fbfffc',casing:'#c9dcca',pin:'#e94e5b'},
-      sunset:{water:'#b9d8ed',land:'#f6eee9',park:['#d5dda2','#c7d38e','#e5dfb1'],road:'#fffdfb',minor:'#e1d2d0',arterial:'#fffaf7',casing:'#f0c49b',pin:'#ef5960'},
-      ice:{water:'#a9d9f0',land:'#f3f7f9',park:['#d0e6d1','#bddfc8','#e0eddc'],road:'#ffffff',minor:'#d6e1e7',arterial:'#ffffff',casing:'#c3dce9',pin:'#e84b56'},
-      sage:{water:'#c5dfe0',land:'#eeefe6',park:['#9fc29a','#91b78b','#bad1a7'],road:'#fffefa',minor:'#d1d4c8',arterial:'#fbfbf2',casing:'#d8cfae',pin:'#d94a4e'},
-      sand:{water:'#b9d9e5',land:'#f1e5d2',park:['#c8d29b','#b8c78a','#dedbb0'],road:'#fffaf0',minor:'#d8cdbb',arterial:'#fffdf5',casing:'#d8b47c',pin:'#d94b46'},
-      lavender:{water:'#c5d9f0',land:'#f1eef7',park:['#c6d8b1','#b7d0a3','#d7e3c2'],road:'#ffffff',minor:'#dcd7e7',arterial:'#fffefe',casing:'#d8c9e8',pin:'#e34e6b'},
-      coral:{water:'#b9deec',land:'#f5f0e9',park:['#c4dca1','#b4d28e','#d8e6b4'],road:'#fffdf8',minor:'#ded6ce',arterial:'#fffaf5',casing:'#efc6a4',pin:'#ef514e'},
-      monochrome:{water:'#d9e1e5',land:'#eeeeec',park:['#d4d9d2','#c9d0c8','#e0e2dd'],road:'#ffffff',minor:'#c9cecf',arterial:'#ffffff',casing:'#d7d7d2',pin:'#e34b52'},
-      retro:{water:'#b8d8d5',land:'#efe5cc',park:['#c7cf91','#b9c583','#d7d6a1'],road:'#fff8e9',minor:'#d7cbb0',arterial:'#fff9eb',casing:'#d8a96f',pin:'#d94c43'},
-      highway:{water:'#b7dced',land:'#f0f0eb',park:['#c2dba0','#b2d18d','#d5e4b3'],road:'#ffffff',minor:'#d3d4cf',arterial:'#fffdf8',casing:'#e9c27e',pin:'#e8424b'},
-      parkland:{water:'#b9dce9',land:'#f0f0e8',park:['#a6d27c','#95c86e','#c1df93'],road:'#fffefa',minor:'#d8d9cf',arterial:'#fffdf5',casing:'#e2d3a2',pin:'#e94c53'},
-      harbor:{water:'#91c9e3',land:'#e9e8e1',park:['#b6d49b','#a5c98b','#c7ddb0'],road:'#ffffff',minor:'#d0d3d0',arterial:'#fffdf8',casing:'#e4c18a',pin:'#e6424a'},
-      softgray:{water:'#c7dce7',land:'#eeeeed',park:['#c9d8bd','#bccfb0','#d8e0cd'],road:'#ffffff',minor:'#d5d5d4',arterial:'#fffefa',casing:'#ddd5c6',pin:'#e84a52'},
-      cleanpins:{water:'#c5e4f2',land:'#f2f1ed',park:['#b8d98e','#c5e1a2'],road:'#ffffff',minor:'#d9d9d4',arterial:'#fffefa',casing:'#e8d7b7',pin:'#e63e46'},
-      simpleurban:{water:'#d8eaf2',land:'#f7f6f1',park:['#d5e5bf','#c7dfad'],road:'#ffffff',minor:'#deded9',arterial:'#ffffff',casing:'#e7e0d2',pin:'#dc4b50'},
-      quietroads:{water:'#d2e7f0',land:'#f5f4ef',park:['#d6e5c4','#c8dfb3'],road:'#fffefa',minor:'#e4e1da',arterial:'#fffefa',casing:'#eee5d6',pin:'#e64a50'},
-      blueprint:{water:'#c9e2ef',land:'#f8fafb',park:['#dbe9d5','#d0e3cb'],road:'#ffffff',minor:'#d8e2e7',arterial:'#ffffff',casing:'#d8e8f0',pin:'#de4b55'},
-      softpark:{water:'#b9dff0',land:'#f3f2ec',park:['#b4d88b','#c6e2a0','#d2e7b7'],road:'#ffffff',minor:'#dcdcd5',arterial:'#fffefa',casing:'#e7d7b6',pin:'#e7444b'}
-    };
-    const theme=presets[googleStreetPreset]||presets.classic;
-    const water=theme.water,land=theme.land;
-    const paths=[],labels=[],parks=[];
-    const control=id=>document.getElementById(id);
-    const detail=Number(control('gsDensity')?.value||35)/100;
-    const roadAmount=Number(control('gsRoads')?.value||30)/100;
-    const lineAmount=Number(control('gsLines')?.value||15)/100;
-    const pinCount=Number(control('gsPins')?.value||3);
-    const showWater=!!control('gsWater')?.checked, showParks=!!control('gsParks')?.checked, showBlocks=!!control('gsBlocks')?.checked, showArterials=!!control('gsArterials')?.checked;
-    // Optional river or canal with banks and a pale-blue fill.
-    if(showWater && rnd()>.22){const y=H*(.25+rnd()*.5),d=`M ${-W*.05} ${y} C ${W*.18} ${y-H*.2} ${W*.22} ${y+H*.18} ${W*.42} ${y-H*.01} S ${W*.72} ${y+H*.2} ${W*1.05} ${y-H*.12}`;paths.push(`<path d="${d}" fill="none" stroke="#b4d6e8" stroke-width="${H*.085}"/><path d="${d}" fill="none" stroke="#c9e5f2" stroke-width="${H*.073}"/>`)}
-    // Parks as irregular polygons.
-    for(let i=0;i<(showParks?Math.max(2,Math.round(W/110*detail*2.2)):0);i++){let x=rnd()*W,y=rnd()*H,rx=W*(.012+rnd()*.045),ry=H*(.015+rnd()*.06);let pts=[];for(let j=0;j<8;j++){let a=j*Math.PI/4,r=.7+rnd()*.45;pts.push(`${(x+Math.cos(a)*rx*r).toFixed(1)},${(y+Math.sin(a)*ry*r).toFixed(1)}`)}parks.push(`<polygon points="${pts.join(' ')}" fill="${pick(theme.park)}"/>`)}
-    // Organic, irregular street network: deliberately avoid the repeated tiled/grid overlay.
-    // Each road follows a different curved path with varying junctions and spacing.
-    const roadCount=Math.round((W/24)*roadAmount*(0.35+detail));
-    for(let i=0;i<roadCount;i++){
-      const horizontal=rnd()>.43;
-      let x=horizontal?mx+rnd()*(W-2*mx):mx+rnd()*(W-2*mx), y=horizontal?my+rnd()*(H-2*my):my+rnd()*(H-2*my);
-      let d=`M ${x.toFixed(1)} ${y.toFixed(1)}`;
-      const segments=2+Math.floor(rnd()*4);
-      for(let j=0;j<segments;j++){
-        const nx=clamp(horizontal?x+W*(.08+rnd()*.17):x+W*(rnd()-.5)*.16,mx,W-mx);
-        const ny=clamp(horizontal?y+H*(rnd()-.5)*.18:y+H*(.08+rnd()*.17),my,H-my);
-        const c1x=clamp(x+(nx-x)*(.25+rnd()*.2)+(rnd()-.5)*W*.04,mx,W-mx);
-        const c1y=clamp(y+(ny-y)*(.25+rnd()*.2)+(rnd()-.5)*H*.04,my,H-my);
-        const c2x=clamp(x+(nx-x)*(.7+rnd()*.15)+(rnd()-.5)*W*.035,mx,W-mx);
-        const c2y=clamp(y+(ny-y)*(.7+rnd()*.15)+(rnd()-.5)*H*.035,my,H-my);
-        d+=` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${nx.toFixed(1)} ${ny.toFixed(1)}`;x=nx;y=ny;
-      }
-      const sw=Math.max(2,Math.min(W,H)*(.0025+rnd()*.004));
-      paths.push(`<path d="${d}" fill="none" stroke="${theme.road}" stroke-width="${sw*2.5}" stroke-linecap="round" stroke-linejoin="round"/>`);
-      paths.push(`<path d="${d}" fill="none" stroke="${theme.minor}" stroke-width="${Math.max(.7,sw*.22)}" stroke-linecap="round" stroke-linejoin="round" opacity=".72"/>`);
-    }
-    // Small curved side streets branching from varied points; no uniform grid spacing.
-    for(let i=0;i<Math.round((W/35)*roadAmount*detail);i++){
-      const x=mx+rnd()*(W-2*mx),y=my+rnd()*(H-2*my),dx=clamp((rnd()-.5)*W*.14,mx-x,W-mx-x),dy=clamp((rnd()-.5)*H*.14,my-y,H-my-y);
-      const qx=clamp(x+dx*.35,mx,W-mx),qy=clamp(y+dy*.8,my,H-my),ex=clamp(x+dx,mx,W-mx),ey=clamp(y+dy,my,H-my);
-      const d=`M ${x.toFixed(1)} ${y.toFixed(1)} Q ${qx.toFixed(1)} ${qy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`;
-      paths.push(`<path d="${d}" fill="none" stroke="${theme.road}" stroke-width="${Math.max(2,Math.min(W,H)*.004)}" stroke-linecap="round"/>`);
-    }
-    // Curving arterial roads, with a warm casing and pale inner surface.
-    for(let i=0;i<(showArterials?Math.round(5*lineAmount):0);i++){let x=mx+rnd()*(W-2*mx),y=my+rnd()*(H-2*my),dx=Math.min(W*.42,W*(.16+rnd()*.25)),dy=Math.min(H*.16,H*(.04+rnd()*.1)),sx=clamp(x-dx/2,mx,W-mx),ex=clamp(x+dx/2,mx,W-mx),c1y=clamp(y-dy*1.2,my,H-my),c2y=clamp(y+dy*1.2,my,H-my),ey=clamp(y-dy,my,H-my),d=`M ${sx} ${clamp(y+dy,my,H-my)} C ${clamp(x-dx*.25,mx,W-mx)} ${c1y} ${clamp(x+dx*.2,mx,W-mx)} ${c2y} ${ex} ${ey}`;paths.push(`<path d="${d}" fill="none" stroke="${theme.casing}" stroke-width="${Math.max(4,spacing*.17)}" stroke-linecap="round"/>`);paths.push(`<path d="${d}" fill="none" stroke="${theme.arterial}" stroke-width="${Math.max(2.5,spacing*.11)}" stroke-linecap="round"/>`)}
-    // No labels or country-related elements: keep the map artwork purely visual.
-    // Add varied local block geometry to avoid a repetitive generic grid.
-    for(let i=0;i<(showBlocks?Math.round((W/28)*detail):0);i++){
-      const x=rnd()*W,y=rnd()*H,bw=spacing*(.28+rnd()*.9),bh=spacing*(.22+rnd()*.75),rot=(rnd()-.5)*24;
-      const fill=pick(googleStreetPreset==='night'?['#536168','#505c61','#59666b']:['#f1efe8','#f4f2eb','#ebe9e1','#f7f5ef']);
-      paths.push(`<rect x="${(x-bw/2).toFixed(1)}" y="${(y-bh/2).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${(2+rnd()*5).toFixed(1)}" fill="${fill}" stroke="#deddd6" stroke-width="1" transform="rotate(${rot.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`);
-    }
-    // Red location pins inspired by the supplied reference: white center, subtle offset shadow.
-    const pins=[];
-    if(['classic','pastel','river','warm'].includes(googleStreetPreset) || pinCount>0){
-      const count=pinCount;
-      for(let i=0;i<count;i++){
-        const x=W*(.14+rnd()*.72),y=H*(.18+rnd()*.65),r=Math.min(W,H)*(.012+rnd()*.012);
-        const d=`M ${x} ${y+r*2.1} C ${x-r*.45} ${y+r*1.25} ${x-r*1.35} ${y+r*.25} ${x-r*1.35} ${y-r*.45} A ${r*1.35} ${r*1.35} 0 1 1 ${x+r*1.35} ${y-r*.45} C ${x+r*1.35} ${y+r*.25} ${x+r*.45} ${y+r*1.25} ${x} ${y+r*2.1} Z`;
-        pins.push(`<ellipse cx="${x+r*.65}" cy="${y+r*1.8}" rx="${r*1.7}" ry="${r*.62}" fill="#555" opacity=".24"/><path d="${d}" fill="${theme.pin}"/><circle cx="${x}" cy="${y-r*.45}" r="${r*.62}" fill="#fff"/>`);
-      }
-    }
-    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="${water}"/><path d="M0 0H${W}V${H}H0Z" fill="${land}"/>${parks.join('')}${paths.join('')}${pins.join('')}</svg>`;
-    root.innerHTML=svg;resizeGoogleStreetPreview();
-  }
-  function exportGoogleStreetSVG(){const svg=document.querySelector('#googleStreetMap svg');if(!svg){generateGoogleStreetMap();return exportGoogleStreetSVG()}const blob=new Blob([new XMLSerializer().serializeToString(svg)],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`google-style-street-map-${googleStreetRatio.replace(':','x')}.svg`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-  ['gsDensity','gsRoads','gsLines','gsPins'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{const out={gsDensity:'gsDensityValue',gsRoads:'gsRoadValue',gsLines:'gsLineValue',gsPins:'gsPinValue'}[id];const el=document.getElementById(out);if(el)el.textContent=id==='gsPins'?document.getElementById(id).value:document.getElementById(id).value+'%';}));
-  document.getElementById('gsApplyControls')?.addEventListener('click',generateGoogleStreetMap);
-  document.getElementById('googleStreetGenerate')?.addEventListener('click',()=>{if(document.getElementById('gsAutoRandom')?.checked){const d=document.getElementById('gsDensity'),r=document.getElementById('gsRoads'),l=document.getElementById('gsLines');if(d)d.value=25+Math.floor(Math.random()*26);if(r)r.value=20+Math.floor(Math.random()*31);if(l)l.value=5+Math.floor(Math.random()*21);['gsDensity','gsRoads','gsLines'].forEach(id=>document.getElementById(id)?.dispatchEvent(new Event('input')));}generateGoogleStreetMap();});
-  document.getElementById('googleStreetRandom')?.addEventListener('click',()=>{const styles=['classic','pastel','river','minimal','warm','night','coastal','mint','sunset','ice','sage','sand','lavender','coral','monochrome','retro','highway','parkland','harbor','softgray','cleanpins','simpleurban','quietroads','blueprint','softpark'];const current=document.getElementById('googleStreetStyle')?.value;const choices=styles.filter(x=>x!==current);googleStreetPreset=choices[Math.floor(Math.random()*choices.length)];const select=document.getElementById('googleStreetStyle');if(select)select.value=googleStreetPreset;generateGoogleStreetMap()});
-  document.getElementById('googleStreetStyle')?.addEventListener('change',()=>{googleStreetPreset=document.getElementById('googleStreetStyle').value;generateGoogleStreetMap()});
-  document.getElementById('googleStreetExport')?.addEventListener('click',exportGoogleStreetSVG);
-  document.querySelectorAll('[data-gstreet-ratio]').forEach(b=>b.addEventListener('click',()=>{googleStreetRatio=b.dataset.gstreetRatio;document.querySelectorAll('[data-gstreet-ratio]').forEach(x=>x.classList.toggle('active',x===b));resizeGoogleStreetPreview();generateGoogleStreetMap()}));
-  window.addEventListener('resize',resizeGoogleStreetPreview);
   const routeRatios={'1:1':1,'16:9':16/9,'9:16':9/16,'3:4':3/4,'4:3':4/3};
   function resizeRoutePreview(){const map=document.getElementById('routeMap');if(!map)return;const ratio=routeRatios[routeRatio]||routeRatios['16:9'];const parent=map.parentElement;const availableWidth=Math.max(180,(parent.clientWidth||900)-26);const availableHeight=Math.max(220,(parent.clientHeight||window.innerHeight)-26);let width=Math.min(availableWidth,availableHeight*ratio);let height=width/ratio;if(height>availableHeight){height=availableHeight;width=height*ratio;}map.style.width=Math.floor(width)+'px';map.style.height=Math.floor(height)+'px';map.style.aspectRatio=String(ratio);map.style.maxHeight='100%';map.style.marginTop='0';}
   document.querySelectorAll('[data-route-ratio]').forEach(button=>button.addEventListener('click',()=>{routeRatio=button.dataset.routeRatio;document.querySelectorAll('[data-route-ratio]').forEach(b=>b.classList.toggle('active',b===button));routeSectionView.dataset.ratio=routeRatio;resizeRoutePreview();buildRoute();}));
