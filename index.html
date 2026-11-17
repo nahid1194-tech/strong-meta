@@ -4957,17 +4957,17 @@
       showToast(completedPrompts.length+' prompts exported to CSV');
     }
   }
-  // Magnific contributor CSV format:
-  // File name; Title; Keywords; Prompt (for AI-generated assets); Model.
-  // Fields use semicolon delimiters; keywords remain comma-separated.
-  // Magnific import CSV: exact supported headers, semicolon-delimited.
-  // filename is required; all other fields are optional and blank values are preserved.
+  // Magnific metadata CSV (matches Magnific's official example file):
+  // UTF-8 with BOM, CRLF, semicolon-delimited, header:
+  // filename;title;tags;is_ai;ai_prompt;ai_model;people_count
+  // Tags are comma-separated inside one cell. is_ai is yes/no (blank = unknown).
   function exportMagnificCsv(done){
+    // Plain cells like the example file; quote only when a cell contains ; " or a line break.
     const q = (value)=>{
-      const text = String(value == null ? '' : value);
-      return '"' + text.replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
+      const text = String(value == null ? '' : value).replace(/\r?\n/g, ' ');
+      return /[;"]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     };
-    const lines = ['filename;title;tags;is_ai;ai_prompt;ai_model'];
+    const lines = ['filename;title;tags;is_ai;ai_prompt;ai_model;people_count'];
     done.forEach(file=>{
       const result = file.result || {};
       const filename = String(file.name || '').trim();
@@ -4979,27 +4979,28 @@
         .map(tag => String(tag || '').trim())
         .filter(Boolean))].slice(0, 50).join(',');
       const rawIsAi = result.is_ai ?? result.isAi ?? file.is_ai ?? file.isAi;
-      const isAi = rawIsAi === true || rawIsAi === 1 ||
-        (typeof rawIsAi === 'string' && ['true','1','yes','y'].includes(rawIsAi.trim().toLowerCase()))
-        ? 'true'
-        : (rawIsAi === false || rawIsAi === 0 ||
-          (typeof rawIsAi === 'string' && ['false','0','no','n'].includes(rawIsAi.trim().toLowerCase()))
-          ? 'false' : '');
-      const aiPrompt = String(result.ai_prompt || result.prompt || '').trim();
-      const aiModel = String(result.ai_model || result.model || result.modelName || '').trim();
+      const aiYes = rawIsAi === true || rawIsAi === 1 ||
+        (typeof rawIsAi === 'string' && ['true','1','yes','y'].includes(rawIsAi.trim().toLowerCase()));
+      const aiNo = rawIsAi === false || rawIsAi === 0 ||
+        (typeof rawIsAi === 'string' && ['false','0','no','n'].includes(rawIsAi.trim().toLowerCase()));
+      const isAi = aiYes ? 'yes' : (aiNo ? 'no' : '');
+      const aiPrompt = aiYes ? String(result.ai_prompt || result.prompt || '').trim() : '';
+      const aiModel = aiYes ? String(result.ai_model || result.model || result.modelName || '').trim() : '';
+      const pc = parseInt(result.people_count ?? result.peopleCount ?? file.people_count ?? file.peopleCount, 10);
+      const peopleCount = Number.isFinite(pc) && pc >= 0 ? pc : 0;
 
-      // A blank optional cell intentionally leaves the corresponding Magnific field unchanged.
       lines.push([
         q(filename),
         q(title),
         q(tags),
         q(isAi),
         q(aiPrompt),
-        q(aiModel)
+        q(aiModel),
+        String(peopleCount)
       ].join(';'));
     });
-    // No BOM: keep the very first bytes as the required "filename" header.
-    const csv = lines.join('\r\n');
+    // UTF-8 BOM + CRLF, same as Magnific's example file.
+    const csv = '\uFEFF' + lines.join('\r\n') + '\r\n';
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
