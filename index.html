@@ -2239,8 +2239,8 @@
     const serialized='<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(clone);
     const blob=new Blob([serialized],{type:'image/svg+xml;charset=utf-8'});
     const url=URL.createObjectURL(blob);
-    const start=(document.getElementById('routeStart').value.trim()||'start').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    const end=(document.getElementById('routeEnd').value.trim()||'destination').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    const start=((document.getElementById('routeStart')?.value||'').trim()||'start').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    const end=((document.getElementById('routeEnd')?.value||'').trim()||'destination').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     const a=document.createElement('a');a.href=url;a.download=(document.querySelectorAll('#routeCountryInputs input').length===1?`country-${start}-${routeRatio.replace(':','x')}-vector.svg`:`route-${start}-to-${end}-${routeRatio.replace(':','x')}-vector.svg`);
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
     document.getElementById('routeStatus').textContent=`Editable SVG exported (${routeRatio}). Open it in Adobe Illustrator; map paths, pins and labels remain vector elements.`;
